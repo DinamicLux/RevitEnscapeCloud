@@ -1,0 +1,12 @@
+# Builds temporales
+dist_*
+*.log
+*.tmp
+*.suo
+*.user
+.vs/
+bin/
+obj/
+
+# Archivos de caché del navegador
+.system_generated/

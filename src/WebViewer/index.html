@@ -1,0 +1,4223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>EnscapeCloud RT — Motor PBR + Nube de Puntos ReCap / VZ-600i (Revit 2026)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #141821;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #f1f5f9;
+    }
+    #viewport {
+      width: 100%; height: 100%; display: block;
+    }
+
+    /* Floating Glassmorphism Control Panel (Enscape / ReCap Pro Style) */
+    #hud-panel {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 365px;
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.90);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      border-radius: 12px;
+      padding: 13px 15px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
+      z-index: 10;
+    }
+    #hud-panel::-webkit-scrollbar { width: 6px; }
+    #hud-panel::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.35); border-radius: 3px; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    }
+    .panel-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #38bdf8;
+      text-transform: uppercase;
+    }
+    .section-divider {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fbbf24;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 11px 0 7px 0;
+      padding-top: 7px;
+      border-top: 1px solid rgba(148, 163, 184, 0.20);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .fps-badge {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .mode-badge {
+      background: rgba(245, 158, 11, 0.22);
+      border: 1px solid rgba(245, 158, 11, 0.6);
+      color: #fcd34d;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+    .mode-badge.walk {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #10b981;
+      color: #6ee7b7;
+    }
+
+    .control-group {
+      margin-bottom: 8px;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+    .control-value {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 5px;
+      background: #1e293b;
+      border-radius: 4px;
+      outline: none;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+    }
+
+    select.hud-select, input.hud-input {
+      width: 100%;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      outline: none;
+      margin-bottom: 6px;
+    }
+
+    .dual-slider-row {
+      display: grid;
+      grid-template-columns: 44px 1fr 1fr;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 5px;
+      font-size: 10.5px;
+      color: #94a3b8;
+    }
+    .dual-slider-row strong { color: #e2e8f0; }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 11px;
+      color: #e2e8f0;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #0ea5e9;
+      cursor: pointer;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .hud-btn {
+      flex: 1;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #e2e8f0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .hud-btn:hover {
+      background: rgba(14, 165, 233, 0.35);
+      border-color: #38bdf8;
+    }
+    .hud-btn.primary {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .hud-btn.emerald {
+      background: linear-gradient(135deg, #059669, #10b981);
+      border-color: #34d399;
+      color: #fff;
+    }
+    .hud-btn.amber {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      border-color: #fbbf24;
+      color: #fff;
+    }
+
+    .estimate-card {
+      background: rgba(15, 118, 110, 0.18);
+      border: 1px solid rgba(45, 212, 191, 0.4);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin: 6px 0;
+      font-size: 10.5px;
+      line-height: 1.45;
+      color: #ccfbf1;
+    }
+    .estimate-card strong { color: #5eead4; }
+
+    .legend-bar {
+      display: flex;
+      gap: 8px;
+      font-size: 10px;
+      margin: 4px 0 6px 0;
+      padding: 4px 6px;
+      background: rgba(30, 41, 59, 0.7);
+      border-radius: 5px;
+    }
+    .legend-dot {
+      display: inline-block;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    /* Bottom-left Navigation & Point Cloud Telemetry Overlay */
+    #telemetry-box {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.84);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+      padding: 9px 13px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    #telemetry-box strong { color: #f8fafc; }
+    .key-pill {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.2);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: #7dd3fc;
+      padding: 0 5px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    /* ================= PROGRESS DIALOG MODAL & TASK STATUS CARD ================= */
+    #hud-task-card {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 10.5px;
+    }
+    .task-status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .task-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 0.3px;
+    }
+    .task-badge.idle {
+      background: rgba(148, 163, 184, 0.2);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      color: #cbd5e1;
+    }
+    .task-badge.running {
+      background: rgba(14, 165, 233, 0.25);
+      border: 1px solid #38bdf8;
+      color: #7dd3fc;
+      animation: pulseBadge 1.2s infinite ease-in-out;
+    }
+    .task-badge.done {
+      background: rgba(16, 185, 129, 0.25);
+      border: 1px solid #10b981;
+      color: #6ee7b7;
+    }
+    .task-badge.error {
+      background: rgba(239, 68, 68, 0.25);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+    }
+    @keyframes pulseBadge {
+      0%, 100% { opacity: 1.0; transform: scale(1.0); }
+      50% { opacity: 0.72; transform: scale(0.98); }
+    }
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #0f172a;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 5px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0284c7, #38bdf8, #10b981);
+      border-radius: 999px;
+      transition: width 0.12s ease-out;
+    }
+
+    /* Centered Modal Dialog for Point Cloud Loading Progress (No slow backdrop-filter blur!) */
+    #progress-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #progress-modal {
+      width: 460px;
+      max-width: 92vw;
+      background: #0f172a;
+      border: 1.5px solid rgba(56, 189, 248, 0.65);
+      border-radius: 14px;
+      padding: 20px 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+      color: #f8fafc;
+    }
+    .modal-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    }
+    .modal-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .modal-pct-big {
+      font-size: 32px;
+      font-weight: 800;
+      color: #38bdf8;
+      text-align: center;
+      margin: 8px 0 4px 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .modal-stage-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .modal-detail-text {
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 6px;
+      min-height: 18px;
+      word-break: break-word;
+    }
+
+    /* Interactive Drop-In Zone & Fullscreen Drag Overlay */
+    #drop-in-zone {
+      border: 1.5px dashed rgba(52, 211, 153, 0.65);
+      background: rgba(6, 78, 59, 0.22);
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #a7f3d0;
+      margin-bottom: 7px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    #drop-in-zone:hover, #drop-in-zone.drag-active {
+      background: rgba(16, 185, 129, 0.35);
+      border-color: #34d399;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+    }
+    #fullscreen-drop-overlay {
+      position: fixed;
+      inset: 14px;
+      border: 3px dashed #34d399;
+      border-radius: 16px;
+      background: rgba(6, 78, 59, 0.78);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9500;
+      pointer-events: none;
+      color: #ecfdf5;
+      font-size: 22px;
+      font-weight: 800;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    }
+
+    /* Floating Cursor 3D Coordinates Tooltip */
+    #cursor-coords-tooltip {
+      position: fixed;
+      top: 0;
+      left: 0;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1.5px solid #38bdf8;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #f8fafc;
+      pointer-events: none;
+      z-index: 8000;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    #cursor-coords-tooltip .coord-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      display: block;
+    }
+    #cursor-coords-tooltip .cota-highlight {
+      color: #34d399;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="viewport"></canvas>
+
+  <!-- Fullscreen Drop-In Visual Overlay when dragging files from Windows Explorer -->
+  <div id="fullscreen-drop-overlay">
+    <div>📥 SUELTA AQUÍ TU NUBE DE PUNTOS (.LAS o ReCap .RCS)</div>
+    <div style="font-size: 14px; font-weight: 600; color: #a7f3d0; margin-top: 8px;">
+      Se cargará y posicionará automáticamente por Coordenadas Compartidas
+    </div>
+  </div>
+
+  <!-- Floating 3D Cursor Coordinate Inspector Tooltip -->
+  <div id="cursor-coords-tooltip">
+    <span class="coord-title" id="tt-source">📍 Coordenadas Compartidas</span>
+    <div><strong>Este (X):</strong> <span id="tt-east">0.000</span> m</div>
+    <div><strong>Norte (Y):</strong> <span id="tt-north">0.000</span> m</div>
+    <div><strong>Cota (Z):</strong> <span class="cota-highlight" id="tt-cota">0.000 msnm</span></div>
+  </div>
+
+  <!-- ================= CENTERED PROGRESS DIALOG MODAL ================= -->
+  <div id="progress-modal-backdrop">
+    <div id="progress-modal">
+      <div class="modal-top-row">
+        <span class="modal-title" id="modal-task-title">Monitor de Carga de Nube de Puntos</span>
+        <span class="task-badge idle" id="modal-state-badge">⚪ TAREA NO INICIADA</span>
+      </div>
+
+      <div class="modal-pct-big" id="modal-pct-value">0.0%</div>
+      <div class="modal-stage-text" id="modal-stage-label">La tarea aún no ha iniciado (En espera de archivo .LAS / .RCS)</div>
+
+      <div class="progress-track" style="height: 14px; margin: 10px 0;">
+        <div class="progress-fill" id="modal-progress-bar"></div>
+      </div>
+
+      <div class="modal-detail-text" id="modal-detail-label">
+        Selecciona o arrastra (Drop-In) un archivo .LAS o Autodesk ReCap .RCS para iniciar.
+      </div>
+
+      <div class="btn-row" style="margin-top: 14px;">
+        <button class="hud-btn emerald" id="btn-modal-select-las">📂 Elegir Archivo (.LAS / .RCS)</button>
+        <button class="hud-btn primary" id="btn-modal-fit-cloud" style="display: none;">🔍 Encuadrar Nube Cargada</button>
+        <button class="hud-btn" id="btn-modal-close" style="flex: 0.45;">Ocultar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating HUD Panel -->
+  <div id="hud-panel">
+    <div class="panel-header">
+      <span class="panel-title">Autodesk ReCap + PBR RT</span>
+      <span class="fps-badge" id="fps-counter">60 FPS</span>
+    </div>
+
+    <!-- ================= VISIBILITY TOGGLES FOR REVIT VS DIRECT CLOUDS ================= -->
+    <label class="checkbox-row">
+      <span>👁 Mostrar Nube Vinculada de Revit</span>
+      <input type="checkbox" id="chk-vis-revit-cloud" checked />
+    </label>
+
+    <label class="checkbox-row">
+      <span>👁 Mostrar Nube Cargada Directa (.LAS/.RCS)</span>
+      <input type="checkbox" id="chk-vis-direct-cloud" checked />
+    </label>
+
+    <label class="checkbox-row">
+      <span>👁 Mostrar Modelo 3D BIM de Revit</span>
+      <input type="checkbox" id="chk-vis-bim-meshes" checked />
+    </label>
+
+    <!-- Posicionamiento por Coordenadas Compartidas (Igual que en Revit) -->
+    <div class="control-group" style="margin-top: 4px; margin-bottom: 6px;">
+      <div class="control-label">
+        <span>📍 Posicionamiento al Cargar Nube:</span>
+      </div>
+      <select class="hud-select" id="sel-coord-mode" style="margin-bottom: 4px;">
+        <option value="shared" selected>1. Por Coordenadas Compartidas (Igual a Revit — Casa Cota Z)</option>
+        <option value="internal">2. Origen a Origen Interno (Coordenadas Locales)</option>
+        <option value="ground_match">3. Centrar en Escena + Casar Cota Base de Terreno</option>
+      </select>
+    </div>
+
+    <!-- Unified Button for .LAS and .RCS + Clear Button -->
+    <div class="btn-row" style="margin-bottom: 6px;">
+      <button class="hud-btn emerald" id="btn-load-cloud-unified" style="font-size: 11.5px; padding: 7px 10px;">
+        📂 Cargar Nube (.LAS / ReCap .RCS)
+      </button>
+      <button class="hud-btn" id="btn-clear-clouds" style="flex: 0.34;" title="Limpiar nubes directas">Limpiar</button>
+    </div>
+
+    <!-- Interactive Drop-In Zone -->
+    <div id="drop-in-zone" title="Arrastra aquí archivos .LAS o .RCS desde el Explorador de Windows">
+      📥 <strong>Drop-In:</strong> Arrastra y suelta aquí tu archivo <strong>.LAS</strong> o <strong>.RCS</strong>
+    </div>
+
+    <!-- Fine Elevation (Cota Z) Offset Adjustment for Direct Cloud -->
+    <div class="control-group" style="margin-bottom: 6px;">
+      <div class="control-label">
+        <span>Ajuste Fino de Cota Nube Directa (ΔZ)</span>
+        <span class="control-value" id="lbl-cota-offset">+0.00 m</span>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <input type="range" id="slider-cota-offset" min="-50" max="50" step="0.05" value="0" style="flex:1;" />
+        <button class="hud-btn" id="btn-reset-cota" style="flex:0; padding:2px 6px; font-size:10px;" title="Restablecer ΔZ a 0.00m">0m</button>
+      </div>
+    </div>
+
+    <!-- Live Task Status & Progress Card inside HUD + Button to open Modal Dialog -->
+    <div id="hud-task-card">
+      <div class="task-status-header">
+        <span style="font-weight:700; color:#e2e8f0;">Estado de Carga:</span>
+        <span class="task-badge idle" id="hud-task-badge">⚪ NO INICIADA (0%)</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="hud-progress-bar"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; color:#94a3b8;">
+        <span id="hud-task-detail" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px;">Sin tarea activa</span>
+        <button class="hud-btn" id="btn-open-progress-modal" style="flex:0; white-space:nowrap; padding:2px 7px; font-size:10px;">📊 Ver Diálogo</button>
+      </div>
+    </div>
+
+    <!-- Unfiltered file input so Windows File Explorer opens instantaneously without stalling on ACCDocs cloud shell filters -->
+    <input type="file" id="file-cloud-input" multiple style="display: none;" />
+
+    <!-- ================= CURSOR 3D COORDINATES INSPECTOR TOGGLE ================= -->
+    <label class="checkbox-row" style="background: rgba(14, 165, 233, 0.14); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35);">
+      <span style="color:#7dd3fc;">🎯 Ver Coordenadas donde se pare el Cursor</span>
+      <input type="checkbox" id="chk-cursor-coords" checked />
+    </label>
+
+    <!-- ================= POINT CLOUD DENSITY & RECAP APPEARANCE ================= -->
+    <div class="section-divider">
+      <span>☁ Apariencia ReCap Pro &amp; Filtros</span>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Modo de Apariencia de Nube</span>
+      </div>
+      <select class="hud-select" id="sel-color-mode">
+        <option value="0">1. True Color ReCap (Con Ajuste de Brillo + EDL)</option>
+        <option value="4">2. True Color Mejorado (Relleno de Puntos Blancos por Cercanía)</option>
+        <option value="1">3. Filtro Altura desde Punto más Bajo de cada Sector</option>
+        <option value="2">4. Segmentación Entorno: Árboles/Vegetación vs Suelo</option>
+        <option value="3">5. Intensidad / Reflectancia Láser VZ-600i</option>
+      </select>
+    </div>
+
+    <div id="tree-legend" class="legend-bar" style="display: none;">
+      <span><i class="legend-dot" style="background:#b4783c;"></i>Suelo / Terreno</span>
+      <span><i class="legend-dot" style="background:#22c55e;"></i>Árboles / Copa</span>
+      <span><i class="legend-dot" style="background:#94a3b8;"></i>Estructura</span>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Densidad Global Nube de Puntos</span>
+        <span class="control-value" id="lbl-density">100.0%</span>
+      </div>
+      <input type="range" id="slider-density" min="0" max="100" step="0.5" value="100" />
+    </div>
+
+    <!-- ================= RENDERIZADO DE ZONA EN MÁXIMA CALIDAD (100% DENSIDAD) ================= -->
+    <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(52, 211, 153, 0.45); border-radius: 8px; padding: 9px 10px; margin-bottom: 9px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px;">
+        <span style="color:#6ee7b7; font-weight:700; font-size:12px;">🎯 Renderizado de Zona (100% Calidad)</span>
+        <span style="font-size:10px; color:#a7f3d0; background:rgba(6,95,70,0.5); padding:2px 6px; border-radius:4px;">1 zona a la vez</span>
+      </div>
+
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label">
+          <span>Radio de la Zona en Máxima Calidad</span>
+          <span class="control-value" id="lbl-full-radius" style="color:#34d399; font-weight:700;">10.0 m</span>
+        </div>
+        <input type="range" id="slider-full-radius" min="2.0" max="60.0" step="1.0" value="10.0" />
+      </div>
+
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label">
+          <span>⚙ Límite de Puntos de la Zona</span>
+        </div>
+        <select class="hud-select" id="sel-bubble-budget">
+          <option value="6000000">6 M puntos (GPU Básica)</option>
+          <option value="12000000" selected>12 M puntos (Recomendado - Sin Huecos)</option>
+          <option value="20000000">20 M puntos (Alta Gama RTX)</option>
+          <option value="30000000">30 M puntos (Extrema Densidad 2mm)</option>
+        </select>
+      </div>
+
+      <label class="checkbox-row" style="margin: 2px 0 6px 0;">
+        <span style="font-size:11px; color:#cbd5e1;">⭕ Mostrar Anillo Guía en el Suelo</span>
+        <input type="checkbox" id="chk-show-radius-ring" checked />
+      </label>
+
+      <button class="hud-btn hud-btn-primary" id="btn-render-zone" style="background:#059669; border-color:#10b981; color:#fff; font-weight:700; font-size:12px; padding:8px 12px; width:100%; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; margin-top:3px; box-shadow: 0 2px 8px rgba(5,150,105,0.35);">
+        🎯 Renderizar Zona (100% Calidad)
+      </button>
+
+      <button class="hud-btn" id="btn-clear-zone" style="font-size:11px; width:100%; margin-top:5px; background:rgba(255,255,255,0.06); color:#cbd5e1; border-color:rgba(255,255,255,0.15);">
+        ✕ Desactivar Zona (Volver a Vista Global)
+      </button>
+
+      <div id="lbl-bubble-status" style="font-size:10.5px; color:#a7f3d0; margin-top:7px; line-height:1.4; border-top:1px solid rgba(52,211,153,0.25); padding-top:6px;">
+        ⚪ Ninguna zona renderizada aún. Ubica la cámara o camina y pulsa "Renderizar Zona".
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Brillo True Color / Ganancia</span>
+        <span class="control-value" id="lbl-brightness">1.15x</span>
+      </div>
+      <input type="range" id="slider-brightness" min="0.25" max="3.0" step="0.05" value="1.15" />
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Rango Gradiente Altura por Sector</span>
+        <span class="control-value" id="lbl-sector-range">15.0 m</span>
+      </div>
+      <input type="range" id="slider-sector-range" min="2.0" max="60.0" step="0.5" value="15.0" />
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Tamaño Splat ReCap (Sólido)</span>
+        <span class="control-value" id="lbl-size">6.5 px</span>
+      </div>
+      <input type="range" id="slider-size" min="0.0" max="25" step="0.1" value="6.5" />
+    </div>
+
+    <label class="checkbox-row">
+      <span>Sombreado Volumétrico ReCap (Eye-Dome EDL)</span>
+      <input type="checkbox" id="chk-solid-splat" checked />
+    </label>
+
+    <!-- ================= KEYBOARD MOVEMENT SPEED & WALK MODE / CIVIL ENGINEER AVATAR ================= -->
+    <div class="section-divider">
+      <span>⚡ Velocidad Teclado &amp; Modo Caminar</span>
+      <span class="mode-badge" id="badge-nav-mode">VUELO LIBRE</span>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Velocidad Desplazamiento Teclado (WASD)</span>
+        <span class="control-value" id="lbl-move-speed">12.0 m/s</span>
+      </div>
+      <input type="range" id="slider-move-speed" min="0.5" max="150.0" step="0.5" value="12.0" />
+      <div class="btn-row" style="margin-top: 4px;">
+        <button class="hud-btn" id="btn-spd-slow" style="padding:3px 4px; font-size:10px;">Lento (2m/s)</button>
+        <button class="hud-btn" id="btn-spd-norm" style="padding:3px 4px; font-size:10px;">Normal (12m/s)</button>
+        <button class="hud-btn" id="btn-spd-fast" style="padding:3px 4px; font-size:10px;">Rápido (40m/s)</button>
+        <button class="hud-btn" id="btn-spd-turbo" style="padding:3px 4px; font-size:10px;">Turbo (100m/s)</button>
+      </div>
+    </div>
+
+    <label class="checkbox-row">
+      <span>Activar Modo Caminar <span class="key-pill">ESPACIO</span></span>
+      <input type="checkbox" id="chk-walk-mode" />
+    </label>
+
+    <label class="checkbox-row">
+      <span>Ver Ingeniero Civil (3ra Persona)</span>
+      <input type="checkbox" id="chk-third-person" />
+    </label>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Altura Vista / Estatura Ingeniero</span>
+        <span class="control-value" id="lbl-avatar-height">1.75 m</span>
+      </div>
+      <input type="range" id="slider-avatar-height" min="1.10" max="2.50" step="0.02" value="1.75" />
+    </div>
+
+    <!-- ================= CAMERA PATH & MP4 VIDEO EXPORT ================= -->
+    <div class="section-divider">
+      <span>🎬 Ruta de Cámara &amp; Exportar MP4</span>
+      <span class="mode-badge" id="badge-keyframes">0 escenas</span>
+    </div>
+
+    <div class="btn-row" style="margin-bottom: 6px;">
+      <button class="hud-btn emerald" id="btn-add-keyframe">+ Capturar Escena</button>
+      <button class="hud-btn" id="btn-preview-path">▶ Previsualizar</button>
+      <button class="hud-btn" id="btn-clear-keyframes" style="flex:0.45;">Borrar</button>
+    </div>
+
+    <div class="dual-slider-row" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+      <div>
+        <div class="control-label"><span>Trayectoria:</span></div>
+        <select class="hud-select" id="sel-path-type" style="margin-bottom:0;">
+          <option value="curve">Curva Suave (Spline)</option>
+          <option value="linear">Lineal (Recta)</option>
+        </select>
+      </div>
+      <div>
+        <div class="control-label">
+          <span>Tiempo entre escenas:</span>
+          <span class="control-value" id="lbl-seg-sec">4.0 s</span>
+        </div>
+        <input type="range" id="slider-seg-sec" min="1.0" max="15.0" step="0.5" value="4.0" />
+      </div>
+    </div>
+
+    <div class="dual-slider-row" style="grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
+      <div>
+        <div class="control-label"><span>Resolución MP4:</span></div>
+        <select class="hud-select" id="sel-video-res" style="margin-bottom:0;">
+          <option value="1280x720">HD 720p (1280×720)</option>
+          <option value="1920x1080" selected>Full HD 1080p (1920×1080)</option>
+          <option value="2560x1440">2K QHD (2560×1440)</option>
+          <option value="3840x2160">4K UHD (3840×2160)</option>
+        </select>
+      </div>
+      <div>
+        <div class="control-label"><span>Fotogramas (FPS):</span></div>
+        <select class="hud-select" id="sel-video-fps" style="margin-bottom:0;">
+          <option value="24">24 FPS (Cine)</option>
+          <option value="30" selected>30 FPS (Estándar)</option>
+          <option value="60">60 FPS (Ultra Fluido)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Pre-Export Time & Frame Estimator Card (Shown BEFORE clicking Export) -->
+    <div class="estimate-card" id="video-estimate-box">
+      <div><strong>Resumen del Recorrido:</strong> <span id="est-summary">Agrega al menos 2 escenas con "+ Capturar Escena"</span></div>
+      <div><strong>Tiempo estimado de exportación:</strong> <span id="est-render-time">0 seg</span></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="hud-btn amber" id="btn-export-mp4">🎥 Enviar y Exportar Video (.MP4)</button>
+    </div>
+
+    <!-- ================= INTERACTIVE 3D SECTION BOX ================= -->
+    <div class="section-divider">
+      <span>📦 Caja de Sección 3D Interactiva</span>
+    </div>
+
+    <label class="checkbox-row">
+      <span>Activar Recorte de Caja 3D</span>
+      <input type="checkbox" id="chk-box-active" checked />
+    </label>
+
+    <label class="checkbox-row">
+      <span>Mostrar Borde de Caja (Gizmo 3D)</span>
+      <input type="checkbox" id="chk-box-visible" checked />
+    </label>
+
+    <div class="dual-slider-row">
+      <strong>Eje X:</strong>
+      <input type="range" id="box-xmin" min="0" max="100" step="0.5" value="0" />
+      <input type="range" id="box-xmax" min="0" max="100" step="0.5" value="100" />
+    </div>
+    <div class="dual-slider-row">
+      <strong>Eje Y:</strong>
+      <input type="range" id="box-zmin" min="0" max="100" step="0.5" value="0" />
+      <input type="range" id="box-zmax" min="0" max="100" step="0.5" value="100" />
+    </div>
+    <div class="dual-slider-row">
+      <strong>Altura Z:</strong>
+      <input type="range" id="box-ymin" min="0" max="100" step="0.5" value="0" />
+      <input type="range" id="box-ymax" min="0" max="100" step="0.5" value="100" />
+    </div>
+
+    <div class="btn-row">
+      <button class="hud-btn" id="btn-reset-box">Expandir Caja 100%</button>
+    </div>
+
+    <!-- ================= BACKGROUND COLOR & LIGHTING ================= -->
+    <div class="section-divider">
+      <span>🎨 Fondo, Sol &amp; Cámara</span>
+    </div>
+
+    <div class="dual-slider-row" style="grid-template-columns: 1fr 90px; gap: 8px; margin-bottom: 6px;">
+      <label class="checkbox-row" style="margin-bottom:0;">
+        <span>Usar Color de Fondo Fijo (ReCap)</span>
+        <input type="checkbox" id="chk-custom-bg" checked />
+      </label>
+      <input type="color" id="picker-bg-color" value="#141821" style="width:100%; height:26px; border:none; border-radius:4px; cursor:pointer; background:transparent;" />
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Hora Solar &amp; Sombras</span>
+        <span class="control-value" id="lbl-sun">13:30</span>
+      </div>
+      <input type="range" id="slider-sun" min="5.5" max="19.5" step="0.1" value="13.5" />
+    </div>
+
+    <div class="btn-row">
+      <button class="hud-btn" id="btn-fit">Encuadrar Todo</button>
+      <button class="hud-btn primary" id="btn-screenshot">📸 Captura PNG</button>
+    </div>
+  </div>
+
+  <!-- Bottom-Left Telemetry -->
+  <div id="telemetry-box">
+    <div><strong>Puntos en GPU:</strong> <span id="stat-points">0 / 0</span> (<span id="stat-pct">100%</span>) | <strong>Estado:</strong> <span id="stat-meshes">Listo</span></div>
+    <div><strong>Modo Navegación:</strong> <span id="stat-walk">Vuelo Libre (Presiona <span class="key-pill">ESPACIO</span> para Modo Caminar)</span></div>
+    <div><strong>Controles:</strong> Click + Arrastrar (Mirar) | <strong>WASD</strong> (Mover) | <span class="key-pill">ESPACIO</span> (Caminar/Volar) | <strong>Arrastra archivos .LAS aquí</strong></div>
+  </div>
+
+  <script src="three.min.js"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('viewport');
+      const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        powerPreference: 'high-performance',
+        preserveDrawingBuffer: true
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.localClippingEnabled = true;
+
+      const scene = new THREE.Scene();
+      let useCustomBgColor = true;
+      let customBgColor = new THREE.Color('#141821'); // Autodesk ReCap dark slate background by default
+      let solarSkyColor = new THREE.Color(0x87b5d8);
+      scene.background = customBgColor.clone();
+      scene.fog = new THREE.FogExp2(0x141821, 0.00008);
+
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 100000);
+      camera.position.set(14, 7.5, 16);
+
+      // Separate Scene Groups so Revit Cloud, Direct Cloud (.LAS/.RCS), and BIM Meshes can be toggled independently!
+      const meshGroup = new THREE.Group();
+      const revitCloudGroup = new THREE.Group();
+      const directCloudGroup = new THREE.Group();
+      const cameraPathVisualGroup = new THREE.Group();
+      scene.add(meshGroup);
+      scene.add(revitCloudGroup);
+      scene.add(directCloudGroup);
+      scene.add(cameraPathVisualGroup);
+
+      // ================= SKY DOME & DYNAMIC SUN LIGHTING =================
+      const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x334155, 0.75);
+      hemiLight.position.set(0, 100, 0);
+      scene.add(hemiLight);
+
+      const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.45);
+      sunLight.position.set(40, 65, 35);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.width = 2048;
+      sunLight.shadow.mapSize.height = 2048;
+      sunLight.shadow.camera.near = 0.5;
+      sunLight.shadow.camera.far = 500;
+      const d = 55;
+      sunLight.shadow.camera.left = -d;
+      sunLight.shadow.camera.right = d;
+      sunLight.shadow.camera.top = d;
+      sunLight.shadow.camera.bottom = -d;
+      sunLight.shadow.bias = -0.0005;
+      scene.add(sunLight);
+
+      // Subtle ReCap Reference Grid
+      const gridHelper = new THREE.GridHelper(140, 140, 0x38bdf8, 0x263244);
+      gridHelper.position.y = -0.05;
+      gridHelper.material.opacity = 0.25;
+      gridHelper.material.transparent = true;
+      scene.add(gridHelper);
+
+      // ================= INTERACTIVE 3D SECTION BOX GIZMO & CLIPPING PLANES =================
+      let fullBoundsMin = new THREE.Vector3(-50, -5, -50);
+      let fullBoundsMax = new THREE.Vector3(50, 30, 50);
+      let activeBoxMin = new THREE.Vector3(-50, -5, -50);
+      let activeBoxMax = new THREE.Vector3(50, 30, 50);
+      let isSectionBoxActive = true;
+      let isSectionBoxVisible = true;
+
+      const meshClippingPlanes = [
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), 50),
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 50),
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), 5),
+        new THREE.Plane(new THREE.Vector3(0, -1, 0), 30),
+        new THREE.Plane(new THREE.Vector3(0, 0, 1), 50),
+        new THREE.Plane(new THREE.Vector3(0, 0, -1), 50)
+      ];
+
+      const sectionBoxGizmoGroup = new THREE.Group();
+      const unitBoxGeo = new THREE.BoxGeometry(1, 1, 1);
+      const boxEdgesGeo = new THREE.EdgesGeometry(unitBoxGeo);
+      const boxWireMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.92 });
+      const boxWireMesh = new THREE.LineSegments(boxEdgesGeo, boxWireMat);
+
+      const boxFaceMat = new THREE.MeshBasicMaterial({
+        color: 0x0ea5e9,
+        transparent: true,
+        opacity: 0.04,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const boxFaceMesh = new THREE.Mesh(unitBoxGeo, boxFaceMat);
+      sectionBoxGizmoGroup.add(boxWireMesh);
+      sectionBoxGizmoGroup.add(boxFaceMesh);
+      scene.add(sectionBoxGizmoGroup);
+
+      function updateSectionBoxPlanesAndGizmo() {
+        const rxMin = parseFloat(document.getElementById('box-xmin').value) / 100.0;
+        const rxMax = parseFloat(document.getElementById('box-xmax').value) / 100.0;
+        const ryMin = parseFloat(document.getElementById('box-ymin').value) / 100.0;
+        const ryMax = parseFloat(document.getElementById('box-ymax').value) / 100.0;
+        const rzMin = parseFloat(document.getElementById('box-zmin').value) / 100.0;
+        const rzMax = parseFloat(document.getElementById('box-zmax').value) / 100.0;
+
+        const x0 = Math.min(rxMin, rxMax - 0.005);
+        const x1 = Math.max(rxMax, rxMin + 0.005);
+        const y0 = Math.min(ryMin, ryMax - 0.005);
+        const y1 = Math.max(ryMax, ryMin + 0.005);
+        const z0 = Math.min(rzMin, rzMax - 0.005);
+        const z1 = Math.max(rzMax, rzMin + 0.005);
+
+        activeBoxMin.set(
+          THREE.MathUtils.lerp(fullBoundsMin.x, fullBoundsMax.x, x0),
+          THREE.MathUtils.lerp(fullBoundsMin.y, fullBoundsMax.y, y0),
+          THREE.MathUtils.lerp(fullBoundsMin.z, fullBoundsMax.z, z0)
+        );
+        activeBoxMax.set(
+          THREE.MathUtils.lerp(fullBoundsMin.x, fullBoundsMax.x, x1),
+          THREE.MathUtils.lerp(fullBoundsMin.y, fullBoundsMax.y, y1),
+          THREE.MathUtils.lerp(fullBoundsMin.z, fullBoundsMax.z, z1)
+        );
+
+        const center = new THREE.Vector3().addVectors(activeBoxMin, activeBoxMax).multiplyScalar(0.5);
+        const size = new THREE.Vector3().subVectors(activeBoxMax, activeBoxMin);
+        sectionBoxGizmoGroup.position.copy(center);
+        sectionBoxGizmoGroup.scale.set(Math.max(0.1, size.x), Math.max(0.1, size.y), Math.max(0.1, size.z));
+        sectionBoxGizmoGroup.visible = isSectionBoxVisible;
+
+        if (isSectionBoxActive) {
+          meshClippingPlanes[0].constant = -activeBoxMin.x;
+          meshClippingPlanes[1].constant = activeBoxMax.x;
+          meshClippingPlanes[2].constant = -activeBoxMin.y;
+          meshClippingPlanes[3].constant = activeBoxMax.y;
+          meshClippingPlanes[4].constant = -activeBoxMin.z;
+          meshClippingPlanes[5].constant = activeBoxMax.z;
+        } else {
+          for (let i = 0; i < 6; i++) meshClippingPlanes[i].constant = 1e9;
+        }
+
+        const uMin = isSectionBoxActive ? activeBoxMin : new THREE.Vector3(-1e9, -1e9, -1e9);
+        const uMax = isSectionBoxActive ? activeBoxMax : new THREE.Vector3(1e9, 1e9, 1e9);
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          pointCloudMaterials[i].uniforms.uBoxMin.value.copy(uMin);
+          pointCloudMaterials[i].uniforms.uBoxMax.value.copy(uMax);
+        }
+      }
+
+      // ================= 3D CIVIL ENGINEER CHARACTER (AVATAR) =================
+      const engineerAvatar = new THREE.Group();
+      let leftLegGroup, rightLegGroup, leftArmGroup, rightArmGroup;
+      let avatarUserHeight = 1.75;
+      let isWalkMode = false;
+      let isThirdPerson = false;
+
+      function buildCivilEngineerAvatar() {
+        const denimMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.8 });
+        const bootMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
+        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7 });
+        const vestMat = new THREE.MeshStandardMaterial({
+          color: 0xccff00, roughness: 0.35, emissive: 0x334d00, emissiveIntensity: 0.25
+        });
+        const stripeMat = new THREE.MeshStandardMaterial({
+          color: 0xf8fafc, roughness: 0.15, metalness: 0.8, emissive: 0x64748b, emissiveIntensity: 0.3
+        });
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xf1c27d, roughness: 0.65 });
+        const helmetMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.2, metalness: 0.1 });
+        const blueprintMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+
+        leftLegGroup = new THREE.Group();
+        leftLegGroup.position.set(-0.11, 0.82, 0);
+        const legGeo = new THREE.CylinderGeometry(0.075, 0.065, 0.72, 12);
+        const leftLegMesh = new THREE.Mesh(legGeo, denimMat);
+        leftLegMesh.position.y = -0.36;
+        const bootGeo = new THREE.BoxGeometry(0.14, 0.10, 0.24);
+        const leftBoot = new THREE.Mesh(bootGeo, bootMat);
+        leftBoot.position.set(0, -0.77, -0.03);
+        leftLegGroup.add(leftLegMesh);
+        leftLegGroup.add(leftBoot);
+        engineerAvatar.add(leftLegGroup);
+
+        rightLegGroup = new THREE.Group();
+        rightLegGroup.position.set(0.11, 0.82, 0);
+        const rightLegMesh = new THREE.Mesh(legGeo, denimMat);
+        rightLegMesh.position.y = -0.36;
+        const rightBoot = new THREE.Mesh(bootGeo, bootMat);
+        rightBoot.position.set(0, -0.77, -0.03);
+        rightLegGroup.add(rightLegMesh);
+        rightLegGroup.add(rightBoot);
+        engineerAvatar.add(rightLegGroup);
+
+        const torsoMesh = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.56, 0.22), vestMat);
+        torsoMesh.position.set(0, 1.10, 0);
+        engineerAvatar.add(torsoMesh);
+
+        const hStripe1 = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.045, 0.23), stripeMat);
+        hStripe1.position.set(0, 0.96, 0);
+        engineerAvatar.add(hStripe1);
+
+        const hStripe2 = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.045, 0.23), stripeMat);
+        hStripe2.position.set(0, 1.12, 0);
+        engineerAvatar.add(hStripe2);
+
+        const vStripeL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.57, 0.23), stripeMat);
+        vStripeL.position.set(-0.10, 1.10, 0);
+        engineerAvatar.add(vStripeL);
+
+        const vStripeR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.57, 0.23), stripeMat);
+        vStripeR.position.set(0.10, 1.10, 0);
+        engineerAvatar.add(vStripeR);
+
+        const armGeo = new THREE.CylinderGeometry(0.055, 0.048, 0.56, 10);
+        leftArmGroup = new THREE.Group();
+        leftArmGroup.position.set(-0.24, 1.34, 0);
+        const leftArmMesh = new THREE.Mesh(armGeo, shirtMat);
+        leftArmMesh.position.y = -0.26;
+        const blueprintTube = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.48, 10), blueprintMat);
+        blueprintTube.rotation.x = Math.PI / 2;
+        blueprintTube.position.set(0, -0.54, -0.08);
+        leftArmGroup.add(leftArmMesh);
+        leftArmGroup.add(blueprintTube);
+        engineerAvatar.add(leftArmGroup);
+
+        rightArmGroup = new THREE.Group();
+        rightArmGroup.position.set(0.24, 1.34, 0);
+        const rightArmMesh = new THREE.Mesh(armGeo, shirtMat);
+        rightArmMesh.position.y = -0.26;
+        rightArmGroup.add(rightArmMesh);
+        engineerAvatar.add(rightArmGroup);
+
+        const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.125, 16, 16), skinMat);
+        headMesh.position.set(0, 1.53, 0);
+        engineerAvatar.add(headMesh);
+
+        const helmetDome = new THREE.Mesh(
+          new THREE.SphereGeometry(0.142, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
+          helmetMat
+        );
+        helmetDome.position.set(0, 1.56, 0);
+        engineerAvatar.add(helmetDome);
+
+        const helmetBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.165, 0.02, 16), helmetMat);
+        helmetBrim.position.set(0, 1.56, -0.03);
+        engineerAvatar.add(helmetBrim);
+
+        const helmetRidge = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.24), helmetMat);
+        helmetRidge.position.set(0, 1.69, 0);
+        engineerAvatar.add(helmetRidge);
+
+        engineerAvatar.visible = false;
+        scene.add(engineerAvatar);
+      }
+      buildCivilEngineerAvatar();
+
+      // ================= AUTODESK RECAP PRO SHADER (TRUE COLOR BRIGHTNESS, SECTOR HEIGHT GRADIENT, TREE VS GROUND SEGMENTATION) =================
+      const pointCloudVertexShader = `
+        attribute float aSeed;
+        attribute float aHeightAboveGround;
+        attribute vec3 aInfillColor;
+        uniform float uDensity;
+        uniform float uPointSize;
+        uniform float uSolidMode;
+        uniform float uBrightness;
+        uniform float uSectorRange;
+        uniform vec3 uBoxMin;
+        uniform vec3 uBoxMax;
+        uniform int uColorMode;
+        uniform vec3 uFocusPos;
+        uniform float uFullRadius;
+        uniform float uDegradeDist;
+        uniform float uUseRadiusLod;
+        uniform float uIsFullBubble;
+        uniform float uIsDirect;
+        uniform vec3 uBubbleCenter;
+        uniform float uBubbleRadius;
+        uniform float uBubbleReady;
+
+        varying vec3 vColor;
+        varying float vVisible;
+        varying float vSolid;
+
+        // Turbo / Viridis-inspired ReCap Pro Elevation Gradient from the lowest point in each sector
+        vec3 sectorElevationGradient(float hAboveSectorMin, float maxRange) {
+          float t = clamp(hAboveSectorMin / max(0.5, maxRange), 0.0, 1.0);
+          vec3 c0 = vec3(0.12, 0.30, 0.88); // Deep Blue (Sector Lowest Floor/Ground)
+          vec3 c1 = vec3(0.05, 0.78, 0.85); // Cyan
+          vec3 c2 = vec3(0.15, 0.88, 0.38); // Emerald Green
+          vec3 c3 = vec3(0.98, 0.84, 0.12); // Warm Yellow
+          vec3 c4 = vec3(0.95, 0.20, 0.18); // High Red
+          if (t < 0.25) return mix(c0, c1, t * 4.0);
+          if (t < 0.50) return mix(c1, c2, (t - 0.25) * 4.0);
+          if (t < 0.75) return mix(c2, c3, (t - 0.50) * 4.0);
+          return mix(c3, c4, (t - 0.75) * 4.0);
+        }
+
+        // Visual Segmentation for Environments with Trees vs Ground vs Built Structures
+        vec3 segmentTreesAndGround(vec3 rawRgb, float hag) {
+          // Excess Green Index (ExG = 2*G - R - B) + Height Above Local Ground (hag)
+          float exG = 2.0 * rawRgb.g - rawRgb.r - rawRgb.b;
+
+          if (hag <= 0.38) {
+            // Ground / Terrain / Road surface: Warm earthy terracotta-ochre tone blended with scan texture
+            float luma = dot(rawRgb, vec3(0.299, 0.587, 0.114));
+            vec3 groundTone = mix(vec3(0.52, 0.35, 0.20), vec3(0.82, 0.65, 0.45), clamp(luma * 1.3, 0.0, 1.0));
+            return groundTone;
+          } else if (hag <= 1.65 && exG < 0.06) {
+            // Tree Trunks / Low Shrubs / Understory
+            return mix(rawRgb, vec3(0.55, 0.42, 0.18), 0.55);
+          } else if (exG > 0.03 || hag > 1.25) {
+            // Tree Canopy & Foliage: Rich multi-tone forest/emerald greens graduated by canopy height
+            float canopyFactor = clamp((hag - 1.0) / 12.0, 0.0, 1.0);
+            vec3 deepLeaf = vec3(0.08, 0.62, 0.24);
+            vec3 brightCanopy = vec3(0.38, 0.95, 0.32);
+            vec3 treeCol = mix(deepLeaf, brightCanopy, canopyFactor);
+            return mix(treeCol, rawRgb * vec3(0.6, 1.35, 0.6), 0.30);
+          } else {
+            // Man-made structures / walls / poles
+            return mix(rawRgb, vec3(0.75, 0.80, 0.88), 0.45);
+          }
+        }
+
+        void main() {
+          vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+          if (worldPos.x < uBoxMin.x || worldPos.x > uBoxMax.x ||
+              worldPos.y < uBoxMin.y || worldPos.y > uBoxMax.y ||
+              worldPos.z < uBoxMin.z || worldPos.z > uBoxMax.z) {
+            vVisible = 0.0;
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            gl_PointSize = 0.0;
+            return;
+          }
+
+          float distToFocus = distance(worldPos, uFocusPos);
+          float lodSizeCompensation = 1.0;
+
+          if (uIsFullBubble > 0.5) {
+            // Zona 100% Full-Density (renderizada bajo demanda al pulsar 'Renderizar Zona')
+            if (uBubbleReady < 0.5) {
+              vVisible = 0.0;
+              gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+              gl_PointSize = 0.0;
+              return;
+            }
+          } else {
+            // Nube base general (resolución fluida global):
+            if (aSeed > uDensity) {
+              vVisible = 0.0;
+              gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+              gl_PointSize = 0.0;
+              return;
+            }
+          }
+
+          vVisible = 1.0;
+          vSolid = uSolidMode;
+
+          // Mode 4 uses precomputed nearest-neighbor infilled colors for white/overexposed points
+          vec3 activeRgb = (uColorMode == 4) ? aInfillColor : color;
+          vec3 baseCol = clamp(activeRgb * uBrightness, 0.0, 1.0);
+
+          if (uColorMode == 4) {
+            // Mode 4: True Color Mejorado (Relleno de Puntos Blancos por Cercanía)
+            vColor = baseCol;
+          } else if (uColorMode == 1) {
+            // Mode 1: Height Filter relative to the LOWEST point in each 2D sector
+            vColor = sectorElevationGradient(aHeightAboveGround, uSectorRange) * clamp(uBrightness * 0.9, 0.5, 2.0);
+          } else if (uColorMode == 2) {
+            // Mode 2: Tree Canopy vs Ground Surface Visual Segmentation
+            vColor = segmentTreesAndGround(baseCol, aHeightAboveGround);
+          } else if (uColorMode == 3) {
+            // Mode 3: Laser Reflectance / Intensity
+            float luma = dot(baseCol, vec3(0.299, 0.587, 0.114));
+            vColor = vec3(luma * 0.92, luma * 0.96, min(1.0, luma * 1.08));
+          } else {
+            // Mode 0: True Color ReCap with Brightness & Contrast enhancement
+            vColor = baseCol;
+          }
+
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+
+          if (uPointSize <= 0.001) {
+            gl_PointSize = 0.0;
+            vVisible = 0.0;
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            return;
+          }
+
+          float dist = max(0.35, -mvPosition.z);
+          float solidBoost = (uSolidMode > 0.5) ? 1.85 : 1.0;
+          float perspectiveScale = mix(28.0 / dist, 12.5 / sqrt(dist), 0.48);
+          float minSplat = max(0.2, uPointSize * 0.3);
+          gl_PointSize = clamp(uPointSize * solidBoost * perspectiveScale * lodSizeCompensation, minSplat, 64.0);
+        }
+      `;
+
+      const pointCloudFragmentShader = `
+        varying vec3 vColor;
+        varying float vVisible;
+        varying float vSolid;
+
+        void main() {
+          if (vVisible < 0.5) discard;
+
+          vec2 coord = gl_PointCoord - vec2(0.5);
+          float r2 = dot(coord, coord);
+
+          if (vSolid < 0.5 && r2 > 0.25) discard;
+          if (vSolid >= 0.5 && r2 > 0.36) discard;
+
+          // Autodesk ReCap Pro style Eye-Dome Lighting (EDL) depth-contour shading on each splat
+          float edlShade = 1.0 - r2 * (vSolid >= 0.5 ? 0.48 : 0.85);
+          gl_FragColor = vec4(vColor * edlShade, 1.0);
+        }
+      `;
+
+      let currentDensity = 1.0;
+      let currentPointSize = 6.5;
+      let currentSolidMode = 1.0;
+      let currentBrightness = 1.15;
+      let currentSectorRange = 15.0;
+      let currentColorMode = 0;
+      let currentFullRadius = 10.0;
+      let currentDegradeDist = 35.0;
+      let useRecapRadiusLod = 1.0;
+      let showFullRadiusRing = true;
+      let revitLoadedPoints = 0;
+      let directLoadedPoints = 0;
+      let bubbleLoadedPoints = 0;
+      let directCloudElevationOffset = 0.0;
+      const currentFocusWorldPos = new THREE.Vector3(0, 0, 0);
+      const targetFocusWorldPos = new THREE.Vector3(0, 0, 0);
+      const bubbleCenterWorld = new THREE.Vector3(1e9, 1e9, 1e9);
+      const bubbleCenterGroup = new THREE.Vector3(1e9, 1e9, 1e9);
+      let bubbleCoverRadius = 0.0;
+      let bubbleReadyFlag = 0.0;
+      const pointCloudMaterials = [];
+
+      // Dedicated subgroup inside directCloudGroup for the 100% Full-Density (2mm) Local Bubble around the camera
+      const fullDensityBubbleGroup = new THREE.Group();
+      directCloudGroup.add(fullDensityBubbleGroup);
+
+      // Visual 3D Ground Ring showing the user's Full-Density Radius (default 10.0m) on the terrain
+      const ringGeo = new THREE.RingGeometry(0.985, 1.0, 96);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x34d399,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.72,
+        depthWrite: false
+      });
+      const fullRadiusRingMesh = new THREE.Mesh(ringGeo, ringMat);
+      fullRadiusRingMesh.scale.set(currentFullRadius, 1, currentFullRadius);
+      scene.add(fullRadiusRingMesh);
+
+      // Spatial 2D Sector Grid (2.0m x 2.0m sectors) using fast integer keys (zero GC string overhead!)
+      const sectorMinYMap = new Map();
+      const smoothedSectorMinYMap = new Map();
+      const revitSectorGroundMap = new Map();
+      const directSectorGroundMap = new Map();
+      const sectorSizeMeters = 2.0;
+      function packGridKey(ix, iz) {
+        return ((ix + 524288) * 1048576) + (iz + 524288);
+      }
+
+      const pcSurfaceGrid = new Map();
+      const pcGridCellSize = 1.0;
+      function getGridKey(x, z) {
+        return packGridKey(Math.floor(x / pcGridCellSize), Math.floor(z / pcGridCellSize));
+      }
+
+      function computeHeightAboveSectorGround(posArr, count, isDirectCloud) {
+        const localSectorMap = new Map();
+        const targetGroundMap = isDirectCloud ? directSectorGroundMap : revitSectorGroundMap;
+
+        // Pass 1: find lowest point Y (ground terrain) in each 2m x 2m horizontal sector using integer keys
+        for (let i = 0; i < count; i++) {
+          const px = posArr[i * 3 + 0];
+          const py = posArr[i * 3 + 1];
+          const pz = posArr[i * 3 + 2];
+          if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) continue;
+
+          const sx = Math.floor(px / sectorSizeMeters);
+          const sz = Math.floor(pz / sectorSizeMeters);
+          const key = packGridKey(sx, sz);
+
+          const prev = localSectorMap.get(key);
+          if (prev === undefined || py < prev) {
+            localSectorMap.set(key, py);
+          }
+          const gPrev = sectorMinYMap.get(key);
+          if (gPrev === undefined || py < gPrev) {
+            sectorMinYMap.set(key, py);
+          }
+
+          const wKey = getGridKey(px, pz);
+          const wPrev = pcSurfaceGrid.get(wKey);
+          if (wPrev === undefined || py < wPrev) {
+            pcSurfaceGrid.set(wKey, py);
+          }
+        }
+
+        // Pre-smooth 3x3 sector neighbors over the unique sectors (only ~2,000 sectors instead of millions of points!)
+        const localSmoothed = new Map();
+        localSectorMap.forEach((valY, key) => {
+          const rem = key % 1048576;
+          const sx = Math.floor((key - rem) / 1048576) - 524288;
+          const sz = rem - 524288;
+          let minY = valY;
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dz = -1; dz <= 1; dz++) {
+              const nY = localSectorMap.get(packGridKey(sx + dx, sz + dz));
+              if (nY !== undefined && nY < minY) minY = nY;
+            }
+          }
+          localSmoothed.set(key, minY);
+          smoothedSectorMinYMap.set(key, minY);
+
+          const prevTarget = targetGroundMap.get(key);
+          if (prevTarget === undefined || minY < prevTarget) {
+            targetGroundMap.set(key, minY);
+          }
+        });
+
+        // Fill/dilate up to 2 neighbor sectors around each populated sector so Walk Mode never falls into scan gaps!
+        localSmoothed.forEach((minY, key) => {
+          const rem = key % 1048576;
+          const sx = Math.floor((key - rem) / 1048576) - 524288;
+          const sz = rem - 524288;
+          for (let dx = -2; dx <= 2; dx++) {
+            for (let dz = -2; dz <= 2; dz++) {
+              if (dx === 0 && dz === 0) continue;
+              const nKey = packGridKey(sx + dx, sz + dz);
+              if (!localSmoothed.has(nKey) && !targetGroundMap.has(nKey)) {
+                targetGroundMap.set(nKey, minY);
+              }
+            }
+          }
+        });
+
+        // Pass 2: O(1) integer lookup per point
+        const hagArr = new Float32Array(count);
+        for (let i = 0; i < count; i++) {
+          const px = posArr[i * 3 + 0];
+          const py = posArr[i * 3 + 1];
+          const pz = posArr[i * 3 + 2];
+          const sx = Math.floor(px / sectorSizeMeters);
+          const sz = Math.floor(pz / sectorSizeMeters);
+          const localGroundY = localSmoothed.get(packGridKey(sx, sz));
+          hagArr[i] = (localGroundY !== undefined) ? Math.max(0.0, py - localGroundY) : 0.0;
+        }
+        return hagArr;
+      }
+
+      // 3D Nearest-Neighbor Color Infilling for White/Overexposed/Blown-out Points
+      function computeWhiteInfilledColors(posArr, colArr, count) {
+        const outCol = new Float32Array(count * 3);
+        outCol.set(colArr);
+
+        const whiteIndices = [];
+        const voxelSize = 0.80; // 80 cm grid size for 3D nearest-neighbor indexing
+        const voxelGrid = new Map(); // key -> array of [x, y, z, r, g, b, ...]
+
+        function packVoxelKey(vx, vy, vz) {
+          return `${vx},${vy},${vz}`;
+        }
+
+        for (let i = 0; i < count; i++) {
+          const r = colArr[i * 3 + 0];
+          const g = colArr[i * 3 + 1];
+          const b = colArr[i * 3 + 2];
+
+          // White or blown-out/overexposed points (RGB near 1.0 with minimal chromatic difference)
+          const isWhite = (r >= 0.92 && g >= 0.92 && b >= 0.92 && Math.abs(r - g) < 0.08 && Math.abs(g - b) < 0.08 && Math.abs(r - b) < 0.08) ||
+                          (r >= 0.96 && g >= 0.96 && b >= 0.96);
+
+          if (isWhite) {
+            whiteIndices.push(i);
+          } else {
+            const px = posArr[i * 3 + 0];
+            const py = posArr[i * 3 + 1];
+            const pz = posArr[i * 3 + 2];
+            if (Number.isFinite(px) && Number.isFinite(py) && Number.isFinite(pz)) {
+              const vx = Math.floor(px / voxelSize);
+              const vy = Math.floor(py / voxelSize);
+              const vz = Math.floor(pz / voxelSize);
+              const key = packVoxelKey(vx, vy, vz);
+              let cell = voxelGrid.get(key);
+              if (!cell) {
+                cell = [];
+                voxelGrid.set(key, cell);
+              }
+              // Keep up to 16 representative non-white points per cell to ensure ultra-fast lookup
+              if (cell.length < 96) {
+                cell.push(px, py, pz, r, g, b);
+              }
+            }
+          }
+        }
+
+        // If no white points or cloud is completely white, keep original colors
+        if (whiteIndices.length === 0 || voxelGrid.size === 0) {
+          return outCol;
+        }
+
+        // For each white point, find the nearest non-white neighbor point
+        for (let w = 0; w < whiteIndices.length; w++) {
+          const idx = whiteIndices[w];
+          const px = posArr[idx * 3 + 0];
+          const py = posArr[idx * 3 + 1];
+          const pz = posArr[idx * 3 + 2];
+          if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) continue;
+
+          const vx = Math.floor(px / voxelSize);
+          const vy = Math.floor(py / voxelSize);
+          const vz = Math.floor(pz / voxelSize);
+
+          let bestDistSq = Infinity;
+          let bestR = -1, bestG = -1, bestB = -1;
+
+          // Search immediate neighbor cells (ring 1: 3x3x3 = 27 cells)
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dz = -1; dz <= 1; dz++) {
+                const cell = voxelGrid.get(packVoxelKey(vx + dx, vy + dy, vz + dz));
+                if (!cell) continue;
+                for (let c = 0; c < cell.length; c += 6) {
+                  const cx = cell[c];
+                  const cy = cell[c + 1];
+                  const cz = cell[c + 2];
+                  const dSq = (px - cx) * (px - cx) + (py - cy) * (py - cy) + (pz - cz) * (pz - cz);
+                  if (dSq < bestDistSq) {
+                    bestDistSq = dSq;
+                    bestR = cell[c + 3];
+                    bestG = cell[c + 4];
+                    bestB = cell[c + 5];
+                  }
+                }
+              }
+            }
+          }
+
+          // If not found in 1-ring, search 2-ring (5x5x5 = 125 cells)
+          if (bestDistSq === Infinity) {
+            for (let dx = -2; dx <= 2; dx++) {
+              for (let dy = -2; dy <= 2; dy++) {
+                for (let dz = -2; dz <= 2; dz++) {
+                  if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1 && Math.abs(dz) <= 1) continue;
+                  const cell = voxelGrid.get(packVoxelKey(vx + dx, vy + dy, vz + dz));
+                  if (!cell) continue;
+                  for (let c = 0; c < cell.length; c += 6) {
+                    const cx = cell[c];
+                    const cy = cell[c + 1];
+                    const cz = cell[c + 2];
+                    const dSq = (px - cx) * (px - cx) + (py - cy) * (py - cy) + (pz - cz) * (pz - cz);
+                    if (dSq < bestDistSq) {
+                      bestDistSq = dSq;
+                      bestR = cell[c + 3];
+                      bestG = cell[c + 4];
+                      bestB = cell[c + 5];
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (bestR >= 0) {
+            outCol[idx * 3 + 0] = bestR;
+            outCol[idx * 3 + 1] = bestG;
+            outCol[idx * 3 + 2] = bestB;
+          }
+        }
+
+        return outCol;
+      }
+
+      function createPointCloudShaderMaterial(isFullBubble, isDirect) {
+        const mat = new THREE.ShaderMaterial({
+          vertexShader: pointCloudVertexShader,
+          fragmentShader: pointCloudFragmentShader,
+          vertexColors: true,
+          uniforms: {
+            uDensity: { value: currentDensity },
+            uPointSize: { value: currentPointSize },
+            uSolidMode: { value: currentSolidMode },
+            uBrightness: { value: currentBrightness },
+            uSectorRange: { value: currentSectorRange },
+            uBoxMin: { value: isSectionBoxActive ? activeBoxMin.clone() : new THREE.Vector3(-1e9, -1e9, -1e9) },
+            uBoxMax: { value: isSectionBoxActive ? activeBoxMax.clone() : new THREE.Vector3(1e9, 1e9, 1e9) },
+            uColorMode: { value: currentColorMode },
+            uFocusPos: { value: currentFocusWorldPos },
+            uFullRadius: { value: currentFullRadius },
+            uDegradeDist: { value: currentDegradeDist },
+            uUseRadiusLod: { value: useRecapRadiusLod },
+            uIsFullBubble: { value: isFullBubble ? 1.0 : 0.0 },
+            uIsDirect: { value: (isDirect || isFullBubble) ? 1.0 : 0.0 },
+            uBubbleCenter: { value: bubbleCenterWorld },
+            uBubbleRadius: { value: bubbleCoverRadius },
+            uBubbleReady: { value: bubbleReadyFlag }
+          }
+        });
+        pointCloudMaterials.push(mat);
+        return mat;
+      }
+
+      // Pushes the LOD / Full-Radius uniforms to every point cloud material
+      function syncLodUniforms() {
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          const u = pointCloudMaterials[i].uniforms;
+          u.uFullRadius.value = currentFullRadius;
+          u.uDegradeDist.value = currentDegradeDist;
+          u.uUseRadiusLod.value = useRecapRadiusLod;
+          u.uBubbleRadius.value = bubbleCoverRadius;
+          u.uBubbleReady.value = bubbleReadyFlag;
+        }
+      }
+
+      // ================= FULL-DENSITY (100% RECAP) STREAMING ENGINE =================
+      const directCloudSources = [];
+      let bubblePointLimit = 12000000;
+      let bubbleMesh = null;
+      let isStreamingBubble = false;
+      let pendingBubbleRefresh = false;
+      let bubbleRefreshTimer = null;
+
+      function disposePointCloudObject(obj) {
+        if (!obj) return;
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          const idx = pointCloudMaterials.indexOf(obj.material);
+          if (idx !== -1) pointCloudMaterials.splice(idx, 1);
+          obj.material.dispose();
+        }
+      }
+
+      function clearFullDensityBubble() {
+        if (bubbleMesh) {
+          fullDensityBubbleGroup.remove(bubbleMesh);
+          disposePointCloudObject(bubbleMesh);
+          bubbleMesh = null;
+        }
+        bubbleLoadedPoints = 0;
+        bubbleReadyFlag = 0.0;
+        bubbleCoverRadius = 0.0;
+        bubbleCenterWorld.set(1e9, 1e9, 1e9);
+        bubbleCenterGroup.set(1e9, 1e9, 1e9);
+        syncLodUniforms();
+        updatePointCloudTelemetry();
+      }
+
+      window.clearActiveZone = function () {
+        clearFullDensityBubble();
+        const stat = document.getElementById('lbl-bubble-status');
+        if (stat) stat.textContent = '⚪ Zona desactivada. Se visualiza la nube global fluida.';
+      };
+
+      // Renders 100% of the raw points inside the user-defined radius ON DEMAND (only 1 zone at a time)
+      window.renderActiveZone = async function () {
+        if (isStreamingBubble) return;
+        const stat = document.getElementById('lbl-bubble-status');
+
+        if (directCloudSources.length === 0) {
+          if (stat) stat.textContent = '⚠ Primero carga una nube directa (.LAS o .RCS) para renderizar la zona en máxima calidad.';
+          return;
+        }
+
+        // 1. Dispose previous zone if any (enforce strictly ONE zone rendered at a time)
+        clearFullDensityBubble();
+
+        if (stat) stat.textContent = '⏳ Extrayendo 100% de puntos en radio R=' + currentFullRadius.toFixed(1) + 'm (sin huecos)...';
+        isStreamingBubble = true;
+
+        try {
+          // Strictly concentric with the observer's standing location (X, Z) and ground elevation (Y)
+          let obsX = 0, obsY = 0, obsZ = 0;
+          if (isWalkMode) {
+            obsX = playerFeetPos.x;
+            obsY = playerFeetPos.y;
+            obsZ = playerFeetPos.z;
+          } else {
+            obsX = camera.position.x;
+            obsZ = camera.position.z;
+            const gY = findSurfaceHeightUnderPlayer(obsX, camera.position.y, obsZ);
+            obsY = (gY !== -9999) ? gY : camera.position.y;
+          }
+          const focusW = new THREE.Vector3(obsX, obsY, obsZ);
+
+          const focusLocal = focusW.clone();
+          focusLocal.y -= directCloudElevationOffset;
+
+          const r = currentFullRadius;
+          const rSq = r * r;
+          const collectedPositions = [];
+          const collectedColors = [];
+          const collectedSeeds = [];
+          const collectedHag = [];
+
+          let totalStreamed = 0;
+
+          for (let sIdx = 0; sIdx < directCloudSources.length; sIdx++) {
+            const src = directCloudSources[sIdx];
+            if (!src || !src.file) continue;
+
+            const focusSrc = focusLocal.clone().applyMatrix4(src.inverse);
+
+            if (src.type === 'las') {
+              const cMin = src.chunkMin;
+              const cMax = src.chunkMax;
+              const nChunks = src.numChunks;
+              const matchingChunks = [];
+
+              for (let c = 0; c < nChunks; c++) {
+                const c3 = c * 3;
+                const minX = cMin[c3], minZ = cMin[c3 + 2];
+                const maxX = cMax[c3], maxZ = cMax[c3 + 2];
+
+                // If chunk bounds were not set during fast initial subsampling, NEVER discard -> MUST read!
+                if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+                  matchingChunks.push(c);
+                  continue;
+                }
+
+                // Horizontal distance from observer to chunk 2D footprint (no vertical chopping)
+                const dx = Math.max(0, Math.max(minX - focusSrc.x, focusSrc.x - maxX));
+                const dz = Math.max(0, Math.max(minZ - focusSrc.z, focusSrc.z - maxZ));
+                if ((dx * dx + dz * dz) <= rSq * 1.35) {
+                  matchingChunks.push(c);
+                }
+              }
+
+              // Uniform sampling stride across ALL candidate chunks so no sector is left blank
+              const estCandPts = matchingChunks.length * src.chunkRecs;
+              const stride = (estCandPts > bubblePointLimit) ? (estCandPts / bubblePointLimit) : 1.0;
+
+              for (let m = 0; m < matchingChunks.length && totalStreamed < bubblePointLimit; m++) {
+                const c = matchingChunks[m];
+                const startRec = c * src.chunkRecs;
+                const recsInChunk = Math.min(src.chunkRecs, src.totalPts - startRec);
+                if (recsInChunk <= 0) continue;
+
+                const bStart = src.offsetToPointData + startRec * src.pointRecordLength;
+                const bEnd = Math.min(src.file.size, bStart + recsInChunk * src.pointRecordLength);
+                if (bEnd <= bStart) continue;
+
+                const sliceBuf = await src.file.slice(bStart, bEnd).arrayBuffer();
+                const dv = new DataView(sliceBuf);
+                const actual = Math.floor(sliceBuf.byteLength / src.pointRecordLength);
+                const m4 = src.matrix.elements;
+
+                for (let cur = 0; cur < actual && totalStreamed < bubblePointLimit; cur += stride) {
+                  const i = Math.floor(cur);
+                  const pOff = i * src.pointRecordLength;
+                  const xi = dv.getInt32(pOff, true);
+                  const yi = dv.getInt32(pOff + 4, true);
+                  const zi = dv.getInt32(pOff + 8, true);
+
+                  const wx = (xi * src.scaleX + src.offsetX) - src.baseX;
+                  const wy = (zi * src.scaleZ + src.offsetZ) - src.baseZ;
+                  const wz = -((yi * src.scaleY + src.offsetY) - src.baseY);
+
+                  // Concentric horizontal radius around observer standing position
+                  const ddx = wx - focusSrc.x;
+                  const ddz = wz - focusSrc.z;
+                  const distHorizSq = ddx * ddx + ddz * ddz;
+                  if (distHorizSq > rSq) continue;
+
+                  // Generous vertical envelope: covers ground, full trees, walls, columns, ceilings without diagonal cuts
+                  const ddy = wy - focusSrc.y;
+                  if (ddy < -25.0 || ddy > 65.0) continue;
+
+                  const gx = m4[0] * wx + m4[4] * wy + m4[8]  * wz + m4[12];
+                  const gy = m4[1] * wx + m4[5] * wy + m4[9]  * wz + m4[13];
+                  const gz = m4[2] * wx + m4[6] * wy + m4[10] * wz + m4[14];
+
+                  collectedPositions.push(gx, gy, gz);
+
+                  let rCol = 0, gCol = 0, bCol = 0;
+                  if (src.rgbOffset > 0 && pOff + src.rgbOffset + 6 <= sliceBuf.byteLength) {
+                    rCol = dv.getUint16(pOff + src.rgbOffset, true) / src.rgbDiv;
+                    gCol = dv.getUint16(pOff + src.rgbOffset + 2, true) / src.rgbDiv;
+                    bCol = dv.getUint16(pOff + src.rgbOffset + 4, true) / src.rgbDiv;
+                  }
+                  if (rCol === 0 && gCol === 0 && bCol === 0) {
+                    const intensity = dv.getUint16(pOff + 12, true);
+                    if (intensity > 0) {
+                      const normI = Math.max(0.22, Math.min(1.0, intensity > 255 ? (intensity / 4096.0) : (intensity / 255.0)));
+                      rCol = normI * 0.9; gCol = normI * 0.95; bCol = Math.min(1.0, normI * 1.05);
+                    } else {
+                      rCol = 0.35; gCol = 0.78; bCol = 0.95;
+                    }
+                  }
+                  collectedColors.push(rCol, gCol, bCol);
+                  collectedSeeds.push(Math.random());
+
+                  const sx = Math.floor(gx / sectorSizeMeters);
+                  const sz = Math.floor(gz / sectorSizeMeters);
+                  const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
+                  collectedHag.push(groundY !== undefined ? Math.max(0.0, gy - groundY) : 0.0);
+
+                  totalStreamed++;
+                }
+
+                if (m % 10 === 0) {
+                  await new Promise((res) => setTimeout(res, 0));
+                }
+              }
+
+            } else if (src.type === 'rcs') {
+              const nodes = src.nodes;
+              const cMin = src.chunkMin;
+              const cMax = src.chunkMax;
+              const m4 = src.matrix.elements;
+
+              for (let n = 0; n < nodes.length && totalStreamed < bubblePointLimit; n++) {
+                const c3 = n * 3;
+                const minX = cMin[c3], minZ = cMin[c3 + 2];
+                const maxX = cMax[c3], maxZ = cMax[c3 + 2];
+                if (Number.isFinite(minX) && Number.isFinite(maxX)) {
+                  const dx = Math.max(0, Math.max(minX - focusSrc.x, focusSrc.x - maxX));
+                  const dz = Math.max(0, Math.max(minZ - focusSrc.z, focusSrc.z - maxZ));
+                  if ((dx * dx + dz * dz) > rSq * 1.35) continue;
+                }
+
+                const nd = nodes[n];
+                if (nd.ptCount <= 0 || nd.ptOffset < 0 || nd.ptOffset + nd.ptCount * 16 > src.file.size) continue;
+
+                const nodeBuf = await src.file.slice(nd.ptOffset, nd.ptOffset + nd.ptCount * 16).arrayBuffer();
+                const ndv = new DataView(nodeBuf);
+                const actualPts = Math.floor(nodeBuf.byteLength / 16);
+                if (actualPts <= 0) continue;
+
+                let minQx = 999999, maxQx = -1;
+                let minQy = 999999, maxQy = -1;
+                let minQz = 999999, maxQz = -1;
+                for (let p = 0; p < actualPts; p++) {
+                  const bOff = p * 16;
+                  const uLow = ndv.getUint32(bOff, true);
+                  const uHigh = ndv.getUint32(bOff + 4, true);
+                  const qx = uLow & 0x3FFFF;
+                  const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
+                  const qz = (uHigh >>> 4) & 0x3FFFF;
+                  if (qx < minQx) minQx = qx; if (qx > maxQx) maxQx = qx;
+                  if (qy < minQy) minQy = qy; if (qy > maxQy) maxQy = qy;
+                  if (qz < minQz) minQz = qz; if (qz > maxQz) maxQz = qz;
+                }
+                const scaleX = (maxQx > minQx && nd.tMaxX > nd.tMinX) ? (nd.tMaxX - nd.tMinX) / (maxQx - minQx) : 0.001;
+                const scaleY = (maxQy > minQy && nd.tMaxY > nd.tMinY) ? (nd.tMaxY - nd.tMinY) / (maxQy - minQy) : 0.001;
+                const scaleZ = (maxQz > minQz && nd.tMaxZ > nd.tMinZ) ? (nd.tMaxZ - nd.tMinZ) / (maxQz - minQz) : 0.001;
+
+                for (let p = 0; p < actualPts && totalStreamed < bubblePointLimit; p++) {
+                  const bOff = p * 16;
+                  const uLow = ndv.getUint32(bOff, true);
+                  const uHigh = ndv.getUint32(bOff + 4, true);
+                  const qx = uLow & 0x3FFFF;
+                  const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
+                  const qz = (uHigh >>> 4) & 0x3FFFF;
+
+                  const wx = ((maxQx > minQx) ? (nd.tMinX + (qx - minQx) * scaleX) : (nd.cMinX + qx * 0.001)) * src.hdrScaleX;
+                  const wy = ((maxQy > minQy) ? (nd.tMinY + (qy - minQy) * scaleY) : (nd.cMinY + qy * 0.001)) * src.hdrScaleY;
+                  const wz = ((maxQz > minQz) ? (nd.tMinZ + (qz - minQz) * scaleZ) : (nd.cMinZ + qz * 0.001)) * src.hdrScaleZ;
+
+                  // Concentric horizontal radius around observer standing position
+                  const ddx = wx - focusSrc.x;
+                  const ddz = (-wy) - focusSrc.z;
+                  const distHorizSq = ddx * ddx + ddz * ddz;
+                  if (distHorizSq > rSq) continue;
+
+                  const ddy = wz - focusSrc.y;
+                  if (ddy < -25.0 || ddy > 65.0) continue;
+
+                  const gx = m4[0] * wx + m4[4] * wz + m4[8]  * (-wy) + m4[12];
+                  const gy = m4[1] * wx + m4[5] * wz + m4[9]  * (-wy) + m4[13];
+                  const gz = m4[2] * wx + m4[6] * wz + m4[10] * (-wy) + m4[14];
+
+                  collectedPositions.push(gx, gy, gz);
+
+                  const intensity = ndv.getUint8(bOff + 8);
+                  const bByte = ndv.getUint8(bOff + 9);
+                  const gByte = ndv.getUint8(bOff + 10);
+                  const rByte = ndv.getUint8(bOff + 11);
+                  let rCol = rByte / 255.0;
+                  let gCol = gByte / 255.0;
+                  let bCol = bByte / 255.0;
+                  if (rCol === 0 && gCol === 0 && bCol === 0) {
+                    const normI = Math.max(0.25, intensity / 255.0);
+                    rCol = normI; gCol = normI; bCol = normI;
+                  }
+                  collectedColors.push(rCol, gCol, bCol);
+                  collectedSeeds.push(Math.random());
+
+                  const sx = Math.floor(gx / sectorSizeMeters);
+                  const sz = Math.floor(gz / sectorSizeMeters);
+                  const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
+                  collectedHag.push(groundY !== undefined ? Math.max(0.0, gy - groundY) : 0.0);
+
+                  totalStreamed++;
+                }
+
+                if (n % 10 === 0) {
+                  await new Promise((res) => setTimeout(res, 0));
+                }
+              }
+            }
+          }
+
+          if (totalStreamed > 0) {
+            const bPosArr = new Float32Array(collectedPositions);
+            const bColArr = new Float32Array(collectedColors);
+            const bInfilledCol = computeWhiteInfilledColors(bPosArr, bColArr, totalStreamed);
+
+            const bGeo = new THREE.BufferGeometry();
+            bGeo.setAttribute('position', new THREE.BufferAttribute(bPosArr, 3));
+            bGeo.setAttribute('color', new THREE.BufferAttribute(bColArr, 3));
+            bGeo.setAttribute('aInfillColor', new THREE.BufferAttribute(bInfilledCol, 3));
+            bGeo.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(collectedSeeds), 1));
+            bGeo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(new Float32Array(collectedHag), 1));
+            bGeo.computeBoundingBox();
+            bGeo.computeBoundingSphere();
+
+            const bMat = createPointCloudShaderMaterial(true, true);
+            const newMesh = new THREE.Points(bGeo, bMat);
+            newMesh.frustumCulled = false;
+
+            bubbleMesh = newMesh;
+            fullDensityBubbleGroup.add(bubbleMesh);
+
+            bubbleLoadedPoints = totalStreamed;
+            bubbleCoverRadius = r;
+            bubbleCenterWorld.copy(focusW);
+            bubbleCenterGroup.copy(focusLocal);
+            bubbleReadyFlag = 1.0;
+
+            const ringGroundY = findSurfaceHeightUnderPlayer(focusW.x, focusW.y, focusW.z);
+            fullRadiusRingMesh.position.set(focusW.x, ringGroundY + 0.08, focusW.z);
+            fullRadiusRingMesh.scale.set(r, 1, r);
+            fullRadiusRingMesh.visible = showFullRadiusRing;
+
+            syncLodUniforms();
+            updatePointCloudTelemetry();
+
+            if (stat) {
+              stat.innerHTML = '🟢 <b>Zona Renderizada (100% Calidad):</b> ' + totalStreamed.toLocaleString() + ' puntos en R=' + r.toFixed(1) + ' m. Solo esta zona está activa.';
+            }
+          } else {
+            clearFullDensityBubble();
+            if (stat) {
+              stat.textContent = '⚪ No se encontraron puntos en el radio R=' + r.toFixed(1) + ' m desde esta ubicación.';
+            }
+          }
+        } catch (err) {
+          console.warn('Zone render error:', err);
+          if (stat) stat.textContent = '⚠ Error al renderizar zona: ' + (err.message || err);
+        } finally {
+          isStreamingBubble = false;
+        }
+      };
+
+      function getTotalActivePoints() {
+        let total = 0;
+        if (revitCloudGroup.visible) total += revitLoadedPoints;
+        if (directCloudGroup.visible) total += (directLoadedPoints + bubbleLoadedPoints);
+        return total;
+      }
+
+      function updatePointCloudTelemetry() {
+        const total = getTotalActivePoints();
+        const visiblePts = Math.round(total * currentDensity);
+        const pct = (currentDensity * 100).toFixed(1) + '%';
+        document.getElementById('stat-points').textContent =
+          visiblePts.toLocaleString() + ' / ' + total.toLocaleString() + (bubbleLoadedPoints > 0 ? (' (+' + bubbleLoadedPoints.toLocaleString() + ' Full 100%)') : '');
+        document.getElementById('stat-pct').textContent = pct;
+        document.getElementById('lbl-density').textContent = pct;
+      }
+
+      // ================= GLOBAL API FOR C# WPF TOOLBAR & HUD =================
+      window.setPointCloudDensity = function (density01) {
+        currentDensity = Math.max(0.0, Math.min(1.0, parseFloat(density01)));
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          pointCloudMaterials[i].uniforms.uDensity.value = currentDensity;
+        }
+        document.getElementById('slider-density').value = (currentDensity * 100).toFixed(1);
+        updatePointCloudTelemetry();
+      };
+
+      window.setPointCloudSize = function (sizePx) {
+        const val = parseFloat(sizePx);
+        currentPointSize = Math.max(0.0, Math.min(25.0, Number.isFinite(val) ? val : 0.0));
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          pointCloudMaterials[i].uniforms.uPointSize.value = currentPointSize;
+        }
+        document.getElementById('slider-size').value = currentPointSize;
+        document.getElementById('lbl-size').textContent = currentPointSize.toFixed(1) + ' px';
+      };
+
+      window.setPointCloudColorMode = function (modeIdx) {
+        currentColorMode = parseInt(modeIdx, 10) || 0;
+        document.getElementById('sel-color-mode').value = String(currentColorMode);
+        document.getElementById('tree-legend').style.display = (currentColorMode === 2) ? 'flex' : 'none';
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          pointCloudMaterials[i].uniforms.uColorMode.value = currentColorMode;
+        }
+      };
+
+      window.setTimeOfDay = function (hoursFloat) {
+        const h = parseFloat(hoursFloat);
+        document.getElementById('slider-sun').value = h;
+        const hh = Math.floor(h);
+        const mm = Math.round((h - hh) * 60);
+        document.getElementById('lbl-sun').textContent =
+          String(hh).padStart(2, '0') + ':' + String(mm === 60 ? 0 : mm).padStart(2, '0');
+
+        const norm = (h - 5.5) / 14.0;
+        const angle = norm * Math.PI;
+        const radius = 85;
+        const sunY = Math.max(2.0, Math.sin(angle) * radius);
+        const sunX = Math.cos(angle) * radius;
+        const sunZ = 35 * Math.sin(angle * 0.8);
+
+        const targetPos = sunLight.target ? sunLight.target.position : new THREE.Vector3(0, 0, 0);
+        sunLight.position.set(targetPos.x + sunX, targetPos.y + sunY, targetPos.z + sunZ);
+
+        const elevationFactor = Math.max(0.0, Math.min(1.0, Math.sin(angle)));
+        solarSkyColor.setHSL(0.57, 0.62, 0.18 + 0.55 * elevationFactor);
+
+        if (!useCustomBgColor) {
+          scene.background.copy(solarSkyColor);
+          scene.fog.color.copy(solarSkyColor);
+        }
+
+        const sunColor = new THREE.Color().setHSL(0.08 + 0.04 * elevationFactor, 0.9, 0.55 + 0.42 * elevationFactor);
+        sunLight.color.copy(sunColor);
+        sunLight.intensity = 0.35 + 1.35 * elevationFactor;
+        hemiLight.intensity = 0.25 + 0.55 * elevationFactor;
+      };
+
+      function clearRevitSceneOnly() {
+        while (meshGroup.children.length > 0) {
+          const obj = meshGroup.children.pop();
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) obj.material.dispose();
+        }
+        while (revitCloudGroup.children.length > 0) {
+          const obj = revitCloudGroup.children.pop();
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) obj.material.dispose();
+        }
+        revitSectorGroundMap.clear();
+        revitLoadedPoints = 0;
+      }
+
+      // ================= BASE64 BINARY DECODING FOR REVIT SCENE PAYLOAD =================
+      function decodeBase64ToFloat32(b64) {
+        const bin = atob(b64);
+        const len = bin.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+        return new Float32Array(bytes.buffer);
+      }
+
+      function decodeBase64ToUint32(b64) {
+        const bin = atob(b64);
+        const len = bin.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+        return new Uint32Array(bytes.buffer);
+      }
+
+      // ================= REVIT SHARED COORDINATES (SURVEY / PROJECT BASE POINT) =================
+      // Pre-initialized with active Revit 2026 project's Shared Origin and updated automatically on every Sync
+      let sharedOrigin = {
+        east: 1083692.001,
+        north: 1275923.913,
+        elev: 382.670,
+        angleRad: 0.0
+      };
+
+      function threeToSharedCoords(threeX, threeY, threeZ) {
+        const internalX = threeX;
+        const internalY = -threeZ;
+        const internalZ = threeY;
+        const cosA = Math.cos(sharedOrigin.angleRad);
+        const sinA = Math.sin(sharedOrigin.angleRad);
+        return {
+          east: sharedOrigin.east + internalX * cosA + internalY * sinA,
+          north: sharedOrigin.north - internalX * sinA + internalY * cosA,
+          cota: sharedOrigin.elev + internalZ
+        };
+      }
+
+      function sharedToThreeCoords(sharedEast, sharedNorth, sharedElev) {
+        const dE = sharedEast - sharedOrigin.east;
+        const dN = sharedNorth - sharedOrigin.north;
+        const dZ = sharedElev - sharedOrigin.elev;
+        const cosA = Math.cos(sharedOrigin.angleRad);
+        const sinA = Math.sin(sharedOrigin.angleRad);
+        const internalX = dE * cosA - dN * sinA;
+        const internalY = dE * sinA + dN * cosA;
+        return {
+          x: internalX,
+          y: dZ,
+          z: -internalY
+        };
+      }
+
+      function loadRevitScenePayload(payload) {
+        if (!payload) return;
+
+        if (payload.sharedOrigin && payload.sharedOrigin.length >= 3) {
+          if (payload.sharedOrigin[0] !== 0 || payload.sharedOrigin[1] !== 0) {
+            sharedOrigin.east = payload.sharedOrigin[0];
+            sharedOrigin.north = payload.sharedOrigin[1];
+            sharedOrigin.elev = payload.sharedOrigin[2];
+            sharedOrigin.angleRad = payload.sharedOrigin[3] || 0.0;
+          }
+        }
+
+        const isAppend = (payload.viewName === 'APPEND_LAS' || payload.viewName === 'APPEND_CLOUD');
+        if (!isAppend) {
+          clearRevitSceneOnly();
+        }
+
+        if (payload.meshes && payload.meshes.length > 0) {
+          for (let i = 0; i < payload.meshes.length; i++) {
+            const m = payload.meshes[i];
+            if (!m.positionsB64 || !m.indicesB64) continue;
+
+            const positions = decodeBase64ToFloat32(m.positionsB64);
+            const normals = m.normalsB64 ? decodeBase64ToFloat32(m.normalsB64) : null;
+            const indices = decodeBase64ToUint32(m.indicesB64);
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            if (normals && normals.length === positions.length) {
+              geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+            } else {
+              geo.computeVertexNormals();
+            }
+            geo.setIndex(new THREE.BufferAttribute(indices, 1));
+
+            const c = m.color || [200, 200, 200];
+            const color = new THREE.Color(c[0] / 255.0, c[1] / 255.0, c[2] / 255.0);
+            const isTrans = (m.transparency || 0) > 0.02;
+
+            const mat = new THREE.MeshStandardMaterial({
+              color: color,
+              roughness: m.roughness !== undefined ? m.roughness : 0.6,
+              metalness: m.metalness !== undefined ? m.metalness : 0.1,
+              transparent: isTrans,
+              opacity: 1.0 - (m.transparency || 0),
+              side: THREE.DoubleSide,
+              clippingPlanes: meshClippingPlanes
+            });
+
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = !isTrans;
+            mesh.receiveShadow = true;
+            mesh.frustumCulled = false;
+            meshGroup.add(mesh);
+          }
+        }
+
+        updateSceneBoundsAndEnvironment();
+
+        if (!isAppend && payload.camera && payload.camera.eye && payload.camera.target) {
+          window.updateCameraFromRevit(payload.camera.eye, payload.camera.target);
+        }
+
+        if (!isAppend && payload.timeOfDayHours) {
+          window.setTimeOfDay(payload.timeOfDayHours);
+        }
+
+        if (!isAppend) {
+          document.getElementById('stat-meshes').textContent =
+            (payload.meshes ? payload.meshes.length : 0) + ' lotes BIM (' + (payload.viewName || 'Vista 3D') + ')';
+        }
+        updatePointCloudTelemetry();
+      }
+
+      // ================= BINARY POINT CLOUD STREAMING LOADER (REVIT & DIRECT .LAS / .RCS) =================
+      window.loadBinaryCloudFromHost = async function (binUrl, expectedCount, shouldFitCamera, sourceTag) {
+        try {
+          const isDirect = (
+            sourceTag === 'DIRECT' ||
+            shouldFitCamera === true ||
+            (binUrl && (binUrl.indexOf('las_tile') !== -1 || binUrl.indexOf('direct_') !== -1))
+          );
+
+          if (isDirect && window.updateTaskProgressModal) {
+            window.updateTaskProgressModal('IN_PROGRESS', 85.0, 'Recibiendo Nube en GPU', 'Decodificando lote binario (' + (expectedCount || 0).toLocaleString() + ' pts)...');
+          }
+
+          const resp = await fetch(binUrl);
+          if (!resp.ok) return;
+          const buf = await resp.arrayBuffer();
+          const interleaved = new Float32Array(buf);
+          const count = Math.floor(interleaved.length / 7);
+          if (count <= 0) return;
+
+          const posArr = new Float32Array(count * 3);
+          const colArr = new Float32Array(count * 3);
+          const seedArr = new Float32Array(count);
+
+          let minX = Infinity, maxX = -Infinity;
+          let minY = Infinity, maxY = -Infinity;
+          let minZ = Infinity, maxZ = -Infinity;
+
+          for (let p = 0; p < count; p++) {
+            const base = p * 7;
+            const px = interleaved[base + 0];
+            const py = interleaved[base + 1];
+            const pz = interleaved[base + 2];
+
+            posArr[p * 3 + 0] = px;
+            posArr[p * 3 + 1] = py;
+            posArr[p * 3 + 2] = pz;
+
+            if (px < minX) minX = px; if (px > maxX) maxX = px;
+            if (py < minY) minY = py; if (py > maxY) maxY = py;
+            if (pz < minZ) minZ = pz; if (pz > maxZ) maxZ = pz;
+
+            colArr[p * 3 + 0] = interleaved[base + 3];
+            colArr[p * 3 + 1] = interleaved[base + 4];
+            colArr[p * 3 + 2] = interleaved[base + 5];
+
+            seedArr[p] = interleaved[base + 6];
+          }
+
+          // If a direct cloud has unaligned UTM/Magna-Sirgas coordinates far from the active scene, center it automatically
+          if (isDirect && Number.isFinite(minX) && Number.isFinite(maxX)) {
+            const cx = (minX + maxX) * 0.5;
+            const cy = (minY + maxY) * 0.5;
+            const cz = (minZ + maxZ) * 0.5;
+            let refX = 0, refY = 0, refZ = 0;
+            const refBox = new THREE.Box3();
+            if (meshGroup.children.length > 0) refBox.expandByObject(meshGroup);
+            if (revitCloudGroup.children.length > 0) refBox.expandByObject(revitCloudGroup);
+            if (!refBox.isEmpty()) {
+              const rc = refBox.getCenter(new THREE.Vector3());
+              refX = rc.x; refY = rc.y; refZ = rc.z;
+            }
+            const dist = Math.hypot(cx - refX, cy - refY, cz - refZ);
+            if (dist > 450.0) {
+              const sx = refX - cx;
+              const sy = refY - cy;
+              const sz = refZ - cz;
+              for (let p = 0; p < count; p++) {
+                posArr[p * 3 + 0] += sx;
+                posArr[p * 3 + 1] += sy;
+                posArr[p * 3 + 2] += sz;
+              }
+            }
+          }
+
+          const hagArr = computeHeightAboveSectorGround(posArr, count, isDirect);
+          const infilledCol = computeWhiteInfilledColors(posArr, colArr, count);
+
+          const pcGeo = new THREE.BufferGeometry();
+          pcGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+          pcGeo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+          pcGeo.setAttribute('aInfillColor', new THREE.BufferAttribute(infilledCol, 3));
+          pcGeo.setAttribute('aSeed', new THREE.BufferAttribute(seedArr, 1));
+          pcGeo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(hagArr, 1));
+          pcGeo.computeBoundingBox();
+          pcGeo.computeBoundingSphere();
+
+          const pcMat = createPointCloudShaderMaterial(false, isDirect);
+          const points = new THREE.Points(pcGeo, pcMat);
+          points.frustumCulled = false;
+
+          if (isDirect) {
+            directCloudGroup.visible = true;
+            document.getElementById('chk-vis-direct-cloud').checked = true;
+            directCloudGroup.add(points);
+            directLoadedPoints += count;
+          } else {
+            revitCloudGroup.add(points);
+            revitLoadedPoints += count;
+          }
+
+          updateSceneBoundsAndEnvironment();
+          if (shouldFitCamera || isDirect) {
+            fitCameraToGroup(isDirect ? directCloudGroup : null);
+          }
+          updatePointCloudTelemetry();
+
+          if (isDirect && window.updateTaskProgressModal) {
+            window.updateTaskProgressModal(
+              'COMPLETED',
+              100.0,
+              'Nube Cargada en GPU',
+              'Total en capa directa: ' + directLoadedPoints.toLocaleString() + ' puntos visualizados.'
+            );
+          }
+        } catch (e) {
+          console.error('Error loading binary cloud:', e);
+        }
+      };
+
+      // ================= NAVIGATION, WALK MODE, KEYBOARD SPEED & CURSOR 3D COORDINATES =================
+      let yaw = -0.75;
+      let pitch = -0.22;
+      let moveSpeed = 12.0;
+      let userModifiedSpeed = false;
+      const keys = {};
+      let isDragging = false;
+      let prevMouseX = 0;
+      let prevMouseY = 0;
+
+      // 3D Cursor Coordinate Inspector Marker & Raycaster
+      let isCursorCoordsEnabled = true;
+      const cursorRaycaster = new THREE.Raycaster();
+      const cursorMouseNDC = new THREE.Vector2();
+      const cursorTooltip = document.getElementById('cursor-coords-tooltip');
+      const ttSource = document.getElementById('tt-source');
+      const ttEast = document.getElementById('tt-east');
+      const ttNorth = document.getElementById('tt-north');
+      const ttCota = document.getElementById('tt-cota');
+
+      const cursorMarkerGeo = new THREE.SphereGeometry(0.18, 14, 14);
+      const cursorMarkerMat = new THREE.MeshBasicMaterial({
+        color: 0x34d399,
+        depthTest: false,
+        transparent: true,
+        opacity: 0.92
+      });
+      const cursorTargetMarker = new THREE.Mesh(cursorMarkerGeo, cursorMarkerMat);
+      cursorTargetMarker.renderOrder = 999;
+      cursorTargetMarker.visible = false;
+      scene.add(cursorTargetMarker);
+
+      function setKeyboardMoveSpeed(spd, markUserModified) {
+        moveSpeed = Math.max(0.5, Math.min(150.0, parseFloat(spd) || 12.0));
+        if (markUserModified) userModifiedSpeed = true;
+        const sl = document.getElementById('slider-move-speed');
+        const lb = document.getElementById('lbl-move-speed');
+        if (sl) sl.value = moveSpeed;
+        if (lb) lb.textContent = moveSpeed.toFixed(1) + ' m/s';
+      }
+
+      function pickPointCloudRayCone(group, rayOrigin, rayDir, maxDist) {
+        if (!group || !group.visible || group.children.length === 0) return null;
+        const offsetY = group.position.y || 0.0;
+        let bestT = maxDist;
+        let bestHit = null;
+
+        for (let c = 0; c < group.children.length; c++) {
+          const ptsObj = group.children[c];
+          if (!ptsObj.geometry || !ptsObj.geometry.attributes.position) continue;
+          const posArr = ptsObj.geometry.attributes.position.array;
+          const seedArr = ptsObj.geometry.attributes.aSeed ? ptsObj.geometry.attributes.aSeed.array : null;
+          const count = Math.floor(posArr.length / 3);
+          if (count <= 0) continue;
+
+          // Test up to ~65,000 points per cloud group so hover picking runs in < 0.7 ms at 60 FPS
+          const step = Math.max(1, Math.floor(count / 65000));
+          for (let i = 0; i < count; i += step) {
+            if (seedArr && seedArr[i] > currentDensity) continue;
+
+            const px = posArr[i * 3 + 0];
+            const py = posArr[i * 3 + 1] + offsetY;
+            const pz = posArr[i * 3 + 2];
+
+            if (isSectionBoxActive) {
+              if (px < activeBoxMin.x || px > activeBoxMax.x ||
+                  py < activeBoxMin.y || py > activeBoxMax.y ||
+                  pz < activeBoxMin.z || pz > activeBoxMax.z) continue;
+            }
+
+            const vx = px - rayOrigin.x;
+            const vy = py - rayOrigin.y;
+            const vz = pz - rayOrigin.z;
+
+            const t = vx * rayDir.x + vy * rayDir.y + vz * rayDir.z;
+            if (t < 0.25 || t >= bestT) continue;
+
+            const distSq = vx * vx + vy * vy + vz * vz;
+            const perpSq = Math.max(0.0, distSq - t * t);
+            const tol = Math.max(0.14, t * 0.013);
+
+            if (perpSq <= tol * tol) {
+              bestT = t;
+              bestHit = new THREE.Vector3(px, py, pz);
+            }
+          }
+        }
+        return bestHit ? { point: bestHit, distance: bestT } : null;
+      }
+
+      function updateCursorCoordinatesOnHover(clientX, clientY) {
+        if (!isCursorCoordsEnabled || isDragging || isPlayingPath) {
+          cursorTooltip.style.display = 'none';
+          cursorTargetMarker.visible = false;
+          return;
+        }
+
+        cursorMouseNDC.x = (clientX / window.innerWidth) * 2.0 - 1.0;
+        cursorMouseNDC.y = -(clientY / window.innerHeight) * 2.0 + 1.0;
+        cursorRaycaster.setFromCamera(cursorMouseNDC, camera);
+
+        const rayOrigin = cursorRaycaster.ray.origin;
+        const rayDir = cursorRaycaster.ray.direction;
+
+        let bestPoint = null;
+        let bestDist = Infinity;
+        let hitSourceLabel = '';
+
+        // 1. Check 3D BIM Meshes
+        if (meshGroup.visible && meshGroup.children.length > 0) {
+          const hits = cursorRaycaster.intersectObjects(meshGroup.children, false);
+          for (let i = 0; i < hits.length; i++) {
+            const p = hits[i].point;
+            if (isSectionBoxActive && (
+                p.x < activeBoxMin.x || p.x > activeBoxMax.x ||
+                p.y < activeBoxMin.y || p.y > activeBoxMax.y ||
+                p.z < activeBoxMin.z || p.z > activeBoxMax.z)) continue;
+            bestPoint = p;
+            bestDist = hits[i].distance;
+            hitSourceLabel = '📍 Modelo BIM Revit';
+            break;
+          }
+        }
+
+        // 2. Check Direct Point Cloud (.LAS / .RCS)
+        const directHit = pickPointCloudRayCone(directCloudGroup, rayOrigin, rayDir, bestDist);
+        if (directHit && directHit.distance < bestDist) {
+          bestPoint = directHit.point;
+          bestDist = directHit.distance;
+          hitSourceLabel = '📍 Nube Directa (.LAS / .RCS)';
+        }
+
+        // 3. Check Linked Revit Point Cloud
+        const revitHit = pickPointCloudRayCone(revitCloudGroup, rayOrigin, rayDir, bestDist);
+        if (revitHit && revitHit.distance < bestDist) {
+          bestPoint = revitHit.point;
+          bestDist = revitHit.distance;
+          hitSourceLabel = '📍 Nube Vinculada Revit';
+        }
+
+        if (!bestPoint) {
+          cursorTooltip.style.display = 'none';
+          cursorTargetMarker.visible = false;
+          return;
+        }
+
+        const shared = threeToSharedCoords(bestPoint.x, bestPoint.y, bestPoint.z);
+        ttSource.textContent = hitSourceLabel;
+        ttEast.textContent = shared.east.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+        ttNorth.textContent = shared.north.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+        ttCota.textContent = shared.cota.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' msnm';
+
+        const padX = Math.min(window.innerWidth - 210, clientX + 16);
+        const padY = Math.min(window.innerHeight - 95, clientY + 16);
+        cursorTooltip.style.left = padX + 'px';
+        cursorTooltip.style.top = padY + 'px';
+        cursorTooltip.style.display = 'block';
+
+        cursorTargetMarker.position.copy(bestPoint);
+        const markerScale = Math.max(0.25, Math.min(6.0, bestDist * 0.028));
+        cursorTargetMarker.scale.set(markerScale, markerScale, markerScale);
+        cursorTargetMarker.visible = true;
+      }
+
+      const playerFeetPos = new THREE.Vector3(10, 0, 12);
+      let playerVerticalVelocity = 0.0;
+      let walkCyclePhase = 0.0;
+      let lastValidTerrainY = null;
+      const downRaycaster = new THREE.Raycaster();
+      downRaycaster.near = 0.05;
+      downRaycaster.far = 250.0;
+
+      // Finds the lowest point cloud terrain elevation in the zone (x, z), searching expanding sector rings so there are ZERO holes
+      function getPointCloudTerrainHeightAt(x, z) {
+        const useDirect = directCloudGroup.visible && directLoadedPoints > 0 && directSectorGroundMap.size > 0;
+        const useRevit = revitCloudGroup.visible && revitLoadedPoints > 0 && revitSectorGroundMap.size > 0;
+        if (!useDirect && !useRevit) return null;
+
+        const dOffset = directCloudElevationOffset || 0.0;
+        const sx = Math.floor(x / sectorSizeMeters);
+        const sz = Math.floor(z / sectorSizeMeters);
+
+        // Helper to sample lowest terrain point in sector (ix, iz) across visible clouds
+        function sampleSectorGround(ix, iz) {
+          const k = packGridKey(ix, iz);
+          let val = null;
+          if (useDirect) {
+            const dy = directSectorGroundMap.get(k);
+            if (dy !== undefined) val = dy + dOffset;
+          }
+          if (useRevit) {
+            const ry = revitSectorGroundMap.get(k);
+            if (ry !== undefined) {
+              val = (val === null) ? ry : Math.min(val, ry);
+            }
+          }
+          return val;
+        }
+
+        // 1. Check immediate 3x3 neighborhood around (sx, sz) with inverse-distance weighting for smooth slope walking
+        let weightedSum = 0.0;
+        let weightTotal = 0.0;
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            const sy = sampleSectorGround(sx + dx, sz + dz);
+            if (sy !== null) {
+              const cx = (sx + dx + 0.5) * sectorSizeMeters;
+              const cz = (sz + dz + 0.5) * sectorSizeMeters;
+              const dist = Math.hypot(x - cx, z - cz);
+              const w = 1.0 / (0.35 + dist * dist);
+              weightedSum += sy * w;
+              weightTotal += w;
+            }
+          }
+        }
+        if (weightTotal > 0.0) {
+          const h = weightedSum / weightTotal;
+          lastValidTerrainY = h;
+          return h;
+        }
+
+        // 2. If the user is in a wider gap between laser scan lines (up to 12 sectors = 24m radius), search expanding rings
+        for (let r = 2; r <= 12; r++) {
+          let ringSum = 0.0;
+          let ringCount = 0;
+          for (let dx = -r; dx <= r; dx++) {
+            for (let dz = -r; dz <= r; dz++) {
+              if (Math.abs(dx) !== r && Math.abs(dz) !== r) continue;
+              const sy = sampleSectorGround(sx + dx, sz + dz);
+              if (sy !== null) {
+                ringSum += sy;
+                ringCount++;
+              }
+            }
+          }
+          if (ringCount > 0) {
+            const h = ringSum / ringCount;
+            lastValidTerrainY = h;
+            return h;
+          }
+        }
+
+        return lastValidTerrainY;
+      }
+
+      function syncPlayerFromCamera() {
+        playerFeetPos.set(camera.position.x, camera.position.y - avatarUserHeight, camera.position.z);
+        playerVerticalVelocity = 0.0;
+      }
+
+      function toggleWalkMode(forceState) {
+        isWalkMode = (forceState !== undefined) ? forceState : !isWalkMode;
+        document.getElementById('chk-walk-mode').checked = isWalkMode;
+
+        const badge = document.getElementById('badge-nav-mode');
+        const statWalk = document.getElementById('stat-walk');
+
+        if (isWalkMode) {
+          syncPlayerFromCamera();
+          const groundY = findSurfaceHeightUnderPlayer(playerFeetPos.x, playerFeetPos.y, playerFeetPos.z);
+          if (playerFeetPos.y < groundY || (playerFeetPos.y - groundY) < 6.0) {
+            playerFeetPos.y = groundY;
+            playerVerticalVelocity = 0.0;
+            if (!isThirdPerson) {
+              camera.position.y = playerFeetPos.y + avatarUserHeight;
+            }
+          }
+          badge.textContent = 'CAMINANDO';
+          badge.classList.add('walk');
+          statWalk.innerHTML = '<strong style="color:#34d399;">Modo Caminar Activo (Sobre Terreno)</strong> (Estatura: ' + avatarUserHeight.toFixed(2) + 'm | <span class="key-pill">ESPACIO</span> para Volar)';
+        } else {
+          badge.textContent = 'VUELO LIBRE';
+          badge.classList.remove('walk');
+          statWalk.innerHTML = 'Vuelo Libre (Presiona <span class="key-pill">ESPACIO</span> para Modo Caminar)';
+        }
+        updateAvatarVisibilityAndScale();
+        updateCameraVectorsFromEuler();
+      }
+
+      function updateAvatarVisibilityAndScale() {
+        const scale = avatarUserHeight / 1.75;
+        engineerAvatar.scale.set(scale, scale, scale);
+        engineerAvatar.visible = isThirdPerson;
+      }
+
+      function findSurfaceHeightUnderPlayer(x, currentFeetY, z) {
+        let bimSurfaceY = null;
+        const maxStepUp = 1.65;
+        const rayOriginY = currentFeetY + maxStepUp + 0.8;
+
+        // 1. Check 3D BIM Meshes (floors, bridges, stairs, slabs)
+        if (meshGroup.visible && meshGroup.children.length > 0) {
+          downRaycaster.set(new THREE.Vector3(x, rayOriginY, z), new THREE.Vector3(0, -1, 0));
+          const hits = downRaycaster.intersectObjects(meshGroup.children, false);
+          for (let i = 0; i < hits.length; i++) {
+            const hitY = hits[i].point.y;
+            if (isSectionBoxActive && (hitY < activeBoxMin.y || hitY > activeBoxMax.y)) continue;
+            if (hitY <= currentFeetY + maxStepUp) {
+              bimSurfaceY = hitY;
+              break;
+            }
+          }
+        }
+
+        // 2. Check Point Cloud Lowest-Point Sector Terrain (impenetrable ground floor in each zone!)
+        const pcTerrainY = getPointCloudTerrainHeightAt(x, z);
+
+        if (bimSurfaceY !== null && pcTerrainY !== null) {
+          // Never fall below the point cloud terrain, while allowing walking on BIM floors/bridges above the terrain
+          return Math.max(bimSurfaceY, pcTerrainY);
+        }
+        if (pcTerrainY !== null) {
+          return pcTerrainY;
+        }
+        if (bimSurfaceY !== null) {
+          return bimSurfaceY;
+        }
+        return (lastValidTerrainY !== null) ? lastValidTerrainY : gridHelper.position.y;
+      }
+
+      function updateCameraVectorsFromEuler() {
+        const dir = new THREE.Vector3(
+          Math.cos(pitch) * Math.sin(yaw),
+          Math.sin(pitch),
+          Math.cos(pitch) * Math.cos(yaw)
+        );
+
+        if (isThirdPerson) {
+          engineerAvatar.position.copy(playerFeetPos);
+          engineerAvatar.rotation.y = yaw + Math.PI;
+
+          const headTarget = new THREE.Vector3(
+            playerFeetPos.x,
+            playerFeetPos.y + avatarUserHeight * 0.92,
+            playerFeetPos.z
+          );
+          const camDist = Math.max(2.4, avatarUserHeight * 1.65);
+          camera.position.set(
+            headTarget.x - dir.x * camDist,
+            headTarget.y - dir.y * camDist + 0.35,
+            headTarget.z - dir.z * camDist
+          );
+          camera.lookAt(headTarget);
+        } else {
+          camera.lookAt(camera.position.clone().add(dir));
+        }
+      }
+      updateCameraVectorsFromEuler();
+
+      window.updateCameraFromRevit = function (eye, target) {
+        if (!eye || !target) return;
+        camera.position.set(eye[0], eye[1], eye[2]);
+        const dx = target[0] - eye[0];
+        const dy = target[1] - eye[1];
+        const dz = target[2] - eye[2];
+        const len = Math.hypot(dx, dy, dz);
+        if (len > 0.0001) {
+          pitch = Math.asin(Math.max(-0.98, Math.min(0.98, dy / len)));
+          yaw = Math.atan2(dx, dz);
+          syncPlayerFromCamera();
+          updateCameraVectorsFromEuler();
+        }
+      };
+
+      canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+        cursorTooltip.style.display = 'none';
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (isDragging && !isPlayingPath) {
+          const dx = e.clientX - prevMouseX;
+          const dy = e.clientY - prevMouseY;
+          prevMouseX = e.clientX;
+          prevMouseY = e.clientY;
+
+          yaw -= dx * 0.0045;
+          pitch = Math.max(-1.45, Math.min(1.45, pitch - dy * 0.0045));
+          updateCameraVectorsFromEuler();
+          return;
+        }
+        if (e.target === canvas) {
+          updateCursorCoordinatesOnHover(e.clientX, e.clientY);
+        } else {
+          cursorTooltip.style.display = 'none';
+          cursorTargetMarker.visible = false;
+        }
+      });
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (isPlayingPath) return;
+        if (e.shiftKey) {
+          // Shift + Wheel adjusts keyboard movement speed on the fly
+          const factor = e.deltaY < 0 ? 1.2 : 0.82;
+          setKeyboardMoveSpeed(moveSpeed * factor, true);
+          return;
+        }
+        if (isWalkMode) return;
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        const step = (e.deltaY < 0 ? 1 : -1) * Math.max(1.2, moveSpeed * 0.25);
+        camera.position.addScaledVector(forward, step);
+        syncPlayerFromCamera();
+      }, { passive: false });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat) {
+          e.preventDefault();
+          toggleWalkMode();
+          return;
+        }
+        keys[e.code] = true;
+      });
+      window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+      function updateSceneBoundsAndEnvironment() {
+        const box = new THREE.Box3();
+        if (meshGroup.visible && meshGroup.children.length > 0) box.expandByObject(meshGroup);
+        if (revitCloudGroup.visible && revitCloudGroup.children.length > 0) box.expandByObject(revitCloudGroup);
+        if (directCloudGroup.visible && directCloudGroup.children.length > 0) box.expandByObject(directCloudGroup);
+        if (box.isEmpty()) return;
+
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z, 10.0);
+
+        const pad = size.clone().multiplyScalar(0.03).addScalar(0.5);
+        fullBoundsMin.copy(box.min).sub(pad);
+        fullBoundsMax.copy(box.max).add(pad);
+
+        document.getElementById('box-xmin').value = 0;
+        document.getElementById('box-xmax').value = 100;
+        document.getElementById('box-ymin').value = 0;
+        document.getElementById('box-ymax').value = 100;
+        document.getElementById('box-zmin').value = 0;
+        document.getElementById('box-zmax').value = 100;
+        updateSectionBoxPlanesAndGizmo();
+
+        gridHelper.position.set(center.x, box.min.y - 0.08, center.z);
+
+        const shadowHalf = Math.max(40.0, maxDim * 0.75);
+        sunLight.target.position.copy(center);
+        scene.add(sunLight.target);
+        sunLight.shadow.camera.left = -shadowHalf;
+        sunLight.shadow.camera.right = shadowHalf;
+        sunLight.shadow.camera.top = shadowHalf;
+        sunLight.shadow.camera.bottom = -shadowHalf;
+        sunLight.shadow.camera.far = Math.max(500.0, maxDim * 3.0);
+        sunLight.shadow.camera.updateProjectionMatrix();
+
+        if (!userModifiedSpeed) {
+          setKeyboardMoveSpeed(Math.max(6.0, Math.min(45.0, maxDim * 0.12)), false);
+        }
+      }
+
+      function fitCameraToGroup(targetGroup) {
+        const box = new THREE.Box3();
+        if (targetGroup && targetGroup.children.length > 0) {
+          box.expandByObject(targetGroup);
+        } else {
+          if (directCloudGroup.visible && directCloudGroup.children.length > 0) box.expandByObject(directCloudGroup);
+          if (revitCloudGroup.visible && revitCloudGroup.children.length > 0) box.expandByObject(revitCloudGroup);
+          if (meshGroup.visible && meshGroup.children.length > 0) box.expandByObject(meshGroup);
+        }
+        if (box.isEmpty()) return;
+
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z, 5.0);
+
+        const eye = [center.x + maxDim * 0.65, center.y + maxDim * 0.45, center.z + maxDim * 0.65];
+        const target = [center.x, center.y, center.z];
+        window.updateCameraFromRevit(eye, target);
+      }
+
+      // ================= CAMERA PATH (LINEAR & SPLINE CURVE) + MP4 VIDEO RECORDER =================
+      const keyframes = [];
+      let isPlayingPath = false;
+      let pathPlayElapsed = 0.0;
+      let pathTotalDuration = 0.0;
+
+      function updateVideoEstimatorUI() {
+        const n = keyframes.length;
+        document.getElementById('badge-keyframes').textContent = n + (n === 1 ? ' escena' : ' escenas');
+
+        const segSec = parseFloat(document.getElementById('slider-seg-sec').value) || 4.0;
+        const fps = parseInt(document.getElementById('sel-video-fps').value, 10) || 30;
+        const resStr = document.getElementById('sel-video-res').value || '1920x1080';
+
+        if (n < 2) {
+          document.getElementById('est-summary').textContent =
+            'Captura al menos 2 escenas en distintos puntos (' + n + '/2 listas).';
+          document.getElementById('est-render-time').textContent = '0 seg (agrega escenas)';
+          return;
+        }
+
+        const segments = n - 1;
+        const totalVideoSec = segments * segSec;
+        const totalFrames = Math.round(totalVideoSec * fps);
+
+        // Calculate estimated time based on resolution & FPS
+        let resFactor = 1.0;
+        if (resStr === '2560x1440') resFactor = 1.15;
+        else if (resStr === '3840x2160') resFactor = 1.35;
+
+        const estimatedExportSeconds = Math.ceil(totalVideoSec * resFactor + 1.5);
+        const mins = Math.floor(estimatedExportSeconds / 60);
+        const secs = estimatedExportSeconds % 60;
+        const timeText = mins > 0 ? (mins + ' min ' + secs + ' seg') : (secs + ' segundos');
+
+        document.getElementById('est-summary').textContent =
+          n + ' escenas | Duración video: ' + totalVideoSec.toFixed(1) + 's | ' + totalFrames + ' fotogramas (' + resStr + ' @ ' + fps + ' FPS)';
+        document.getElementById('est-render-time').textContent = '~' + timeText + ' en GPU';
+      }
+
+      function rebuildCameraPathVisuals() {
+        while (cameraPathVisualGroup.children.length > 0) {
+          const obj = cameraPathVisualGroup.children.pop();
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) obj.material.dispose();
+        }
+
+        if (keyframes.length === 0) return;
+
+        // Draw keyframe spheres
+        const sphereGeo = new THREE.SphereGeometry(0.32, 12, 12);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+        for (let i = 0; i < keyframes.length; i++) {
+          const marker = new THREE.Mesh(sphereGeo, sphereMat);
+          marker.position.copy(keyframes[i].pos);
+          cameraPathVisualGroup.add(marker);
+        }
+
+        if (keyframes.length >= 2) {
+          const pathType = document.getElementById('sel-path-type').value;
+          const pts = keyframes.map((k) => k.pos);
+          let linePoints = [];
+
+          if (pathType === 'curve' && pts.length >= 2) {
+            const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5);
+            linePoints = curve.getPoints(pts.length * 24);
+          } else {
+            linePoints = pts;
+          }
+
+          const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
+          const lineMat = new THREE.LineBasicMaterial({ color: 0x34d399, linewidth: 2 });
+          const pathLine = new THREE.Line(lineGeo, lineMat);
+          cameraPathVisualGroup.add(pathLine);
+        }
+      }
+
+      function evaluateCameraPathAt(tNorm) {
+        const n = keyframes.length;
+        if (n === 0) return;
+        if (n === 1) {
+          camera.position.copy(keyframes[0].pos);
+          camera.lookAt(keyframes[0].target);
+          return;
+        }
+
+        const t = Math.max(0.0, Math.min(1.0, tNorm));
+        const pathType = document.getElementById('sel-path-type').value;
+
+        const eyePts = keyframes.map((k) => k.pos);
+        const targetPts = keyframes.map((k) => k.target);
+
+        if (pathType === 'curve') {
+          const eyeCurve = new THREE.CatmullRomCurve3(eyePts, false, 'centripetal', 0.5);
+          const targetCurve = new THREE.CatmullRomCurve3(targetPts, false, 'centripetal', 0.5);
+          const pos = eyeCurve.getPoint(t);
+          const look = targetCurve.getPoint(t);
+          camera.position.copy(pos);
+          camera.lookAt(look);
+        } else {
+          // Linear interpolation per segment
+          const scaled = t * (n - 1);
+          const idx = Math.min(n - 2, Math.floor(scaled));
+          const frac = scaled - idx;
+          const pos = new THREE.Vector3().lerpVectors(eyePts[idx], eyePts[idx + 1], frac);
+          const look = new THREE.Vector3().lerpVectors(targetPts[idx], targetPts[idx + 1], frac);
+          camera.position.copy(pos);
+          camera.lookAt(look);
+        }
+      }
+
+      document.getElementById('btn-add-keyframe').addEventListener('click', () => {
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        const target = camera.position.clone().addScaledVector(forward, 10.0);
+        keyframes.push({
+          pos: camera.position.clone(),
+          target: target
+        });
+        rebuildCameraPathVisuals();
+        updateVideoEstimatorUI();
+      });
+
+      document.getElementById('btn-clear-keyframes').addEventListener('click', () => {
+        keyframes.length = 0;
+        isPlayingPath = false;
+        rebuildCameraPathVisuals();
+        updateVideoEstimatorUI();
+      });
+
+      document.getElementById('btn-preview-path').addEventListener('click', () => {
+        if (keyframes.length < 2) {
+          alert('Primero agrega al menos 2 escenas con el botón "+ Capturar Escena".');
+          return;
+        }
+        const segSec = parseFloat(document.getElementById('slider-seg-sec').value) || 4.0;
+        pathTotalDuration = (keyframes.length - 1) * segSec;
+        pathPlayElapsed = 0.0;
+        isPlayingPath = true;
+      });
+
+      document.getElementById('sel-path-type').addEventListener('change', () => {
+        rebuildCameraPathVisuals();
+        updateVideoEstimatorUI();
+      });
+
+      document.getElementById('slider-seg-sec').addEventListener('input', (e) => {
+        document.getElementById('lbl-seg-sec').textContent = parseFloat(e.target.value).toFixed(1) + ' s';
+        updateVideoEstimatorUI();
+      });
+
+      document.getElementById('sel-video-res').addEventListener('change', updateVideoEstimatorUI);
+      document.getElementById('sel-video-fps').addEventListener('change', updateVideoEstimatorUI);
+
+      document.getElementById('btn-export-mp4').addEventListener('click', async () => {
+        if (keyframes.length < 2) {
+          alert('Agrega al menos 2 escenas con "+ Capturar Escena" antes de exportar el recorrido en video.');
+          return;
+        }
+
+        const resParts = (document.getElementById('sel-video-res').value || '1920x1080').split('x');
+        const exportW = parseInt(resParts[0], 10) || 1920;
+        const exportH = parseInt(resParts[1], 10) || 1080;
+        const fps = parseInt(document.getElementById('sel-video-fps').value, 10) || 30;
+        const segSec = parseFloat(document.getElementById('slider-seg-sec').value) || 4.0;
+        const totalDurationSec = (keyframes.length - 1) * segSec;
+
+        const btnExport = document.getElementById('btn-export-mp4');
+        const origBtnText = btnExport.textContent;
+        btnExport.disabled = true;
+
+        // Hide section box wireframe & camera path markers during clean video render
+        const prevGizmoVis = sectionBoxGizmoGroup.visible;
+        sectionBoxGizmoGroup.visible = false;
+        cameraPathVisualGroup.visible = false;
+
+        const origW = window.innerWidth;
+        const origH = window.innerHeight;
+        renderer.setPixelRatio(1);
+        renderer.setSize(exportW, exportH, false);
+        camera.aspect = exportW / exportH;
+        camera.updateProjectionMatrix();
+
+        // Pick best supported hardware MP4 (H.264/AAC) or high-bitrate WebM container in Chromium WebView2
+        let mimeType = 'video/mp4;codecs=avc1.42E01E';
+        if (!window.MediaRecorder || !MediaRecorder.isTypeSupported(mimeType)) {
+          if (window.MediaRecorder && MediaRecorder.isTypeSupported('video/mp4')) {
+            mimeType = 'video/mp4';
+          } else if (window.MediaRecorder && MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
+            mimeType = 'video/webm;codecs=h264';
+          } else {
+            mimeType = 'video/webm;codecs=vp9';
+          }
+        }
+
+        const stream = canvas.captureStream(fps);
+        const recordedChunks = [];
+        const recorder = new MediaRecorder(stream, {
+          mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
+          videoBitsPerSecond: exportW >= 3840 ? 45000000 : (exportW >= 2560 ? 28000000 : 18000000)
+        });
+
+        recorder.ondataavailable = (ev) => {
+          if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data);
+        };
+
+        const stopPromise = new Promise((resolve) => {
+          recorder.onstop = resolve;
+        });
+
+        recorder.start(100);
+
+        const startRenderTime = performance.now();
+        while (true) {
+          const elapsedSec = (performance.now() - startRenderTime) / 1000.0;
+          if (elapsedSec >= totalDurationSec) break;
+
+          const tNorm = elapsedSec / totalDurationSec;
+          evaluateCameraPathAt(tNorm);
+          renderer.render(scene, camera);
+
+          const pct = Math.min(99, Math.round(tNorm * 100));
+          btnExport.textContent = '⏳ Renderizando MP4: ' + pct + '%...';
+          await new Promise((r) => setTimeout(r, 1000 / fps));
+        }
+
+        evaluateCameraPathAt(1.0);
+        renderer.render(scene, camera);
+        recorder.stop();
+        await stopPromise;
+
+        // Restore viewport resolution & gizmos
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(origW, origH);
+        camera.aspect = origW / origH;
+        camera.updateProjectionMatrix();
+        sectionBoxGizmoGroup.visible = prevGizmoVis;
+        cameraPathVisualGroup.visible = true;
+        btnExport.disabled = false;
+        btnExport.textContent = origBtnText;
+
+        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+        if (window.chrome && window.chrome.webview) {
+          // Convert blob to Base64 and send to C# SaveFileDialog so the user chooses exact .mp4 destination
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result;
+            const base64 = dataUrl.substring(dataUrl.indexOf(',') + 1);
+            window.chrome.webview.postMessage('SAVE_VIDEO_B64:mp4|' + base64);
+          };
+          reader.readAsDataURL(blob);
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'Recorrido_EnscapeCloud_' + Date.now() + '.mp4';
+          a.click();
+        }
+      });
+
+      // ================= UI SLIDER & CHECKBOX LISTENERS =================
+      // Visibility Toggles
+      document.getElementById('chk-vis-revit-cloud').addEventListener('change', (e) => {
+        revitCloudGroup.visible = e.target.checked;
+        updatePointCloudTelemetry();
+      });
+
+      document.getElementById('chk-vis-direct-cloud').addEventListener('change', (e) => {
+        directCloudGroup.visible = e.target.checked;
+        updatePointCloudTelemetry();
+      });
+
+      document.getElementById('chk-vis-bim-meshes').addEventListener('change', (e) => {
+        meshGroup.visible = e.target.checked;
+      });
+
+      // Appearance & Color Mode
+      document.getElementById('sel-color-mode').addEventListener('change', (e) => {
+        window.setPointCloudColorMode(parseInt(e.target.value, 10));
+      });
+
+      document.getElementById('slider-density').addEventListener('input', (e) => {
+        const pct = parseFloat(e.target.value);
+        window.setPointCloudDensity(pct / 100.0);
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage('DENSITY:' + pct.toFixed(2));
+        }
+      });
+
+      document.getElementById('slider-brightness').addEventListener('input', (e) => {
+        currentBrightness = parseFloat(e.target.value);
+        document.getElementById('lbl-brightness').textContent = currentBrightness.toFixed(2) + 'x';
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          pointCloudMaterials[i].uniforms.uBrightness.value = currentBrightness;
+        }
+      });
+
+      document.getElementById('slider-sector-range').addEventListener('input', (e) => {
+        currentSectorRange = parseFloat(e.target.value);
+        document.getElementById('lbl-sector-range').textContent = currentSectorRange.toFixed(1) + ' m';
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          pointCloudMaterials[i].uniforms.uSectorRange.value = currentSectorRange;
+        }
+      });
+
+      document.getElementById('slider-size').addEventListener('input', (e) => {
+        window.setPointCloudSize(parseFloat(e.target.value));
+      });
+
+      document.getElementById('lbl-size').style.cursor = 'pointer';
+      document.getElementById('lbl-size').title = 'Haz clic para ingresar un valor exacto (ej. 0.0 px)';
+      document.getElementById('lbl-size').addEventListener('click', () => {
+        const input = prompt('Ingresa el tamaño de splat en px (0.0 a 25.0):', currentPointSize.toFixed(1));
+        if (input !== null && input.trim() !== '') {
+          const val = parseFloat(input);
+          if (Number.isFinite(val)) {
+            window.setPointCloudSize(val);
+          }
+        }
+      });
+
+      document.getElementById('chk-solid-splat').addEventListener('change', (e) => {
+        currentSolidMode = e.target.checked ? 1.0 : 0.0;
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          pointCloudMaterials[i].uniforms.uSolidMode.value = currentSolidMode;
+        }
+      });
+
+      // Background Color Picker
+      document.getElementById('chk-custom-bg').addEventListener('change', (e) => {
+        useCustomBgColor = e.target.checked;
+        if (useCustomBgColor) {
+          scene.background.copy(customBgColor);
+          scene.fog.color.copy(customBgColor);
+        } else {
+          scene.background.copy(solarSkyColor);
+          scene.fog.color.copy(solarSkyColor);
+        }
+      });
+
+      document.getElementById('picker-bg-color').addEventListener('input', (e) => {
+        customBgColor.set(e.target.value);
+        document.getElementById('chk-custom-bg').checked = true;
+        useCustomBgColor = true;
+        scene.background.copy(customBgColor);
+        scene.fog.color.copy(customBgColor);
+      });
+
+      // Walk Mode & Civil Engineer Controls
+      document.getElementById('chk-walk-mode').addEventListener('change', (e) => {
+        toggleWalkMode(e.target.checked);
+      });
+
+      document.getElementById('chk-third-person').addEventListener('change', (e) => {
+        isThirdPerson = e.target.checked;
+        if (isThirdPerson && !isWalkMode) {
+          toggleWalkMode(true);
+        }
+        updateAvatarVisibilityAndScale();
+        updateCameraVectorsFromEuler();
+      });
+
+      document.getElementById('slider-avatar-height').addEventListener('input', (e) => {
+        avatarUserHeight = parseFloat(e.target.value);
+        document.getElementById('lbl-avatar-height').textContent = avatarUserHeight.toFixed(2) + ' m';
+        updateAvatarVisibilityAndScale();
+      });
+
+      // Keyboard Movement Speed Controls (Slider + Quick Presets)
+      document.getElementById('slider-move-speed').addEventListener('input', (e) => {
+        setKeyboardMoveSpeed(parseFloat(e.target.value), false);
+      });
+      document.getElementById('btn-spd-slow').addEventListener('click', () => setKeyboardMoveSpeed(2.0, true));
+      document.getElementById('btn-spd-norm').addEventListener('click', () => setKeyboardMoveSpeed(12.0, true));
+      document.getElementById('btn-spd-fast').addEventListener('click', () => setKeyboardMoveSpeed(40.0, true));
+      document.getElementById('btn-spd-turbo').addEventListener('click', () => setKeyboardMoveSpeed(100.0, true));
+
+      // Full-Density Radius Zone Controls
+      document.getElementById('slider-full-radius').addEventListener('input', (e) => {
+        currentFullRadius = Math.max(1.0, parseFloat(e.target.value) || 10.0);
+        document.getElementById('lbl-full-radius').textContent = currentFullRadius.toFixed(1) + ' m';
+        fullRadiusRingMesh.scale.set(currentFullRadius, 1, currentFullRadius);
+        syncLodUniforms();
+      });
+
+      document.getElementById('chk-show-radius-ring').addEventListener('change', (e) => {
+        showFullRadiusRing = e.target.checked;
+        fullRadiusRingMesh.visible = showFullRadiusRing;
+      });
+
+      document.getElementById('sel-bubble-budget').addEventListener('change', (e) => {
+        bubblePointLimit = parseInt(e.target.value, 10) || 6000000;
+      });
+
+      document.getElementById('btn-render-zone').addEventListener('click', () => {
+        window.renderActiveZone();
+      });
+
+      document.getElementById('btn-clear-zone').addEventListener('click', () => {
+        window.clearActiveZone();
+      });
+
+      // Cursor 3D Coordinates Toggle (ON / OFF) & Fine Elevation Offset (ΔZ)
+      document.getElementById('chk-cursor-coords').addEventListener('change', (e) => {
+        isCursorCoordsEnabled = e.target.checked;
+        if (!isCursorCoordsEnabled) {
+          cursorTooltip.style.display = 'none';
+          cursorTargetMarker.visible = false;
+        }
+      });
+
+      document.getElementById('slider-cota-offset').addEventListener('input', (e) => {
+        directCloudElevationOffset = parseFloat(e.target.value) || 0.0;
+        directCloudGroup.position.y = directCloudElevationOffset;
+        const sign = directCloudElevationOffset >= 0 ? '+' : '';
+        document.getElementById('lbl-cota-offset').textContent = sign + directCloudElevationOffset.toFixed(2) + ' m';
+      });
+
+      document.getElementById('btn-reset-cota').addEventListener('click', () => {
+        directCloudElevationOffset = 0.0;
+        directCloudGroup.position.y = 0.0;
+        document.getElementById('slider-cota-offset').value = 0;
+        document.getElementById('lbl-cota-offset').textContent = '0.00 m';
+      });
+
+      // Interactive 3D Section Box Controls
+      document.getElementById('chk-box-active').addEventListener('change', (e) => {
+        isSectionBoxActive = e.target.checked;
+        updateSectionBoxPlanesAndGizmo();
+      });
+
+      document.getElementById('chk-box-visible').addEventListener('change', (e) => {
+        isSectionBoxVisible = e.target.checked;
+        sectionBoxGizmoGroup.visible = isSectionBoxVisible;
+      });
+
+      ['box-xmin', 'box-xmax', 'box-ymin', 'box-ymax', 'box-zmin', 'box-zmax'].forEach((id) => {
+        document.getElementById(id).addEventListener('input', updateSectionBoxPlanesAndGizmo);
+      });
+
+      document.getElementById('btn-reset-box').addEventListener('click', () => {
+        document.getElementById('box-xmin').value = 0;
+        document.getElementById('box-xmax').value = 100;
+        document.getElementById('box-ymin').value = 0;
+        document.getElementById('box-ymax').value = 100;
+        document.getElementById('box-zmin').value = 0;
+        document.getElementById('box-zmax').value = 100;
+        updateSectionBoxPlanesAndGizmo();
+      });
+
+      document.getElementById('slider-sun').addEventListener('input', (e) => {
+        window.setTimeOfDay(parseFloat(e.target.value));
+      });
+
+      document.getElementById('btn-fit').addEventListener('click', () => fitCameraToGroup(null));
+
+      document.getElementById('btn-screenshot').addEventListener('click', () => {
+        renderer.render(scene, camera);
+        const link = document.createElement('a');
+        link.download = 'EnscapeCloud_Render_' + Date.now() + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+
+      // ================= PROGRESS MODAL CONTROLLER & UNIFIED .LAS / RECAP .RCS LOADER + DROP-IN =================
+      const modalBackdrop = document.getElementById('progress-modal-backdrop');
+      const modalStateBadge = document.getElementById('modal-state-badge');
+      const modalPctValue = document.getElementById('modal-pct-value');
+      const modalStageLabel = document.getElementById('modal-stage-label');
+      const modalProgressBar = document.getElementById('modal-progress-bar');
+      const modalDetailLabel = document.getElementById('modal-detail-label');
+      const btnModalFitCloud = document.getElementById('btn-modal-fit-cloud');
+
+      const hudTaskBadge = document.getElementById('hud-task-badge');
+      const hudProgressBar = document.getElementById('hud-progress-bar');
+      const hudTaskDetail = document.getElementById('hud-task-detail');
+      const fileCloudInput = document.getElementById('file-cloud-input');
+      const dropInZone = document.getElementById('drop-in-zone');
+      const fullscreenDropOverlay = document.getElementById('fullscreen-drop-overlay');
+
+      window.showTaskProgressModal = function () {
+        modalBackdrop.style.display = 'flex';
+      };
+
+      window.hideTaskProgressModal = function () {
+        modalBackdrop.style.display = 'none';
+      };
+
+      // States: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'ERROR'
+      window.updateTaskProgressModal = function (state, pctFloat, stageText, detailText) {
+        const pct = Math.max(0.0, Math.min(100.0, parseFloat(pctFloat) || 0.0));
+        const pctStr = pct.toFixed(1) + '%';
+
+        modalPctValue.textContent = pctStr;
+        modalProgressBar.style.width = pctStr;
+        hudProgressBar.style.width = pctStr;
+
+        if (stageText) {
+          modalStageLabel.textContent = stageText;
+        }
+        if (detailText) {
+          modalDetailLabel.textContent = detailText;
+          hudTaskDetail.textContent = detailText;
+        }
+
+        modalStateBadge.className = 'task-badge';
+        hudTaskBadge.className = 'task-badge';
+
+        if (state === 'IN_PROGRESS') {
+          modalStateBadge.classList.add('running');
+          modalStateBadge.textContent = '🔵 TAREA EN EJECUCIÓN (' + pctStr + ')';
+          hudTaskBadge.classList.add('running');
+          hudTaskBadge.textContent = '🔵 CARGANDO ' + pctStr;
+          btnModalFitCloud.style.display = 'none';
+          modalBackdrop.style.display = 'flex';
+        } else if (state === 'COMPLETED') {
+          modalStateBadge.classList.add('done');
+          modalStateBadge.textContent = '🟢 TAREA COMPLETADA (100%)';
+          hudTaskBadge.classList.add('done');
+          hudTaskBadge.textContent = '🟢 COMPLETADA (100%)';
+          btnModalFitCloud.style.display = 'inline-block';
+          modalBackdrop.style.display = 'flex';
+        } else if (state === 'ERROR') {
+          modalStateBadge.classList.add('error');
+          modalStateBadge.textContent = '🔴 ERROR EN LA TAREA';
+          hudTaskBadge.classList.add('error');
+          hudTaskBadge.textContent = '🔴 ERROR';
+          btnModalFitCloud.style.display = 'none';
+          modalBackdrop.style.display = 'flex';
+        } else {
+          // 'NOT_STARTED'
+          modalStateBadge.classList.add('idle');
+          modalStateBadge.textContent = '⚪ TAREA NO INICIADA';
+          hudTaskBadge.classList.add('idle');
+          hudTaskBadge.textContent = '⚪ NO INICIADA (0%)';
+          btnModalFitCloud.style.display = 'none';
+        }
+      };
+
+      document.getElementById('btn-open-progress-modal').addEventListener('click', () => {
+        window.showTaskProgressModal();
+      });
+
+      document.getElementById('btn-modal-close').addEventListener('click', () => {
+        window.hideTaskProgressModal();
+      });
+
+      // Open the Windows file explorer dialog IMMEDIATELY on line 1 with zero synchronous DOM reflows before .click()!
+      function triggerFastCloudFilePicker() {
+        fileCloudInput.click();
+      }
+
+      document.getElementById('btn-load-cloud-unified').addEventListener('click', triggerFastCloudFilePicker);
+      document.getElementById('btn-modal-select-las').addEventListener('click', triggerFastCloudFilePicker);
+      dropInZone.addEventListener('click', triggerFastCloudFilePicker);
+
+      btnModalFitCloud.addEventListener('click', () => {
+        fitCameraToGroup(directCloudGroup.children.length > 0 ? directCloudGroup : null);
+        window.hideTaskProgressModal();
+      });
+
+      document.getElementById('btn-clear-clouds').addEventListener('click', () => {
+        // Keep the Full-Density bubble subgroup, dispose only point cloud objects
+        for (let c = directCloudGroup.children.length - 1; c >= 0; c--) {
+          const obj = directCloudGroup.children[c];
+          if (obj === fullDensityBubbleGroup) continue;
+          directCloudGroup.remove(obj);
+          disposePointCloudObject(obj);
+        }
+        directCloudSources.length = 0;
+        clearFullDensityBubble();
+        directSectorGroundMap.clear();
+        directLoadedPoints = 0;
+        updatePointCloudTelemetry();
+        window.updateTaskProgressModal(
+          'NOT_STARTED',
+          0.0,
+          'Nubes directas limpiadas (Sin tarea activa)',
+          'Listo para cargar o hacer Drop-In de un archivo .LAS o .RCS.'
+        );
+      });
+
+      // Interactive Drop-In (HUD zone + Fullscreen Visual Overlay)
+      let dragDepth = 0;
+      window.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragDepth++;
+        fullscreenDropOverlay.style.display = 'flex';
+        dropInZone.classList.add('drag-over');
+      });
+
+      window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      });
+
+      window.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) {
+          fullscreenDropOverlay.style.display = 'none';
+          dropInZone.classList.remove('drag-over');
+        }
+      });
+
+      window.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dragDepth = 0;
+        fullscreenDropOverlay.style.display = 'none';
+        dropInZone.classList.remove('drag-over');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          for (let f = 0; f < e.dataTransfer.files.length; f++) {
+            await parsePointCloudFileInBrowser(e.dataTransfer.files[f]);
+          }
+        }
+      });
+
+      fileCloudInput.addEventListener('change', async (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        for (let f = 0; f < files.length; f++) {
+          await parsePointCloudFileInBrowser(files[f]);
+        }
+        e.target.value = '';
+      });
+
+      function getSceneAlignmentTarget() {
+        let refX = 0, refY = 0, refZ = 0, groundMinY = 0;
+        let hasExistingScene = false;
+        const existingBox = new THREE.Box3();
+        if (meshGroup.children.length > 0) existingBox.expandByObject(meshGroup);
+        if (revitCloudGroup.children.length > 0) existingBox.expandByObject(revitCloudGroup);
+        if (!existingBox.isEmpty()) {
+          const c = existingBox.getCenter(new THREE.Vector3());
+          if (Number.isFinite(c.x) && Number.isFinite(c.y) && Number.isFinite(c.z)) {
+            refX = c.x;
+            refY = c.y;
+            refZ = c.z;
+            groundMinY = existingBox.min.y;
+            hasExistingScene = true;
+          }
+        }
+        return { refX, refY, refZ, groundMinY, hasExistingScene };
+      }
+
+      // finalPos contains local offsets (dEast, dElev, -dNorth) relative to (baseEast, baseNorth, baseElev)
+      async function finalizeDirectCloudAndUploadToGpu(fileName, finalPos, finalCol, finalSeed, pointCount, baseEast, baseNorth, baseElev) {
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          92.0,
+          'Etapa 3/3: Georreferenciando por Coordenadas Compartidas y Cota (' + fileName + ')',
+          'Casando cota MSNM y calculando altura sobre terreno por sector (2m×2m) para ' + pointCount.toLocaleString() + ' puntos...'
+        );
+        await new Promise((r) => setTimeout(r, 15));
+
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
+        let minZ = Infinity, maxZ = -Infinity;
+        for (let i = 0; i < pointCount; i++) {
+          const x = finalPos[i * 3 + 0];
+          const y = finalPos[i * 3 + 1];
+          const z = finalPos[i * 3 + 2];
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+          if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+        }
+
+        const cx = (minX + maxX) * 0.5;
+        const cy = (minY + maxY) * 0.5;
+        const cz = (minZ + maxZ) * 0.5;
+
+        // True Shared Coordinates of the loaded point cloud's center & minimum ground elevation
+        const cloudCenterEast = baseEast + cx;
+        const cloudCenterNorth = baseNorth - cz;
+        const cloudMinElev = baseElev + minY;
+        const cloudMaxElev = baseElev + maxY;
+
+        const coordMode = document.getElementById('sel-coord-mode').value || 'shared';
+        const { refX, refZ, groundMinY, hasExistingScene } = getSceneAlignmentTarget();
+        let alignmentNote = '';
+        // Affine transform from the reader's local coords (relative to base) -> directCloudGroup space (used by the Full-Density radius loader)
+        const localToGroup = new THREE.Matrix4();
+
+        if (coordMode === 'shared') {
+          // If no Revit scene is loaded yet and the cloud has real UTM/Shared coordinates, adopt the cloud's base as Shared Origin
+          const distToOriginHoriz = Math.hypot(cloudCenterEast - sharedOrigin.east, cloudCenterNorth - sharedOrigin.north);
+
+          if (!hasExistingScene && distToOriginHoriz > 50000.0) {
+            sharedOrigin.east = cloudCenterEast;
+            sharedOrigin.north = cloudCenterNorth;
+            sharedOrigin.elev = cloudMinElev;
+            sharedOrigin.angleRad = 0.0;
+          }
+
+          const cosA = Math.cos(sharedOrigin.angleRad || 0.0);
+          const sinA = Math.sin(sharedOrigin.angleRad || 0.0);
+          const dBaseE = baseEast - sharedOrigin.east;
+          const dBaseN = baseNorth - sharedOrigin.north;
+          const dBaseElev = baseElev - sharedOrigin.elev;
+
+          // Check if the cloud is in the same Shared Coordinate project (within 50 km of Revit Shared Origin)
+          if (Math.hypot(dBaseE + cx, dBaseN - cz) <= 50000.0) {
+            for (let i = 0; i < pointCount; i++) {
+              const relE = dBaseE + finalPos[i * 3 + 0];
+              const relElev = dBaseElev + finalPos[i * 3 + 1];
+              const relN = dBaseN - finalPos[i * 3 + 2];
+
+              finalPos[i * 3 + 0] = relE * cosA - relN * sinA;
+              finalPos[i * 3 + 1] = relElev; // Exact Cota match: SharedElev - RevitSharedOriginElev!
+              finalPos[i * 3 + 2] = -(relE * sinA + relN * cosA);
+            }
+            localToGroup.set(
+              cosA, 0, sinA, dBaseE * cosA - dBaseN * sinA,
+              0, 1, 0, dBaseElev,
+              -sinA, 0, cosA, -(dBaseE * sinA + dBaseN * cosA),
+              0, 0, 0, 1
+            );
+            alignmentNote = 'Coordenadas Compartidas Exactas (Cota ' + cloudMinElev.toFixed(2) + 'm a ' + cloudMaxElev.toFixed(2) + 'm msnm)';
+          } else {
+            // Cloud is in local coordinates or another CRS: align horizontally to model and match Cota (Elevation)
+            const shiftX = refX - cx;
+            const shiftZ = refZ - cz;
+            const shiftY = (Math.abs(cloudMinElev - sharedOrigin.elev) < 400.0)
+              ? (baseElev - sharedOrigin.elev)
+              : (groundMinY - minY);
+            for (let i = 0; i < pointCount; i++) {
+              finalPos[i * 3 + 0] += shiftX;
+              finalPos[i * 3 + 1] += shiftY;
+              finalPos[i * 3 + 2] += shiftZ;
+            }
+            localToGroup.makeTranslation(shiftX, shiftY, shiftZ);
+            alignmentNote = 'Cota casada con base del modelo (' + cloudMinElev.toFixed(2) + 'm msnm)';
+          }
+        } else if (coordMode === 'internal') {
+          // Origin-to-Internal-Origin (raw coordinates if small, or relative to Shared Origin if UTM)
+          const isUtm = Math.abs(baseEast) > 10000.0 || Math.abs(baseNorth) > 10000.0;
+          const shiftX = isUtm ? (baseEast - sharedOrigin.east) : baseEast;
+          const shiftY = isUtm ? (baseElev - sharedOrigin.elev) : baseElev;
+          const shiftZ = isUtm ? -(baseNorth - sharedOrigin.north) : -baseNorth;
+          for (let i = 0; i < pointCount; i++) {
+            finalPos[i * 3 + 0] += shiftX;
+            finalPos[i * 3 + 1] += shiftY;
+            finalPos[i * 3 + 2] += shiftZ;
+          }
+          localToGroup.makeTranslation(shiftX, shiftY, shiftZ);
+          alignmentNote = 'Origen a Origen Interno Revit';
+        } else {
+          // 'ground_match': Center X/Y and match minimum ground elevation (minY) to Revit ground base (never midpoint!)
+          const shiftX = refX - cx;
+          const shiftY = groundMinY - minY;
+          const shiftZ = refZ - cz;
+          for (let i = 0; i < pointCount; i++) {
+            finalPos[i * 3 + 0] += shiftX;
+            finalPos[i * 3 + 1] += shiftY;
+            finalPos[i * 3 + 2] += shiftZ;
+          }
+          localToGroup.makeTranslation(shiftX, shiftY, shiftZ);
+          alignmentNote = 'Centrado + Cota Base Terreno Casada';
+        }
+
+        const hagArr = computeHeightAboveSectorGround(finalPos, pointCount, true);
+        const infilledCol = computeWhiteInfilledColors(finalPos, finalCol, pointCount);
+
+        const pcGeo = new THREE.BufferGeometry();
+        pcGeo.setAttribute('position', new THREE.BufferAttribute(finalPos, 3));
+        pcGeo.setAttribute('color', new THREE.BufferAttribute(finalCol, 3));
+        pcGeo.setAttribute('aInfillColor', new THREE.BufferAttribute(infilledCol, 3));
+        pcGeo.setAttribute('aSeed', new THREE.BufferAttribute(finalSeed, 1));
+        pcGeo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(hagArr, 1));
+        pcGeo.computeBoundingBox();
+        pcGeo.computeBoundingSphere();
+
+        const pcMat = createPointCloudShaderMaterial(false, true);
+        const points = new THREE.Points(pcGeo, pcMat);
+        points.frustumCulled = false;
+
+        directCloudGroup.visible = true;
+        directCloudGroup.position.y = directCloudElevationOffset;
+        document.getElementById('chk-vis-direct-cloud').checked = true;
+        directCloudGroup.add(points);
+        directLoadedPoints += pointCount;
+
+        // Register the Full-Density (100%) streaming source for this cloud
+        if (window.__pendingCloudSource) {
+          const src = window.__pendingCloudSource;
+          window.__pendingCloudSource = null;
+          src.matrix = localToGroup.clone();
+          src.inverse = localToGroup.clone().invert();
+          src.basePoints = points;
+          directCloudSources.push(src);
+        }
+
+        updateSceneBoundsAndEnvironment();
+        fitCameraToGroup(directCloudGroup);
+        if (isWalkMode) {
+          const groundY = findSurfaceHeightUnderPlayer(playerFeetPos.x, playerFeetPos.y, playerFeetPos.z);
+          playerFeetPos.y = groundY;
+          playerVerticalVelocity = 0.0;
+          if (!isThirdPerson) {
+            camera.position.y = playerFeetPos.y + avatarUserHeight;
+          }
+          updateCameraVectorsFromEuler();
+        }
+        document.getElementById('stat-meshes').textContent = 'Nube Directa: ' + fileName + ' (' + pointCount.toLocaleString() + ' pts)';
+        updatePointCloudTelemetry();
+
+        const spanX = (maxX - minX).toFixed(1);
+        const spanZ = (maxZ - minZ).toFixed(1);
+        const spanY = (maxY - minY).toFixed(1);
+
+        window.updateTaskProgressModal(
+          'COMPLETED',
+          100.0,
+          '¡Carga Completada con Éxito! (' + fileName + ')',
+          pointCount.toLocaleString() + ' pts | ' + alignmentNote + ' | Dim: ' + spanX + 'm × ' + spanZ + 'm × ' + spanY + 'm'
+        );
+      }
+
+      function translateErrorToSpanish(err) {
+        const raw = (err && err.message) ? String(err.message) : String(err || 'Error desconocido');
+        if (raw.indexOf('is not defined') !== -1) {
+          const varName = raw.replace('is not defined', '').trim();
+          return 'Variable o referencia interna no inicializada (' + varName + '). Por favor recarga el visor con F5.';
+        }
+        if (raw.indexOf('Cannot read properties of') !== -1 || raw.indexOf('null') !== -1 || raw.indexOf('undefined') !== -1) {
+          return 'Referencia nula o elemento no disponible al procesar la nube de puntos (' + raw + ').';
+        }
+        if (raw.indexOf('Offset is outside the bounds') !== -1 || raw.indexOf('RangeError') !== -1) {
+          return 'El archivo termina antes de lo esperado según su cabecera binaria (posible archivo incompleto o truncado).';
+        }
+        if (raw.indexOf('allocation failed') !== -1 || raw.indexOf('Out of memory') !== -1 || raw.indexOf('Invalid typed array length') !== -1) {
+          return 'Memoria insuficiente en GPU/navegador para reservar el bloque de puntos del archivo.';
+        }
+        if (raw.indexOf('could not be read') !== -1 || raw.indexOf('NotReadableError') !== -1 || raw.indexOf('permission') !== -1) {
+          return 'No se pudo leer el archivo del disco. Verifica que esté descargado localmente (si usas Autodesk Cloud ACCDocs) y que no esté bloqueado.';
+        }
+        if (raw.indexOf('NotFoundError') !== -1 || raw.indexOf('not found') !== -1) {
+          return 'No se encontró el archivo seleccionado en la ruta indicada.';
+        }
+        return 'Detalle del error: ' + raw;
+      }
+
+      async function parsePointCloudFileInBrowser(file) {
+        try {
+          const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          window.updateTaskProgressModal(
+            'IN_PROGRESS',
+            2.0,
+            'Etapa 1/3: Iniciando lectura de ' + file.name + ' (' + sizeMB + ' MB)',
+            'Verificando firma binaria (.LAS LASF / Autodesk ReCap .RCS ADOCT)...'
+          );
+          await new Promise((r) => setTimeout(r, 15));
+
+          if (file.size < 227) {
+            window.updateTaskProgressModal(
+              'ERROR',
+              0.0,
+              'Archivo vacío o sin descargar (' + file.name + ')',
+              'El archivo tiene ' + file.size + ' bytes. Si está en Autodesk Cloud (ACCDocs), asegúrate de que esté descargado localmente.'
+            );
+            return;
+          }
+
+          const magicBuf = await file.slice(0, 512).arrayBuffer();
+          const mdv = new DataView(magicBuf);
+          const sig4 = String.fromCharCode(mdv.getUint8(0), mdv.getUint8(1), mdv.getUint8(2), mdv.getUint8(3));
+          const sig5 = sig4 + String.fromCharCode(mdv.getUint8(4));
+
+          if (sig5 === 'ADOCT') {
+            await parseLocalRcsFileInBrowser(file, mdv);
+          } else if (sig4 === 'LASF') {
+            await parseLocalLasFileInBrowser(file, mdv);
+          } else {
+            window.updateTaskProgressModal(
+              'ERROR',
+              0.0,
+              'Formato no reconocido en ' + file.name,
+              'Cabecera detectada: "' + sig5 + '". Por favor selecciona o arrastra un archivo .LAS (LASF) o Autodesk ReCap .RCS (ADOCT).'
+            );
+          }
+        } catch (err) {
+          window.updateTaskProgressModal(
+            'ERROR',
+            0.0,
+            'Error al cargar el archivo ' + (file ? file.name : ''),
+            translateErrorToSpanish(err)
+          );
+        }
+      }
+
+      // ================= NATIVE AUTODESK RECAP .RCS (ADOCT) OCTREE READER IN JAVASCRIPT =================
+      async function parseLocalRcsFileInBrowser(file, hdv) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          5.0,
+          'Etapa 1/3: Analizando Octree Autodesk ReCap .RCS (' + file.name + ')',
+          'Leyendo transformación de Coordenadas Compartidas y tabla ADOCT (' + sizeMB + ' MB)...'
+        );
+        await new Promise((r) => setTimeout(r, 10));
+
+        // Read ADOCT header Shared Coordinate translation (0x10..0x27) and scale (0x40..0x57)
+        const hdrTransEast = Number.isFinite(hdv.getFloat64(0x10, true)) ? hdv.getFloat64(0x10, true) : 0.0;
+        const hdrTransNorth = Number.isFinite(hdv.getFloat64(0x18, true)) ? hdv.getFloat64(0x18, true) : 0.0;
+        const hdrTransElev = Number.isFinite(hdv.getFloat64(0x20, true)) ? hdv.getFloat64(0x20, true) : 0.0;
+        const rawScaleX = hdv.getFloat64(0x40, true);
+        const rawScaleY = hdv.getFloat64(0x48, true);
+        const rawScaleZ = hdv.getFloat64(0x50, true);
+        const hdrScaleX = (Number.isFinite(rawScaleX) && Math.abs(rawScaleX) > 1e-9 && Math.abs(rawScaleX) <= 1000.0) ? rawScaleX : 1.0;
+        const hdrScaleY = (Number.isFinite(rawScaleY) && Math.abs(rawScaleY) > 1e-9 && Math.abs(rawScaleY) <= 1000.0) ? rawScaleY : 1.0;
+        const hdrScaleZ = (Number.isFinite(rawScaleZ) && Math.abs(rawScaleZ) > 1e-9 && Math.abs(rawScaleZ) <= 1000.0) ? rawScaleZ : 1.0;
+
+        const numSections = hdv.getUint32(0x129, true);
+        let sec2Off = 0, sec2Size = 0;
+        let sec1Off = 0, sec1Size = 0;
+
+        for (let i = 0; i < numSections && (0x12D + i * 24 + 24) <= hdv.byteLength; i++) {
+          const pos = 0x12D + i * 24;
+          const secType = hdv.getUint32(pos, true);
+          const offLow = hdv.getUint32(pos + 8, true);
+          const offHigh = hdv.getUint32(pos + 12, true);
+          const szLow = hdv.getUint32(pos + 16, true);
+          const szHigh = hdv.getUint32(pos + 20, true);
+
+          const offset = offHigh * 4294967296 + offLow;
+          const size = szHigh * 4294967296 + szLow;
+
+          if (secType === 2) { sec2Off = offset; sec2Size = size; }
+          else if (secType === 1) { sec1Off = offset; sec1Size = size; }
+        }
+
+        if (sec2Off <= 0 || sec1Off <= 0) {
+          throw new Error('No se encontraron las tablas Octree (Sección 1 y 2) dentro del archivo .RCS.');
+        }
+
+        const leafTableBuf = await file.slice(sec2Off, sec2Off + sec2Size).arrayBuffer();
+        const ldv = new DataView(leafTableBuf);
+        const leafCount = ldv.getUint32(0, true);
+        if (leafCount <= 0) {
+          throw new Error('El archivo .RCS no contiene nodos de puntos.');
+        }
+
+        const nodes = [];
+        let streamCursor = sec1Off;
+        let totalRcsPoints = 0;
+
+        for (let n = 0; n < leafCount; n++) {
+          const nPos = 8 + n * 368;
+          if (nPos + 368 > ldv.byteLength) break;
+
+          const cMinX = ldv.getFloat64(nPos + 0, true);
+          const cMinY = ldv.getFloat64(nPos + 8, true);
+          const cMinZ = ldv.getFloat64(nPos + 16, true);
+          const tMinX = ldv.getFloat64(nPos + 48, true);
+          const tMinY = ldv.getFloat64(nPos + 56, true);
+          const tMinZ = ldv.getFloat64(nPos + 64, true);
+          const tMaxX = ldv.getFloat64(nPos + 72, true);
+          const tMaxY = ldv.getFloat64(nPos + 80, true);
+          const tMaxZ = ldv.getFloat64(nPos + 88, true);
+
+          const ptCount = ldv.getUint32(nPos + 100, true);
+          const byteSize = ldv.getUint32(nPos + 104, true);
+          const ptOffset = streamCursor + byteSize - (ptCount * 16);
+
+          nodes.push({
+            cMinX, cMinY, cMinZ,
+            tMinX, tMinY, tMinZ,
+            tMaxX, tMaxY, tMaxZ,
+            ptCount,
+            ptOffset
+          });
+
+          streamCursor += byteSize;
+          totalRcsPoints += ptCount;
+        }
+
+        if (totalRcsPoints <= 0) {
+          throw new Error('La suma de puntos en los nodos del .RCS es 0.');
+        }
+
+        const maxLoad = 3500000;
+        const targetCount = Math.min(totalRcsPoints, maxLoad);
+        const stride = Math.max(1.0, totalRcsPoints / targetCount);
+
+        const posArr = new Float32Array(targetCount * 3);
+        const colArr = new Float32Array(targetCount * 3);
+        const seedArr = new Float32Array(targetCount);
+        const rcsBaseChunkId = new Uint32Array(targetCount);
+        let outIdx = 0;
+
+        for (let n = 0; n < nodes.length && outIdx < targetCount; n++) {
+          const nd = nodes[n];
+          if (nd.ptCount <= 0 || nd.ptOffset < 0 || nd.ptOffset + nd.ptCount * 16 > file.size) continue;
+
+          const nodeBuf = await file.slice(nd.ptOffset, nd.ptOffset + nd.ptCount * 16).arrayBuffer();
+          const ndv = new DataView(nodeBuf);
+          const actualPts = Math.floor(nodeBuf.byteLength / 16);
+          if (actualPts <= 0) continue;
+
+          // Find exact quantization min/max in this leaf node
+          let minQx = 999999, maxQx = -1;
+          let minQy = 999999, maxQy = -1;
+          let minQz = 999999, maxQz = -1;
+
+          for (let p = 0; p < actualPts; p++) {
+            const bOff = p * 16;
+            const uLow = ndv.getUint32(bOff, true);
+            const uHigh = ndv.getUint32(bOff + 4, true);
+            const qx = uLow & 0x3FFFF;
+            const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
+            const qz = (uHigh >>> 4) & 0x3FFFF;
+
+            if (qx < minQx) minQx = qx; if (qx > maxQx) maxQx = qx;
+            if (qy < minQy) minQy = qy; if (qy > maxQy) maxQy = qy;
+            if (qz < minQz) minQz = qz; if (qz > maxQz) maxQz = qz;
+          }
+
+          const scaleX = (maxQx > minQx && nd.tMaxX > nd.tMinX) ? (nd.tMaxX - nd.tMinX) / (maxQx - minQx) : 0.001;
+          const scaleY = (maxQy > minQy && nd.tMaxY > nd.tMinY) ? (nd.tMaxY - nd.tMinY) / (maxQy - minQy) : 0.001;
+          const scaleZ = (maxQz > minQz && nd.tMaxZ > nd.tMinZ) ? (nd.tMaxZ - nd.tMinZ) / (maxQz - minQz) : 0.001;
+
+          for (let pCursor = 0.0; Math.floor(pCursor) < actualPts && outIdx < targetCount; pCursor += stride) {
+            const p = Math.floor(pCursor);
+            const bOff = p * 16;
+            const uLow = ndv.getUint32(bOff, true);
+            const uHigh = ndv.getUint32(bOff + 4, true);
+
+            const qx = uLow & 0x3FFFF;
+            const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
+            const qz = (uHigh >>> 4) & 0x3FFFF;
+
+            const wx = ((maxQx > minQx) ? (nd.tMinX + (qx - minQx) * scaleX) : (nd.cMinX + qx * 0.001)) * hdrScaleX;
+            const wy = ((maxQy > minQy) ? (nd.tMinY + (qy - minQy) * scaleY) : (nd.cMinY + qy * 0.001)) * hdrScaleY;
+            const wz = ((maxQz > minQz) ? (nd.tMinZ + (qz - minQz) * scaleZ) : (nd.cMinZ + qz * 0.001)) * hdrScaleZ;
+
+            // Convert ReCap local offset (wx East, wy North, wz Up) -> Three.js local offset (X Right, Y Up, Z South)
+            posArr[outIdx * 3 + 0] = wx;
+            posArr[outIdx * 3 + 1] = wz;
+            posArr[outIdx * 3 + 2] = -wy;
+
+            const intensity = ndv.getUint8(bOff + 8);
+            const bByte = ndv.getUint8(bOff + 9);
+            const gByte = ndv.getUint8(bOff + 10);
+            const rByte = ndv.getUint8(bOff + 11);
+
+            let r = rByte / 255.0;
+            let g = gByte / 255.0;
+            let b = bByte / 255.0;
+
+            if (r === 0 && g === 0 && b === 0) {
+              const normI = Math.max(0.25, intensity / 255.0);
+              r = normI; g = normI; b = normI;
+            }
+
+            colArr[outIdx * 3 + 0] = r;
+            colArr[outIdx * 3 + 1] = g;
+            colArr[outIdx * 3 + 2] = b;
+            seedArr[outIdx] = Math.random();
+            rcsBaseChunkId[outIdx] = n;
+            outIdx++;
+          }
+
+          if (n % Math.max(1, Math.floor(nodes.length / 30)) === 0 || n === nodes.length - 1) {
+            const pct = 8.0 + 82.0 * ((n + 1) / nodes.length);
+            window.updateTaskProgressModal(
+              'IN_PROGRESS',
+              pct,
+              'Etapa 2/3: Decodificando Octree ReCap .RCS (' + file.name + ')',
+              'Nodo Octree ' + (n + 1) + ' de ' + nodes.length + ' — ' + outIdx.toLocaleString() + ' / ' + targetCount.toLocaleString() + ' puntos leídos...'
+            );
+            await new Promise((r) => setTimeout(r, 4));
+          }
+        }
+
+        // Register this .RCS as a Full-Density (100%) source: each Octree leaf node is a spatial chunk with a known bounding box
+        {
+          const rcsNumChunks = nodes.length;
+          const rcsChunkMin = new Float32Array(rcsNumChunks * 3);
+          const rcsChunkMax = new Float32Array(rcsNumChunks * 3);
+          for (let n = 0; n < rcsNumChunks; n++) {
+            const nd = nodes[n];
+            const xa = nd.tMinX * hdrScaleX, xb = nd.tMaxX * hdrScaleX;
+            const ya = nd.tMinZ * hdrScaleZ, yb = nd.tMaxZ * hdrScaleZ;
+            const za = -nd.tMinY * hdrScaleY, zb = -nd.tMaxY * hdrScaleY;
+            rcsChunkMin[n * 3 + 0] = Math.min(xa, xb); rcsChunkMax[n * 3 + 0] = Math.max(xa, xb);
+            rcsChunkMin[n * 3 + 1] = Math.min(ya, yb); rcsChunkMax[n * 3 + 1] = Math.max(ya, yb);
+            rcsChunkMin[n * 3 + 2] = Math.min(za, zb); rcsChunkMax[n * 3 + 2] = Math.max(za, zb);
+          }
+          window.__pendingCloudSource = {
+            type: 'rcs',
+            file: file,
+            name: file.name,
+            nodes: nodes,
+            hdrScaleX: hdrScaleX, hdrScaleY: hdrScaleY, hdrScaleZ: hdrScaleZ,
+            numChunks: rcsNumChunks,
+            chunkMin: rcsChunkMin,
+            chunkMax: rcsChunkMax,
+            baseChunkId: rcsBaseChunkId,
+            sampleRatio: Math.max(1.0, totalRcsPoints / Math.max(1, outIdx))
+          };
+        }
+
+        const finalPos = (outIdx === targetCount) ? posArr : posArr.subarray(0, outIdx * 3);
+        const finalCol = (outIdx === targetCount) ? colArr : colArr.subarray(0, outIdx * 3);
+        const finalSeed = (outIdx === targetCount) ? seedArr : seedArr.subarray(0, outIdx);
+
+        await finalizeDirectCloudAndUploadToGpu(
+          file.name,
+          finalPos,
+          finalCol,
+          finalSeed,
+          outIdx,
+          hdrTransEast,
+          hdrTransNorth,
+          hdrTransElev
+        );
+      }
+
+      // ================= FAST STRIDED .LAS (1.0 - 1.4) READER IN JAVASCRIPT =================
+      async function parseLocalLasFileInBrowser(file, hdv) {
+        const verMajor = hdv.getUint8(24);
+        const verMinor = hdv.getUint8(25);
+        const offsetToPointData = hdv.getUint32(96, true);
+        const rawFormat = hdv.getUint8(104);
+        const isCompressedLaz = (rawFormat & 0x80) !== 0 || (rawFormat & 0x40) !== 0;
+        if (isCompressedLaz) {
+          throw new Error('Este archivo está comprimido con LASzip (.LAZ). Por favor expórtalo como .LAS o .RCS.');
+        }
+        const pointFormat = rawFormat & 0x3F;
+        const pointRecordLength = hdv.getUint16(105, true);
+
+        let totalPts = hdv.getUint32(107, true);
+        if (verMajor === 1 && verMinor >= 4 && hdv.byteLength >= 255) {
+          const low = hdv.getUint32(247, true);
+          const high = hdv.getUint32(251, true);
+          const ext = high * 4294967296 + low;
+          if (ext > 0) totalPts = ext;
+        }
+        if (totalPts <= 0 && pointRecordLength > 0) {
+          totalPts = Math.floor((file.size - offsetToPointData) / pointRecordLength);
+        }
+        if (totalPts <= 0 || pointRecordLength < 12) {
+          throw new Error('El archivo .LAS no reporta registros de puntos válidos.');
+        }
+
+        const scaleX = hdv.getFloat64(131, true);
+        const scaleY = hdv.getFloat64(139, true);
+        const scaleZ = hdv.getFloat64(147, true);
+        const offsetX = hdv.getFloat64(155, true);
+        const offsetY = hdv.getFloat64(163, true);
+        const offsetZ = hdv.getFloat64(171, true);
+
+        let rgbOffset = -1;
+        if (pointFormat === 2) rgbOffset = 20;
+        else if (pointFormat === 3 || pointFormat === 5) rgbOffset = 28;
+        else if (pointFormat === 7 || pointFormat === 8 || pointFormat === 10) rgbOffset = 30;
+
+        // Sample first 150 points to get reference origin (prevent Float32 precision loss on large UTM coordinates) & RGB bit depth
+        const sampleBytes = Math.min(file.size - offsetToPointData, pointRecordLength * 150);
+        const sampleSlice = await file.slice(offsetToPointData, offsetToPointData + sampleBytes).arrayBuffer();
+        const sdv = new DataView(sampleSlice);
+        const sampleCount = Math.floor(sampleSlice.byteLength / pointRecordLength);
+
+        const baseX = sdv.getInt32(0, true) * scaleX + offsetX;
+        const baseY = sdv.getInt32(4, true) * scaleY + offsetY;
+        const baseZ = sdv.getInt32(8, true) * scaleZ + offsetZ;
+
+        let is16Bit = false;
+        if (rgbOffset > 0) {
+          for (let s = 0; s < sampleCount; s++) {
+            const pOff = s * pointRecordLength;
+            if (pOff + rgbOffset + 6 <= sampleSlice.byteLength) {
+              if (sdv.getUint16(pOff + rgbOffset, true) > 255 ||
+                  sdv.getUint16(pOff + rgbOffset + 2, true) > 255 ||
+                  sdv.getUint16(pOff + rgbOffset + 4, true) > 255) {
+                is16Bit = true;
+                break;
+              }
+            }
+          }
+        }
+        const rgbDiv = is16Bit ? 65535.0 : 255.0;
+
+        // ===== UNIFORM FULL-FILE SAMPLING (fixes "patches" on dense 2mm .LAS scans) =====
+        // Old reader took 80 contiguous runs of records -> in a 2mm scan each run covers only a few m² (patches).
+        // Now: read the file in 8 MB blocks spread across 100% of the file and take every N-th record uniformly,
+        // while building a spatial chunk index (65,536 records per chunk) for the 100% Full-Density radius loader.
+        const maxLoad = 3500000;
+        const targetCount = Math.min(totalPts, maxLoad);
+        const recsPerBlock = Math.max(1, Math.floor((8 * 1024 * 1024) / pointRecordLength));
+        const totalBlocks = Math.max(1, Math.ceil(totalPts / recsPerBlock));
+        const maxReadBytes = 5 * 1024 * 1024 * 1024;
+        const blocksToRead = Math.min(totalBlocks, Math.max(1, Math.floor(maxReadBytes / (recsPerBlock * pointRecordLength))));
+        const blockStep = totalBlocks / blocksToRead;
+        const recsCovered = Math.min(totalPts, blocksToRead * recsPerBlock);
+        const stride = Math.max(1.0, recsCovered / targetCount);
+
+        const LAS_CHUNK_RECS = 65536;
+        const numChunks = Math.max(1, Math.ceil(totalPts / LAS_CHUNK_RECS));
+        const chunkMin = new Float32Array(numChunks * 3).fill(Infinity);
+        const chunkMax = new Float32Array(numChunks * 3).fill(-Infinity);
+
+        const posArr = new Float32Array(targetCount * 3);
+        const colArr = new Float32Array(targetCount * 3);
+        const seedArr = new Float32Array(targetCount);
+        const baseChunkId = new Uint32Array(targetCount);
+        let outIdx = 0;
+        let strideCarry = 0.0;
+        let lastYield = performance.now();
+
+        for (let k = 0; k < blocksToRead && outIdx < targetCount; k++) {
+          const blockIdx = Math.min(totalBlocks - 1, Math.floor(k * blockStep));
+          const blockStartRec = blockIdx * recsPerBlock;
+          const recsInBlock = Math.min(recsPerBlock, totalPts - blockStartRec);
+          if (recsInBlock <= 0) continue;
+
+          const byteStart = offsetToPointData + blockStartRec * pointRecordLength;
+          const byteEnd = Math.min(file.size, byteStart + recsInBlock * pointRecordLength);
+          if (byteEnd <= byteStart) continue;
+
+          const sliceBuf = await file.slice(byteStart, byteEnd).arrayBuffer();
+          const dv = new DataView(sliceBuf);
+          const actualRecs = Math.floor(sliceBuf.byteLength / pointRecordLength);
+
+          let cursor = strideCarry;
+          for (; cursor < actualRecs && outIdx < targetCount; cursor += stride) {
+            const i = Math.floor(cursor);
+            const pOff = i * pointRecordLength;
+            const xi = dv.getInt32(pOff, true);
+            const yi = dv.getInt32(pOff + 4, true);
+            const zi = dv.getInt32(pOff + 8, true);
+            const intensity = dv.getUint16(pOff + 12, true);
+
+            // Subtract baseX/Y/Z in Float64 BEFORE storing in Float32 so millimeter precision is preserved!
+            const wx = (xi * scaleX + offsetX) - baseX;
+            const wy = (zi * scaleZ + offsetZ) - baseZ;
+            const wz = -((yi * scaleY + offsetY) - baseY);
+
+            posArr[outIdx * 3 + 0] = wx;
+            posArr[outIdx * 3 + 1] = wy;
+            posArr[outIdx * 3 + 2] = wz;
+
+            // Spatial chunk index (local coords) for the Full-Density radius loader
+            const c3 = Math.floor((blockStartRec + i) / LAS_CHUNK_RECS) * 3;
+            baseChunkId[outIdx] = c3 / 3;
+            if (wx < chunkMin[c3]) chunkMin[c3] = wx;
+            if (wy < chunkMin[c3 + 1]) chunkMin[c3 + 1] = wy;
+            if (wz < chunkMin[c3 + 2]) chunkMin[c3 + 2] = wz;
+            if (wx > chunkMax[c3]) chunkMax[c3] = wx;
+            if (wy > chunkMax[c3 + 1]) chunkMax[c3 + 1] = wy;
+            if (wz > chunkMax[c3 + 2]) chunkMax[c3 + 2] = wz;
+
+            let r = 0, g = 0, b = 0;
+            if (rgbOffset > 0 && pOff + rgbOffset + 6 <= sliceBuf.byteLength) {
+              r = dv.getUint16(pOff + rgbOffset, true) / rgbDiv;
+              g = dv.getUint16(pOff + rgbOffset + 2, true) / rgbDiv;
+              b = dv.getUint16(pOff + rgbOffset + 4, true) / rgbDiv;
+            }
+            if (r === 0 && g === 0 && b === 0) {
+              if (intensity > 0) {
+                const normI = Math.max(0.22, Math.min(1.0, intensity > 255 ? (intensity / 4096.0) : (intensity / 255.0)));
+                r = normI * 0.9; g = normI * 0.95; b = Math.min(1.0, normI * 1.05);
+              } else {
+                r = 0.35; g = 0.78; b = 0.95;
+              }
+            }
+
+            colArr[outIdx * 3 + 0] = r;
+            colArr[outIdx * 3 + 1] = g;
+            colArr[outIdx * 3 + 2] = b;
+            seedArr[outIdx] = Math.random();
+            outIdx++;
+          }
+          strideCarry = Math.max(0.0, cursor - actualRecs);
+
+          if (performance.now() - lastYield > 120 || k === blocksToRead - 1) {
+            const pct = 6.0 + 84.0 * ((k + 1) / blocksToRead);
+            window.updateTaskProgressModal(
+              'IN_PROGRESS',
+              pct,
+              'Etapa 2/3: Leyendo .LAS con muestreo uniforme en todo el archivo (' + file.name + ')',
+              'Bloque ' + (k + 1) + '/' + blocksToRead + ' — ' + outIdx.toLocaleString() + ' / ' + targetCount.toLocaleString() +
+              ' puntos base de ' + totalPts.toLocaleString() + ' (' + Math.round(pct) + '%)...'
+            );
+            await new Promise((r) => setTimeout(r, 0));
+            lastYield = performance.now();
+          }
+        }
+
+        // Register this file as a Full-Density (100%) source so the radius loader can stream ALL points around the camera
+        window.__pendingCloudSource = {
+          type: 'las',
+          file: file,
+          name: file.name,
+          offsetToPointData: offsetToPointData,
+          pointRecordLength: pointRecordLength,
+          totalPts: totalPts,
+          scaleX: scaleX, scaleY: scaleY, scaleZ: scaleZ,
+          offsetX: offsetX, offsetY: offsetY, offsetZ: offsetZ,
+          baseX: baseX, baseY: baseY, baseZ: baseZ,
+          rgbOffset: rgbOffset,
+          rgbDiv: rgbDiv,
+          chunkRecs: LAS_CHUNK_RECS,
+          numChunks: numChunks,
+          chunkMin: chunkMin,
+          chunkMax: chunkMax,
+          baseChunkId: baseChunkId,
+          sampleRatio: Math.max(1.0, totalPts / Math.max(1, outIdx))
+        };
+
+        const finalPos = (outIdx === targetCount) ? posArr : posArr.subarray(0, outIdx * 3);
+        const finalCol = (outIdx === targetCount) ? colArr : colArr.subarray(0, outIdx * 3);
+        const finalSeed = (outIdx === targetCount) ? seedArr : seedArr.subarray(0, outIdx);
+
+        await finalizeDirectCloudAndUploadToGpu(
+          file.name,
+          finalPos,
+          finalCol,
+          finalSeed,
+          outIdx,
+          baseX,
+          baseY,
+          baseZ
+        );
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.addEventListener('message', (event) => {
+          loadRevitScenePayload(event.data);
+        });
+        window.chrome.webview.postMessage('READY');
+      }
+
+      // ================= RENDER & WALK PHYSICS LOOP =================
+      let lastTime = performance.now();
+      let frameCount = 0;
+      let fpsTimer = 0;
+
+      function animate(now) {
+        requestAnimationFrame(animate);
+        const dt = Math.min(0.1, (now - lastTime) / 1000.0);
+        lastTime = now;
+
+        frameCount++;
+        fpsTimer += dt;
+        if (fpsTimer >= 0.5) {
+          const fps = Math.round(frameCount / fpsTimer);
+          document.getElementById('fps-counter').textContent = fps + ' FPS';
+          frameCount = 0;
+          fpsTimer = 0;
+        }
+
+        // Camera Path Preview Playback
+        if (isPlayingPath && pathTotalDuration > 0) {
+          pathPlayElapsed += dt;
+          if (pathPlayElapsed >= pathTotalDuration) {
+            evaluateCameraPathAt(1.0);
+            isPlayingPath = false;
+          } else {
+            evaluateCameraPathAt(pathPlayElapsed / pathTotalDuration);
+          }
+          renderer.render(scene, camera);
+          return;
+        }
+
+        const isMovingFast = (keys['ShiftLeft'] || keys['ShiftRight']);
+
+        if (isWalkMode) {
+          const horizForward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).normalize();
+          const horizRight = new THREE.Vector3().crossVectors(horizForward, new THREE.Vector3(0, 1, 0)).normalize();
+
+          const walkSpeedScale = Math.max(0.15, moveSpeed / 12.0);
+          const walkSpeed = (isMovingFast ? 6.8 : 3.4) * walkSpeedScale;
+          const moveVec = new THREE.Vector3();
+
+          if (keys['KeyW'] || keys['ArrowUp']) moveVec.add(horizForward);
+          if (keys['KeyS'] || keys['ArrowDown']) moveVec.sub(horizForward);
+          if (keys['KeyD'] || keys['ArrowRight']) moveVec.add(horizRight);
+          if (keys['KeyA'] || keys['ArrowLeft']) moveVec.sub(horizRight);
+
+          const isWalkingNow = moveVec.lengthSq() > 0.001;
+          if (isWalkingNow) {
+            moveVec.normalize().multiplyScalar(walkSpeed * dt);
+            playerFeetPos.add(moveVec);
+            walkCyclePhase += dt * (isMovingFast ? 13.0 : 8.5);
+          } else {
+            walkCyclePhase = 0.0;
+          }
+
+          const swingAmp = isWalkingNow ? 0.52 : 0.0;
+          leftLegGroup.rotation.x = Math.sin(walkCyclePhase) * swingAmp;
+          rightLegGroup.rotation.x = -Math.sin(walkCyclePhase) * swingAmp;
+          leftArmGroup.rotation.x = -Math.sin(walkCyclePhase) * (swingAmp * 0.7);
+          rightArmGroup.rotation.x = Math.sin(walkCyclePhase) * (swingAmp * 0.7);
+
+          const targetGroundY = findSurfaceHeightUnderPlayer(playerFeetPos.x, playerFeetPos.y, playerFeetPos.z);
+          const heightDiff = targetGroundY - playerFeetPos.y;
+
+          if (heightDiff > 3.5) {
+            // If player was below terrain (e.g. activated walk mode underground), snap immediately onto the terrain surface
+            playerFeetPos.y = targetGroundY;
+            playerVerticalVelocity = 0.0;
+          } else if (heightDiff >= -0.95) {
+            // Walking uphill, flat, or downhill on terrain slopes: stay firmly on the sector's lowest-point surface
+            playerFeetPos.y = THREE.MathUtils.lerp(playerFeetPos.y, targetGroundY, Math.min(1.0, dt * 16.0));
+            if (playerFeetPos.y < targetGroundY) {
+              playerFeetPos.y = targetGroundY;
+            }
+            playerVerticalVelocity = 0.0;
+          } else {
+            // Descending from high in the air onto the terrain: fall with gravity and stop solidly at targetGroundY
+            playerVerticalVelocity = Math.max(-35.0, playerVerticalVelocity - 22.0 * dt);
+            playerFeetPos.y += playerVerticalVelocity * dt;
+            if (playerFeetPos.y <= targetGroundY) {
+              playerFeetPos.y = targetGroundY;
+              playerVerticalVelocity = 0.0;
+            }
+          }
+
+          if (!isThirdPerson) {
+            const headBob = isWalkingNow ? Math.sin(walkCyclePhase * 2.0) * 0.025 : 0.0;
+            camera.position.set(playerFeetPos.x, playerFeetPos.y + avatarUserHeight + headBob, playerFeetPos.z);
+          }
+          updateCameraVectorsFromEuler();
+
+        } else {
+          const speed = isMovingFast ? moveSpeed * 2.8 : moveSpeed;
+          const forward = new THREE.Vector3();
+          camera.getWorldDirection(forward);
+          const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+
+          if (keys['KeyW'] || keys['ArrowUp']) camera.position.addScaledVector(forward, speed * dt);
+          if (keys['KeyS'] || keys['ArrowDown']) camera.position.addScaledVector(forward, -speed * dt);
+          if (keys['KeyD'] || keys['ArrowRight']) camera.position.addScaledVector(right, speed * dt);
+          if (keys['KeyA'] || keys['ArrowLeft']) camera.position.addScaledVector(right, -speed * dt);
+          if (keys['KeyE']) camera.position.y += speed * dt;
+          if (keys['KeyQ'] || keys['ControlLeft']) camera.position.y -= speed * dt;
+
+          syncPlayerFromCamera();
+          if (isThirdPerson) {
+            updateCameraVectorsFromEuler();
+          }
+        }
+
+        // Update focus point for the Full-Density (100% ReCap) Area & Distance-Degraded LOD
+        if (isWalkMode) {
+          targetFocusWorldPos.copy(playerFeetPos);
+        } else {
+          targetFocusWorldPos.copy(camera.position);
+        }
+        currentFocusWorldPos.copy(targetFocusWorldPos);
+
+        // Update ground guide ring position & visibility
+        if (showFullRadiusRing) {
+          if (bubbleReadyFlag > 0.5) {
+            // Anillo fijo en el centro de la única zona renderizada activa
+            const ringGroundY = findSurfaceHeightUnderPlayer(bubbleCenterWorld.x, bubbleCenterWorld.y, bubbleCenterWorld.z);
+            fullRadiusRingMesh.position.set(bubbleCenterWorld.x, ringGroundY + 0.08, bubbleCenterWorld.z);
+          } else {
+            // Previsualización concéntrica donde está parado el observador
+            const obsX = isWalkMode ? playerFeetPos.x : camera.position.x;
+            const obsZ = isWalkMode ? playerFeetPos.z : camera.position.z;
+            const gY = findSurfaceHeightUnderPlayer(obsX, camera.position.y, obsZ);
+            const obsY = (gY !== -9999) ? gY : (isWalkMode ? playerFeetPos.y : camera.position.y);
+            fullRadiusRingMesh.position.set(obsX, obsY + 0.08, obsZ);
+          }
+          fullRadiusRingMesh.visible = true;
+        } else {
+          fullRadiusRingMesh.visible = false;
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      requestAnimationFrame(animate);
+    })();
+  </script>
+</body>
+</html>

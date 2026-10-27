@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>EnscapeCloud RT â€” Renderizador + Nube de Puntos (Revit 2026)</Name>
+    <Assembly>C:\Users\durre\.gemini\antigravity\scratch\RevitEnscapeCloud\dist_20261027_145526\RevitEnscapeCloud.dll</Assembly>
+    <AddInId>8D94A1E0-5F3C-4B98-9D42-7A1E2B3C4D5E</AddInId>
+    <FullClassName>RevitEnscapeCloud.App</FullClassName>
+    <VendorId>ENSCAPECLOUD</VendorId>
+    <VendorDescription>EnscapeCloud Real-Time Renderer with Point Cloud Density Control for Revit 2026</VendorDescription>
+  </AddIn>
+</RevitAddIns>
