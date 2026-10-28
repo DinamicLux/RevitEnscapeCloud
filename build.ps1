@@ -20,6 +20,7 @@ $csFiles = @(
     "$srcDir\SceneExportContext.cs",
     "$srcDir\PointCloudReader.cs",
     "$srcDir\LasFileReader.cs",
+    "$srcDir\SmFileReader.cs",
     "$srcDir\LiveSyncExternalHandler.cs",
     "$srcDir\RendererWindow.cs",
     "$srcDir\App.cs"
@@ -50,6 +51,7 @@ try {
     /r:"$netDir\System.Private.Uri.dll" `
     /r:"$netDir\System.ComponentModel.Primitives.dll" `
     /r:"$netDir\System.ObjectModel.dll" `
+    /r:"$netDir\System.IO.Compression.dll" `
     /r:"$netDir\System.Threading.Tasks.dll" `
     /r:"$wpfDir\PresentationFramework.dll" `
     /r:"$wpfDir\PresentationCore.dll" `

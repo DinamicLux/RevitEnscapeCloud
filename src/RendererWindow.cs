@@ -93,6 +93,23 @@ namespace RevitEnscapeCloud
             MinHeight = 600;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             Background = new SolidColorBrush(Color.FromRgb(15, 18, 24));
+            AllowDrop = true;
+            DragEnter += (s, e) =>
+            {
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                    e.Effects = DragDropEffects.Copy;
+            };
+            Drop += (s, e) =>
+            {
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    string[] droppedFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
+                    if (droppedFiles != null && droppedFiles.Length > 0)
+                    {
+                        ProcessSelectedOrDroppedFiles(droppedFiles);
+                    }
+                }
+            };
 
             BuildLayout();
 
@@ -521,6 +538,11 @@ namespace RevitEnscapeCloud
                 {
                     PromptAndLoadPointCloudFile();
                 }
+                else if (msg.StartsWith("LOAD_FILE_PATH:") || msg.StartsWith("LOAD_3SM_PATH:"))
+                {
+                    string p = msg.Substring(msg.IndexOf(':') + 1);
+                    ProcessSelectedOrDroppedFiles(new string[] { p });
+                }
                 else if (msg.StartsWith("SAVE_VIDEO_B64:"))
                 {
                     SaveExportedVideoFromBase64(msg.Substring(15));
@@ -725,7 +747,7 @@ namespace RevitEnscapeCloud
             }));
         }
 
-        private async void PromptAndLoadPointCloudFile()
+        private void PromptAndLoadPointCloudFile()
         {
             try
             {
@@ -739,36 +761,54 @@ namespace RevitEnscapeCloud
                     CheckFileExists = false
                 };
 
-                if (dlg.ShowDialog(this) != true)
-                    return;
+                if (dlg.ShowDialog(this) == true)
+                {
+                    ProcessSelectedOrDroppedFiles(dlg.FileNames);
+                }
+            }
+            catch (Exception ex)
+            {
+                SetStatus("Error al abrir selector de archivos: " + ex.Message);
+            }
+        }
 
+        private async void ProcessSelectedOrDroppedFiles(string[] files)
+        {
+            if (files == null || files.Length == 0) return;
+            try
+            {
                 int maxPts = GetSelectedMaxPoints();
-                string[] files = dlg.FileNames;
                 bool hasRef = _hasSceneCenterRef;
                 double rx = _refCenterX, ry = _refCenterY, rz = _refCenterZ;
 
                 foreach (string filePath in files)
                 {
+                    if (string.IsNullOrEmpty(filePath)) continue;
+
+                    // If user dropped a directory (e.g. WebReady folder)
+                    if (Directory.Exists(filePath))
+                    {
+                        string webReadyN0 = Path.Combine(filePath, "n_0.json");
+                        if (File.Exists(webReadyN0))
+                        {
+                            string parentDir = Path.GetDirectoryName(filePath);
+                            string[] smFiles = Directory.GetFiles(parentDir, "*.3sm");
+                            if (smFiles.Length > 0)
+                            {
+                                await LoadRealityMeshFileAsync(smFiles[0]);
+                                continue;
+                            }
+                        }
+                    }
+
+                    if (!File.Exists(filePath)) continue;
+
                     string ext = Path.GetExtension(filePath).ToLowerInvariant();
                     string fileName = Path.GetFileName(filePath);
 
                     if (ext == ".3sm" || ext == ".3mx" || ext == ".3mxb" || ext == ".glb" || ext == ".obj")
                     {
-                        SetStatus("Cargando Malla Reality (" + ext.ToUpperInvariant() + "): " + fileName + "...");
-                        PushProgressToWebView("IN_PROGRESS", 5.0, "Cargando Malla Reality: " + fileName, "Leyendo archivo binario...");
-                        try
-                        {
-                            byte[] fileBytes = await Task.Run(() => File.ReadAllBytes(filePath));
-                            string b64 = Convert.ToBase64String(fileBytes);
-                            await _webView.CoreWebView2.ExecuteScriptAsync(
-                                "window.loadRealityMeshBase64('" + EscapeJs(fileName) + "', '" + b64 + "');"
-                            );
-                        }
-                        catch (Exception exMesh)
-                        {
-                            SetStatus("Error al cargar malla reality: " + exMesh.Message);
-                            PushProgressToWebView("ERROR", 0.0, "Error en " + fileName, exMesh.Message);
-                        }
+                        await LoadRealityMeshFileAsync(filePath);
                         continue;
                     }
 
@@ -823,7 +863,7 @@ namespace RevitEnscapeCloud
                             System.Globalization.CultureInfo.InvariantCulture,
                             "window.loadBinaryCloudFromHost && window.loadBinaryCloudFromHost('https://enscapecloud.local/{0}', {1}, {2}, 'DIRECT');",
                             binFileName, batches[i].TotalPointsCount, (i == batches.Count - 1) ? "true" : "false");
-                        _webView.CoreWebView2.ExecuteScriptAsync(loadScript);
+                        await _webView.CoreWebView2.ExecuteScriptAsync(loadScript);
                     }
 
                     string doneMsg = string.Format("¡Completado! '{0}' — {1:N0} puntos cargados en GPU.", fileName, loadedPts);
@@ -833,8 +873,92 @@ namespace RevitEnscapeCloud
             }
             catch (Exception ex)
             {
-                SetStatus("Error al cargar archivo de nube de puntos: " + ex.Message);
+                SetStatus("Error al procesar archivo: " + ex.Message);
                 PushProgressToWebView("ERROR", 0.0, "Error de Carga", ex.Message);
+            }
+        }
+
+        private async Task LoadRealityMeshFileAsync(string filePath)
+        {
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            string fileName = Path.GetFileName(filePath);
+
+            if (ext == ".3sm")
+            {
+                SetStatus("Cargando Malla Reality .3SM (iTwin): " + fileName + "...");
+                PushProgressToWebView("IN_PROGRESS", 5.0, "Cargando Malla Reality .3SM: " + fileName, "Consultando base de datos SQLite y extrayendo teselas...");
+                try
+                {
+                    RealityMeshModel model = await Task.Run(() => SmFileReader.Read3smFile(filePath, (pct, detail) =>
+                    {
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            SetStatus(detail);
+                            PushProgressToWebView("IN_PROGRESS", pct, "Cargando Malla Reality .3SM: " + fileName, detail);
+                        }));
+                    }));
+
+                    if (model == null || model.Tiles.Count == 0)
+                    {
+                        throw new InvalidOperationException("No se encontraron teselas de geometría en el archivo .3sm: " + fileName);
+                    }
+
+                    string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    string webViewerFolder = Path.Combine(assemblyDir, "WebViewer");
+
+                    for (int i = 0; i < model.Tiles.Count; i++)
+                    {
+                        var tile = model.Tiles[i];
+                        string binFileName = string.Format("mesh_tile_{0}_{1}.bin", DateTime.UtcNow.Ticks, i);
+                        string binFullPath = Path.Combine(webViewerFolder, binFileName);
+                        File.WriteAllBytes(binFullPath, tile.PackedGeometry);
+
+                        string texFileName = "";
+                        if (tile.JpegTexture != null && tile.JpegTexture.Length > 0)
+                        {
+                            texFileName = string.Format("mesh_tex_{0}_{1}.jpg", DateTime.UtcNow.Ticks, i);
+                            string texFullPath = Path.Combine(webViewerFolder, texFileName);
+                            File.WriteAllBytes(texFullPath, tile.JpegTexture);
+                        }
+
+                        string loadScript = string.Format(
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            "window.loadRealityMeshTileBinary && window.loadRealityMeshTileBinary('{0}', '{1}', {2}, {3}, {4:F4}, {5:F4}, {6:F4}, {7:F4}, {8:F4}, {9:F4}, '{10}', {11});",
+                            binFileName, texFileName, i, model.Tiles.Count,
+                            tile.MinX, tile.MinY, tile.MinZ, tile.MaxX, tile.MaxY, tile.MaxZ,
+                            EscapeJs(fileName), (i == model.Tiles.Count - 1) ? "true" : "false"
+                        );
+                        await _webView.CoreWebView2.ExecuteScriptAsync(loadScript);
+                    }
+
+                    SetStatus(string.Format("Malla Reality '{0}' cargada ({1} teselas en GPU).", fileName, model.Tiles.Count));
+                }
+                catch (Exception ex3sm)
+                {
+                    SetStatus("Error al cargar malla reality .3sm: " + ex3sm.Message);
+                    PushProgressToWebView("ERROR", 0.0, "Error en " + fileName, ex3sm.Message);
+                }
+            }
+            else
+            {
+                SetStatus("Cargando Malla Reality (" + ext.ToUpperInvariant() + "): " + fileName + "...");
+                PushProgressToWebView("IN_PROGRESS", 5.0, "Cargando Malla Reality: " + fileName, "Leyendo archivo...");
+                try
+                {
+                    string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    string webViewerFolder = Path.Combine(assemblyDir, "WebViewer");
+                    string binFileName = string.Format("mesh_direct_{0}_{1}", DateTime.UtcNow.Ticks, fileName);
+                    string binFullPath = Path.Combine(webViewerFolder, binFileName);
+                    await Task.Run(() => File.Copy(filePath, binFullPath, true));
+                    await _webView.CoreWebView2.ExecuteScriptAsync(
+                        "window.loadRealityMeshFileFromHost && window.loadRealityMeshFileFromHost('" + EscapeJs(binFileName) + "', '" + EscapeJs(fileName) + "');"
+                    );
+                }
+                catch (Exception exMesh)
+                {
+                    SetStatus("Error al cargar malla reality: " + exMesh.Message);
+                    PushProgressToWebView("ERROR", 0.0, "Error en " + fileName, exMesh.Message);
+                }
             }
         }
 

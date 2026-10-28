@@ -579,7 +579,7 @@
     </div>
 
     <!-- Unfiltered file input so Windows File Explorer opens instantaneously without stalling on ACCDocs cloud shell filters -->
-    <input type="file" id="file-cloud-input" accept=".las,.laz,.rcs,.3sm,.3mx,.3mxb,.obj,.glb" multiple style="display: none;" />
+    <input type="file" id="file-cloud-input" accept=".las,.laz,.rcs,.3sm,.3mx,.3mxb,.b3dm,.obj,.glb" multiple style="display: none;" />
 
     <!-- ================= CURSOR 3D COORDINATES INSPECTOR TOGGLE ================= -->
     <label class="checkbox-row" style="background: rgba(14, 165, 233, 0.14); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35);">
@@ -3338,7 +3338,11 @@
 
       // Open the Windows file explorer dialog IMMEDIATELY on line 1 with zero synchronous DOM reflows before .click()!
       function triggerFastCloudFilePicker() {
-        fileCloudInput.click();
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage('OPEN_LAS_DIALOG');
+        } else {
+          fileCloudInput.click();
+        }
       }
 
       document.getElementById('btn-load-cloud-unified').addEventListener('click', triggerFastCloudFilePicker);
@@ -3413,7 +3417,15 @@
         dropInZone.classList.remove('drag-over');
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
           for (let f = 0; f < e.dataTransfer.files.length; f++) {
-            await parsePointCloudFileInBrowser(e.dataTransfer.files[f]);
+            const file = e.dataTransfer.files[f];
+            if (window.chrome && window.chrome.webview && file.path) {
+              const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+              if (ext === '.3sm' || ext === '.las' || ext === '.laz' || ext === '.rcs' || ext === '.rcp') {
+                window.chrome.webview.postMessage('LOAD_FILE_PATH:' + file.path);
+                continue;
+              }
+            }
+            await parsePointCloudFileInBrowser(file);
           }
         }
       });
@@ -3764,25 +3776,29 @@
             const chunkType = dv.getUint32(chunkOffset + 4, true);
             if (chunkLength <= 0 || (chunkOffset + 8 + chunkLength) > dv.byteLength) break;
             const chunkDataOffset = chunkOffset + 8;
-            if (chunkType === 0x4E4F534A) { // 'JSON'
+            if (chunkType === 0x4E4F534A || chunkType === 0) { // 'JSON' or GLB 1.0 JSON (0)
               const jsonBytes = new Uint8Array(arrayBuffer, chunkDataOffset, chunkLength);
               const jsonText = new TextDecoder().decode(jsonBytes);
               jsonChunk = JSON.parse(jsonText);
-            } else if (chunkType === 0x004E4942) { // 'BIN\0'
+            } else if (chunkType === 0x004E4942 || chunkType === 1) { // 'BIN\0' or GLB 1.0 BIN (1)
               binChunk = new Uint8Array(arrayBuffer, chunkDataOffset, chunkLength);
             }
             chunkOffset += 8 + chunkLength;
           }
 
-          if (!jsonChunk || !jsonChunk.meshes || jsonChunk.meshes.length === 0) return null;
+          if (!jsonChunk) return null;
+          const rawMeshes = jsonChunk.meshes;
+          if (!rawMeshes) return null;
+          const meshList = Array.isArray(rawMeshes) ? rawMeshes : Object.values(rawMeshes);
+          if (meshList.length === 0) return null;
 
           const resultTiles = [];
-          const bufferViews = jsonChunk.bufferViews || [];
-          const accessors = jsonChunk.accessors || [];
+          const bufferViews = jsonChunk.bufferViews || {};
+          const accessors = jsonChunk.accessors || {};
 
-          function getBufferData(accessorIdx) {
-            if (accessorIdx === undefined || accessorIdx === null) return null;
-            const acc = accessors[accessorIdx];
+          function getBufferData(accessorKey) {
+            if (accessorKey === undefined || accessorKey === null) return null;
+            const acc = accessors[accessorKey];
             if (!acc || acc.bufferView === undefined) return null;
             const bv = bufferViews[acc.bufferView];
             if (!bv) return null;
@@ -3810,14 +3826,41 @@
               const reqBytes = totalElements * 2;
               if (byteOffset + reqBytes > binChunk.byteLength) return null;
               const targetOffset = binChunk.byteOffset + byteOffset;
+              let u16 = null;
               if (targetOffset % 2 === 0) {
-                return new Uint16Array(binChunk.buffer, targetOffset, totalElements);
+                u16 = new Uint16Array(binChunk.buffer, targetOffset, totalElements);
               } else {
                 const copy = new Uint16Array(totalElements);
                 const srcView = new DataView(binChunk.buffer, targetOffset, reqBytes);
                 for (let i = 0; i < totalElements; i++) copy[i] = srcView.getUint16(i * 2, true);
-                return copy;
+                u16 = copy;
               }
+
+              // Support WEB3D_quantized_attributes extension (standard in iTwin ContextCapture 3D Tiles)
+              if (acc.extensions && acc.extensions.WEB3D_quantized_attributes && acc.extensions.WEB3D_quantized_attributes.decodeMatrix) {
+                const mat = acc.extensions.WEB3D_quantized_attributes.decodeMatrix;
+                const f32 = new Float32Array(totalElements);
+                if (numComponents === 3) {
+                  for (let i = 0; i < count; i++) {
+                    const qx = u16[i * 3 + 0];
+                    const qy = u16[i * 3 + 1];
+                    const qz = u16[i * 3 + 2];
+                    f32[i * 3 + 0] = qx * mat[0] + qy * mat[4] + qz * mat[8] + mat[12];
+                    f32[i * 3 + 1] = qx * mat[1] + qy * mat[5] + qz * mat[9] + mat[13];
+                    f32[i * 3 + 2] = qx * mat[2] + qy * mat[6] + qz * mat[10] + mat[14];
+                  }
+                  return f32;
+                } else if (numComponents === 2) {
+                  for (let i = 0; i < count; i++) {
+                    const qu = u16[i * 2 + 0];
+                    const qv = u16[i * 2 + 1];
+                    f32[i * 2 + 0] = qu * mat[0] + qv * mat[3] + mat[6];
+                    f32[i * 2 + 1] = qu * mat[1] + qv * mat[4] + mat[7];
+                  }
+                  return f32;
+                }
+              }
+              return u16;
             } else if (compType === 5125) { // UNSIGNED_INT
               const reqBytes = totalElements * 4;
               if (byteOffset + reqBytes > binChunk.byteLength) return null;
@@ -3835,29 +3878,37 @@
           }
 
           let extractedTexture = null;
-          if (jsonChunk.images && jsonChunk.images.length > 0 && binChunk) {
-            const imgDef = jsonChunk.images[0];
-            if (imgDef.bufferView !== undefined) {
-              const bv = bufferViews[imgDef.bufferView];
-              if (bv) {
-                const imgBytes = new Uint8Array(binChunk.buffer, binChunk.byteOffset + (bv.byteOffset || 0), bv.byteLength);
-                const mime = imgDef.mimeType || 'image/jpeg';
-                const blob = new Blob([imgBytes], { type: mime });
-                const url = URL.createObjectURL(blob);
-                extractedTexture = new THREE.TextureLoader().load(url);
+          const rawImages = jsonChunk.images;
+          if (rawImages && binChunk) {
+            const imgList = Array.isArray(rawImages) ? rawImages : Object.values(rawImages);
+            if (imgList.length > 0) {
+              const imgDef = imgList[0];
+              if (imgDef.bufferView !== undefined) {
+                const bv = bufferViews[imgDef.bufferView];
+                if (bv) {
+                  const imgBytes = new Uint8Array(binChunk.buffer, binChunk.byteOffset + (bv.byteOffset || 0), bv.byteLength);
+                  const mime = imgDef.mimeType || 'image/jpeg';
+                  const blob = new Blob([imgBytes], { type: mime });
+                  const url = URL.createObjectURL(blob);
+                  extractedTexture = new THREE.TextureLoader().load(url);
+                }
               }
             }
           }
 
-          for (let m = 0; m < jsonChunk.meshes.length; m++) {
-            const meshDef = jsonChunk.meshes[m];
+          for (let m = 0; m < meshList.length; m++) {
+            const meshDef = meshList[m];
+            if (!meshDef || !meshDef.primitives) continue;
             for (let p = 0; p < meshDef.primitives.length; p++) {
               const prim = meshDef.primitives[p];
-              const posData = getBufferData(prim.attributes.POSITION);
+              const posKey = prim.attributes ? (prim.attributes.POSITION || prim.attributes['POSITION']) : null;
+              const posData = getBufferData(posKey);
               if (!posData) continue;
               const idxData = prim.indices !== undefined ? getBufferData(prim.indices) : null;
-              const uvData = prim.attributes.TEXCOORD_0 !== undefined ? getBufferData(prim.attributes.TEXCOORD_0) : null;
-              const normData = prim.attributes.NORMAL !== undefined ? getBufferData(prim.attributes.NORMAL) : null;
+              const uvKey = prim.attributes ? (prim.attributes.TEXCOORD_0 || prim.attributes['TEXCOORD_0']) : null;
+              const uvData = uvKey !== null ? getBufferData(uvKey) : null;
+              const normKey = prim.attributes ? (prim.attributes.NORMAL || prim.attributes['NORMAL']) : null;
+              const normData = normKey !== null ? getBufferData(normKey) : null;
 
               resultTiles.push({
                 vertexCount: posData.length / 3,
@@ -3871,6 +3922,59 @@
             }
           }
           return { tiles: resultTiles, texture: extractedTexture };
+        } catch (e) {
+          console.warn('Error decodificando GLB:', e);
+          return null;
+        }
+      }
+
+      // ================= PARSE OGC 3D TILES .B3DM (ITWIN WEBREADY) =================
+      async function parseLocalB3dmFileInBrowser(file) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          15.0,
+          'Etapa 1/3: Decodificando Tesela OGC 3D Tiles .B3DM (' + file.name + ')',
+          'Descomprimiendo datos binarios (' + sizeMB + ' MB)...'
+        );
+        let rawBuf = await file.arrayBuffer();
+        let bytes = new Uint8Array(rawBuf);
+
+        // Check if zlib / deflate compressed (Bentley iTwin WebReady b3dm files start with 0x78)
+        if (bytes[0] === 0x78 && (bytes[1] === 0x5E || bytes[1] === 0x9C || bytes[1] === 0x01 || bytes[1] === 0xDA)) {
+          try {
+            const ds = new DecompressionStream('deflate');
+            const writer = ds.writable.getWriter();
+            writer.write(rawBuf);
+            writer.close();
+            const decompressedResponse = new Response(ds.readable);
+            rawBuf = await decompressedResponse.arrayBuffer();
+            bytes = new Uint8Array(rawBuf);
+          } catch (e) {
+            console.warn('DecompressionStream fallback:', e);
+          }
+        }
+
+        const dv = new DataView(rawBuf);
+        const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
+        if (magic !== 'b3dm') {
+          throw new Error('Firma b3dm no encontrada en ' + file.name + ' (Firma detectada: ' + magic + ')');
+        }
+
+        const ftJSONLen = dv.getUint32(12, true);
+        const ftBinLen = dv.getUint32(16, true);
+        const btJSONLen = dv.getUint32(20, true);
+        const btBinLen = dv.getUint32(24, true);
+        const glbOffset = 28 + ftJSONLen + ftBinLen + btJSONLen + btBinLen;
+
+        const glbBuf = rawBuf.slice(glbOffset);
+        const glbMesh = decodeGlbMesh(glbBuf);
+        if (!glbMesh || !glbMesh.tiles || glbMesh.tiles.length === 0) {
+          throw new Error('No se pudo decodificar la geometría GLB dentro de ' + file.name);
+        }
+
+        await finalizeRealityMeshAndAddToScene(file.name, glbMesh.tiles, 0.0, 0.0, 0.0);
+      }
         } catch (e) {
           return null;
         }
@@ -4214,6 +4318,10 @@
           await new Promise((r) => setTimeout(r, 4));
         }
 
+        if (tiles.length === 0) {
+          throw new Error('El archivo ' + file.name + ' es una base de datos SQLite Bentley iTwin comprimida (' + sizeMB + ' MB). Para visualizarlo con máxima velocidad y fidelidad de textura a 60 FPS, utiliza el botón "📂 Elegir Archivo" del visor o arrastra la carpeta "WebReady" / archivo ".b3dm" ubicado junto al .3SM.');
+        }
+
         await finalizeRealityMeshAndAddToScene(file.name, tiles, baseEast, baseNorth, baseElev);
       }
 
@@ -4374,8 +4482,14 @@
             await parseLocalRcsFileInBrowser(file, mdv);
           } else if (sig4 === 'LASF' || fileNameLower.endsWith('.las') || fileNameLower.endsWith('.laz')) {
             await parseLocalLasFileInBrowser(file, mdv);
+          } else if (sig4 === 'b3dm' || fileNameLower.endsWith('.b3dm')) {
+            await parseLocalB3dmFileInBrowser(file);
           } else if (sig16.startsWith('SQLite format 3') || fileNameLower.endsWith('.3sm')) {
-            await parseLocal3smFileInBrowser(file, mdv);
+            if (window.chrome && window.chrome.webview && file.path) {
+              window.chrome.webview.postMessage('LOAD_3SM_PATH:' + file.path);
+            } else {
+              await parseLocal3smFileInBrowser(file, mdv);
+            }
           } else if (sig5 === '3MXBO' || fileNameLower.endsWith('.3mxb') || fileNameLower.endsWith('.3mx')) {
             await parseLocal3mxbFileInBrowser(file, mdv);
           } else if (sig4 === 'glTF' || fileNameLower.endsWith('.glb') || fileNameLower.endsWith('.gltf')) {
@@ -4383,15 +4497,21 @@
           } else if (fileNameLower.endsWith('.obj')) {
             await parseLocalObjFileInBrowser(file);
           } else {
-            // Check if extension indicates .3sm or similar
-            if (fileNameLower.endsWith('.3sm')) {
-              await parseLocal3smFileInBrowser(file, mdv);
+            const b0 = mdv.getUint8(0);
+            if (b0 === 0x78 && fileNameLower.endsWith('.b3dm')) {
+              await parseLocalB3dmFileInBrowser(file);
+            } else if (fileNameLower.endsWith('.3sm')) {
+              if (window.chrome && window.chrome.webview && file.path) {
+                window.chrome.webview.postMessage('LOAD_3SM_PATH:' + file.path);
+              } else {
+                await parseLocal3smFileInBrowser(file, mdv);
+              }
             } else {
               window.updateTaskProgressModal(
                 'ERROR',
                 0.0,
                 'Formato no reconocido en ' + file.name,
-                'Cabecera detectada: "' + sig5 + '". Formatos compatibles: Nubes .LAS, .RCS y Mallas Reality .3SM (Bentley / iTwin), .3MXB, .GLB, .OBJ.'
+                'Cabecera detectada: "' + sig5 + '". Formatos compatibles: Nubes .LAS, .RCS y Mallas Reality .3SM (Bentley / iTwin), .B3DM (3D Tiles), .3MXB, .GLB, .OBJ.'
               );
             }
           }
@@ -4404,6 +4524,107 @@
           );
         }
       }
+
+      window._pending3smTiles = [];
+
+      window.loadRealityMeshTileBinary = async function(binFileName, texFileName, tileIndex, totalTiles, minX, minY, minZ, maxX, maxY, maxZ, fileName, isLastTile) {
+        try {
+          if (tileIndex === 0) {
+            while (mesh3smGroup.children.length > 0) {
+              const mObj = mesh3smGroup.children.pop();
+              if (mObj.geometry) mObj.geometry.dispose();
+              if (mObj.material) {
+                if (mObj.material.map) mObj.material.map.dispose();
+                mObj.material.dispose();
+              }
+            }
+            window._pending3smTiles = [];
+          }
+
+          const pct = Math.min(96.0, 45.0 + (tileIndex / Math.max(1, totalTiles)) * 48.0);
+          window.updateTaskProgressModal(
+            'IN_PROGRESS',
+            pct,
+            'Cargando Malla Reality .3SM (' + fileName + ')',
+            'Cargando tesela ' + (tileIndex + 1) + ' de ' + totalTiles + ' en memoria GPU...'
+          );
+
+          const binUrl = binFileName.startsWith('http') ? binFileName : ('https://enscapecloud.local/' + binFileName);
+          const resp = await fetch(binUrl);
+          const buf = await resp.arrayBuffer();
+          const f32 = new Float32Array(buf);
+
+          const vertexCount = Math.floor(f32.length / 5);
+          const positions = new Float32Array(vertexCount * 3);
+          const uvs = new Float32Array(vertexCount * 2);
+
+          let pIdx = 0, uIdx = 0;
+          for (let i = 0; i < vertexCount * 5; i += 5) {
+            positions[pIdx++] = f32[i];
+            positions[pIdx++] = f32[i + 1];
+            positions[pIdx++] = f32[i + 2];
+            uvs[uIdx++] = f32[i + 3];
+            uvs[uIdx++] = f32[i + 4];
+          }
+
+          let texture = null;
+          if (texFileName && texFileName.length > 0) {
+            const texUrl = texFileName.startsWith('http') ? texFileName : ('https://enscapecloud.local/' + texFileName);
+            texture = await new Promise((resolve) => {
+              new THREE.TextureLoader().load(
+                texUrl,
+                (tex) => {
+                  tex.flipY = false;
+                  resolve(tex);
+                },
+                undefined,
+                () => resolve(null)
+              );
+            });
+          }
+
+          const tileObj = {
+            vertexCount: vertexCount,
+            triangleCount: Math.floor(vertexCount / 3),
+            vertices: positions,
+            indices: null,
+            uvs: uvs,
+            normals: null,
+            texture: texture
+          };
+
+          window._pending3smTiles.push(tileObj);
+
+          if (isLastTile) {
+            await finalizeRealityMeshAndAddToScene(fileName, window._pending3smTiles, 0.0, 0.0, 0.0);
+          }
+        } catch (err) {
+          console.error('Error en loadRealityMeshTileBinary:', err);
+          window.updateTaskProgressModal(
+            'ERROR',
+            0.0,
+            'Error al cargar tesela de malla reality ' + fileName,
+            translateErrorToSpanish(err)
+          );
+        }
+      };
+
+      window.loadRealityMeshFileFromHost = async function(serverFileName, originalFileName) {
+        try {
+          const fileUrl = 'https://enscapecloud.local/' + serverFileName;
+          const resp = await fetch(fileUrl);
+          const buf = await resp.arrayBuffer();
+          const fileObj = new File([buf], originalFileName);
+          await parsePointCloudFileInBrowser(fileObj);
+        } catch (err) {
+          window.updateTaskProgressModal(
+            'ERROR',
+            0.0,
+            'Error al cargar archivo ' + originalFileName,
+            translateErrorToSpanish(err)
+          );
+        }
+      };
 
       window.loadRealityMeshBase64 = async function(fileName, b64) {
         try {
