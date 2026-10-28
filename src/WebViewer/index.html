@@ -4973,14 +4973,14 @@
 
       async function finalizeRealityMeshAndAddToScene(fileName, tiles, baseEast, baseNorth, baseElev) {
         if (!tiles || tiles.length === 0) {
-          throw new Error('No se encontraron teselas de geometría 3D compatibles en el archivo ' + fileName + '. Si es un archivo de Autodesk Cloud, verifica que esté descargado en el equipo.');
+          throw new Error('No se encontraron teselas de geometría 3D en el archivo ' + fileName);
         }
 
         window.updateTaskProgressModal(
           'IN_PROGRESS',
           92.0,
-          'Etapa 3/3: Georreferenciando Malla Reality (' + fileName + ')',
-          'Posicionando por Coordenadas Compartidas y casando cota MSNM (' + tiles.length + ' teselas)...'
+          'Etapa 3/3: Posicionando Malla Reality (' + fileName + ')',
+          'Alineando teselas en la escena 3D (' + tiles.length + ' teselas)...'
         );
         await new Promise((r) => setTimeout(r, 15));
 
@@ -5007,59 +5007,38 @@
         const cy = (minY + maxY) * 0.5;
         const cz = (minZ + maxZ) * 0.5;
 
-        // True Shared Coordinates of reality mesh center
         const meshCenterEast = baseEast + cx;
-        const meshCenterNorth = baseNorth - cy;
+        const meshCenterNorth = baseNorth + cy;
         const meshMinElev = baseElev + minZ;
         const meshMaxElev = baseElev + maxZ;
 
-        const coordMode = document.getElementById('sel-coord-mode').value || 'shared';
+        const coordMode = (document.getElementById('sel-coord-mode') && document.getElementById('sel-coord-mode').value) || 'shared';
         const { refX, refZ, groundMinY, hasExistingScene } = getSceneAlignmentTarget();
+
+        let useSharedTransform = false;
+        let rotAngle = 0.0;
         let alignmentNote = '';
 
-        let shiftX = 0, shiftY = 0, shiftZ = 0;
-        let rotAngle = 0;
-
-        if (coordMode === 'shared') {
-          const distToOrigin = Math.hypot(meshCenterEast - sharedOrigin.east, meshCenterNorth - sharedOrigin.north);
-          if (!hasExistingScene && distToOrigin > 50000.0) {
-            sharedOrigin.east = meshCenterEast;
-            sharedOrigin.north = meshCenterNorth;
-            sharedOrigin.elev = meshMinElev;
-            sharedOrigin.angleRad = 0.0;
-          }
-
-          const cosA = Math.cos(sharedOrigin.angleRad || 0.0);
-          const sinA = Math.sin(sharedOrigin.angleRad || 0.0);
-          const dBaseE = baseEast - sharedOrigin.east;
-          const dBaseN = baseNorth - sharedOrigin.north;
-          const dBaseElev = baseElev - sharedOrigin.elev;
-
-          if (Math.hypot(dBaseE + cx, dBaseN - cy) <= 50000.0) {
-            rotAngle = sharedOrigin.angleRad || 0.0;
-            shiftX = dBaseE * cosA - dBaseN * sinA;
-            shiftY = dBaseElev;
-            shiftZ = -(dBaseE * sinA + dBaseN * cosA);
-            alignmentNote = 'Coordenadas Compartidas Exactas (Cota ' + meshMinElev.toFixed(2) + 'm a ' + meshMaxElev.toFixed(2) + 'm msnm)';
+        if (hasExistingScene) {
+          if (coordMode === 'shared') {
+            const distToShared = Math.hypot(meshCenterEast - sharedOrigin.east, meshCenterNorth - sharedOrigin.north);
+            if (distToShared <= 50000.0) {
+              useSharedTransform = true;
+              rotAngle = sharedOrigin.angleRad || 0.0;
+              alignmentNote = 'Coordenadas Compartidas Exactas con Modelo Revit';
+            } else {
+              alignmentNote = 'Centrado sobre el modelo Revit (Cota Terreno Casada)';
+            }
           } else {
-            shiftX = refX - cx;
-            shiftZ = refZ - (-cy);
-            shiftY = (Math.abs(meshMinElev - sharedOrigin.elev) < 400.0)
-              ? (baseElev - sharedOrigin.elev)
-              : (groundMinY - minZ);
-            alignmentNote = 'Cota casada con base del modelo (' + meshMinElev.toFixed(2) + 'm msnm)';
+            alignmentNote = 'Centrado sobre la escena existente';
           }
-        } else if (coordMode === 'internal') {
-          const isUtm = Math.abs(baseEast) > 10000.0 || Math.abs(baseNorth) > 10000.0;
-          shiftX = isUtm ? (baseEast - sharedOrigin.east) : baseEast;
-          shiftY = isUtm ? (baseElev - sharedOrigin.elev) : baseElev;
-          shiftZ = isUtm ? -(baseNorth - sharedOrigin.north) : -baseNorth;
-          alignmentNote = 'Origen a Origen Interno';
         } else {
-          shiftX = refX - cx;
-          shiftY = groundMinY - minZ;
-          shiftZ = refZ - (-cy);
-          alignmentNote = 'Centrado + Cota Base Terreno Casada';
+          // No prior model: Center directly at Three.js origin (0, 0, 0)
+          sharedOrigin.east = meshCenterEast;
+          sharedOrigin.north = meshCenterNorth;
+          sharedOrigin.elev = meshMinElev;
+          sharedOrigin.angleRad = 0.0;
+          alignmentNote = 'Centrado en Origen Visual (0, 0, 0) - Base Terreno Cota 0';
         }
 
         const cosA = Math.cos(rotAngle);
@@ -5075,17 +5054,29 @@
             const by = verts[i + 1];
             const bz = verts[i + 2];
 
-            // Convert Bentley Z-up to Three.js Y-up
-            const tx = bx;
-            const ty = bz;
-            const tz = -by;
+            let tx = 0, ty = 0, tz = 0;
 
-            const rx = tx * cosA - (-tz) * sinA;
-            const rz = -(tx * sinA + (-tz) * cosA);
+            if (useSharedTransform) {
+              const dE = bx - sharedOrigin.east;
+              const dN = by - sharedOrigin.north;
+              const dElev = bz - sharedOrigin.elev;
+              tx = dE * cosA - dN * sinA;
+              ty = dElev;
+              tz = -(dE * sinA + dN * cosA);
+            } else if (hasExistingScene) {
+              tx = (bx - cx) + refX;
+              ty = (bz - minZ) + groundMinY;
+              tz = -((by - cy) - refZ);
+            } else {
+              // Standalone / first object
+              tx = bx - cx;
+              ty = bz - minZ;
+              tz = -(by - cy);
+            }
 
-            transformedVerts[i + 0] = rx + shiftX;
-            transformedVerts[i + 1] = ty + shiftY;
-            transformedVerts[i + 2] = rz + shiftZ;
+            transformedVerts[i + 0] = tx;
+            transformedVerts[i + 1] = ty;
+            transformedVerts[i + 2] = tz;
           }
 
           const geo = new THREE.BufferGeometry();
@@ -5130,10 +5121,14 @@
         }
 
         mesh3smGroup.visible = true;
-        mesh3smGroup.position.y = directCloudElevationOffset;
-        document.getElementById('chk-vis-3sm').checked = true;
+        mesh3smGroup.position.set(0, 0, 0);
+        const chk3sm = document.getElementById('chk-vis-3sm');
+        if (chk3sm) chk3sm.checked = true;
 
         updateSceneBoundsAndEnvironment();
+        if (window.fitRenderZoneToEntireCloud) {
+          window.fitRenderZoneToEntireCloud();
+        }
         fitCameraToGroup(mesh3smGroup);
 
         if (isWalkMode) {
@@ -5146,7 +5141,10 @@
           updateCameraVectorsFromEuler();
         }
 
-        document.getElementById('stat-meshes').textContent = 'Malla 3SM: ' + fileName + ' (' + totalTriangles.toLocaleString() + ' tris, ' + tiles.length + ' teselas)';
+        const statElem = document.getElementById('stat-meshes');
+        if (statElem) {
+          statElem.textContent = 'Malla 3SM: ' + fileName + ' (' + totalTriangles.toLocaleString() + ' tris, ' + tiles.length + ' teselas)';
+        }
 
         const spanX = (maxX - minX).toFixed(1);
         const spanY = (maxY - minY).toFixed(1);
@@ -5162,7 +5160,6 @@
           tiles.length + ' teselas | ' + totalTriangles.toLocaleString() + ' triángulos | ' + alignmentNote + ' | Dim: ' + spanX + 'm × ' + spanY + 'm × ' + spanZ + 'm'
         );
       }
-
       // ================= PARSE BENTLEY ITWIN .3SM SQLITE CONTAINER =================
       async function parseLocal3smFileInBrowser(file, mdv) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(1);

@@ -110,17 +110,27 @@ namespace RevitEnscapeCloud
                     sqlite3_finalize(stmtHeader);
                 }
 
-                // 2. Determine target resolution level (Prefer Resolution 1 quadrants for high-definition, fallback to 0)
+                // 2. Determine target resolution level (Prefer Resolution 1 quadrants for high-definition, fallback to min available)
                 int targetResolution = 1;
-                IntPtr stmtCount;
-                if (sqlite3_prepare16_v2(db, "SELECT COUNT(*) FROM SMNodeHeader WHERE Resolution = 1;", -1, out stmtCount, IntPtr.Zero) == 0)
+                IntPtr stmtMin;
+                if (sqlite3_prepare16_v2(db, "SELECT MIN(Resolution) FROM SMNodeHeader;", -1, out stmtMin, IntPtr.Zero) == 0)
                 {
-                    if (sqlite3_step(stmtCount) == 100)
+                    if (sqlite3_step(stmtMin) == 100)
                     {
-                        long countRes1 = sqlite3_column_int64(stmtCount, 0);
-                        if (countRes1 == 0) targetResolution = 0;
+                        int minRes = (int)sqlite3_column_int64(stmtMin, 0);
+                        targetResolution = minRes;
+                        IntPtr stmtCheck;
+                        if (sqlite3_prepare16_v2(db, "SELECT COUNT(*) FROM SMNodeHeader WHERE Resolution = " + (minRes + 1) + ";", -1, out stmtCheck, IntPtr.Zero) == 0)
+                        {
+                            if (sqlite3_step(stmtCheck) == 100)
+                            {
+                                long c1 = sqlite3_column_int64(stmtCheck, 0);
+                                if (c1 > 0 && c1 <= 64) targetResolution = minRes + 1;
+                            }
+                            sqlite3_finalize(stmtCheck);
+                        }
                     }
-                    sqlite3_finalize(stmtCount);
+                    sqlite3_finalize(stmtMin);
                 }
 
                 // 3. Query Nodes at target resolution

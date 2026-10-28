@@ -8,5 +8,9 @@ dist_*
 bin/
 obj/
 
-# Archivos de caché del navegador
+# Archivos de caché del navegador y datos temporales de escena
 .system_generated/
+**/scene_current.json
+**/mesh_tile_*.bin
+**/mesh_tex_*.jpg
+**/cloud_batch_*.bin

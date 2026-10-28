@@ -94,15 +94,27 @@ namespace RevitEnscapeCloud
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             Background = new SolidColorBrush(Color.FromRgb(15, 18, 24));
             AllowDrop = true;
-            DragEnter += (s, e) =>
-            {
-                if (e.Data.GetDataPresent(DataFormats.FileDrop))
-                    e.Effects = DragDropEffects.Copy;
-            };
-            Drop += (s, e) =>
+            PreviewDragEnter += (s, e) =>
             {
                 if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 {
+                    e.Effects = DragDropEffects.Copy;
+                    e.Handled = true;
+                }
+            };
+            PreviewDragOver += (s, e) =>
+            {
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    e.Effects = DragDropEffects.Copy;
+                    e.Handled = true;
+                }
+            };
+            PreviewDrop += (s, e) =>
+            {
+                if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                {
+                    e.Handled = true;
                     string[] droppedFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
                     if (droppedFiles != null && droppedFiles.Length > 0)
                     {
@@ -113,10 +125,13 @@ namespace RevitEnscapeCloud
 
             BuildLayout();
 
-            _handler.OnSceneExported += HandleSceneExported;
-            _handler.OnDirectCloudLoaded += HandleDirectCloudLoaded;
-            _handler.OnRevitCameraChanged += HandleRevitCameraChanged;
-            _handler.OnStatusMessage += HandleStatusMessage;
+            if (_handler != null)
+            {
+                _handler.OnSceneExported += HandleSceneExported;
+                _handler.OnDirectCloudLoaded += HandleDirectCloudLoaded;
+                _handler.OnRevitCameraChanged += HandleRevitCameraChanged;
+                _handler.OnStatusMessage += HandleStatusMessage;
+            }
 
             Loaded += OnWindowLoaded;
             Closed += OnWindowClosed;
@@ -170,8 +185,8 @@ namespace RevitEnscapeCloud
             DockPanel.SetDock(btnSync, Dock.Left);
             topDock.Children.Add(btnSync);
 
-            // Direct .LAS / ReCap .RCS Point Cloud Loader Button
-            Button btnLoadLas = CreateStyledButton("📂 Cargar .LAS / ReCap .RCS", Color.FromRgb(5, 150, 105));
+            // Direct .LAS / ReCap .RCS / Reality Mesh .3SM Loader Button
+            Button btnLoadLas = CreateStyledButton("📂 Cargar Nube (.LAS/.RCS) o Malla .3SM", Color.FromRgb(5, 150, 105));
             btnLoadLas.Click += (s, e) => PromptAndLoadPointCloudFile();
             DockPanel.SetDock(btnLoadLas, Dock.Left);
             topDock.Children.Add(btnLoadLas);
@@ -736,6 +751,20 @@ namespace RevitEnscapeCloud
 
                     string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                     string webViewerFolder = Path.Combine(assemblyDir, "WebViewer");
+                    Directory.CreateDirectory(webViewerFolder);
+
+                    try
+                    {
+                        foreach (string oldFile in Directory.GetFiles(webViewerFolder, "mesh_tile_*.bin"))
+                        {
+                            try { File.Delete(oldFile); } catch { }
+                        }
+                        foreach (string oldFile in Directory.GetFiles(webViewerFolder, "mesh_tex_*.jpg"))
+                        {
+                            try { File.Delete(oldFile); } catch { }
+                        }
+                    }
+                    catch { }
                     int loadedPts = 0;
 
                     for (int i = 0; i < batches.Count; i++)
@@ -867,6 +896,20 @@ namespace RevitEnscapeCloud
                     int loadedPts = 0;
                     string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                     string webViewerFolder = Path.Combine(assemblyDir, "WebViewer");
+                    Directory.CreateDirectory(webViewerFolder);
+
+                    try
+                    {
+                        foreach (string oldFile in Directory.GetFiles(webViewerFolder, "mesh_tile_*.bin"))
+                        {
+                            try { File.Delete(oldFile); } catch { }
+                        }
+                        foreach (string oldFile in Directory.GetFiles(webViewerFolder, "mesh_tex_*.jpg"))
+                        {
+                            try { File.Delete(oldFile); } catch { }
+                        }
+                    }
+                    catch { }
 
                     for (int i = 0; i < batches.Count; i++)
                     {
@@ -924,6 +967,20 @@ namespace RevitEnscapeCloud
 
                     string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                     string webViewerFolder = Path.Combine(assemblyDir, "WebViewer");
+                    Directory.CreateDirectory(webViewerFolder);
+
+                    try
+                    {
+                        foreach (string oldFile in Directory.GetFiles(webViewerFolder, "mesh_tile_*.bin"))
+                        {
+                            try { File.Delete(oldFile); } catch { }
+                        }
+                        foreach (string oldFile in Directory.GetFiles(webViewerFolder, "mesh_tex_*.jpg"))
+                        {
+                            try { File.Delete(oldFile); } catch { }
+                        }
+                    }
+                    catch { }
 
                     for (int i = 0; i < model.Tiles.Count; i++)
                     {
@@ -966,6 +1023,20 @@ namespace RevitEnscapeCloud
                 {
                     string assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                     string webViewerFolder = Path.Combine(assemblyDir, "WebViewer");
+                    Directory.CreateDirectory(webViewerFolder);
+
+                    try
+                    {
+                        foreach (string oldFile in Directory.GetFiles(webViewerFolder, "mesh_tile_*.bin"))
+                        {
+                            try { File.Delete(oldFile); } catch { }
+                        }
+                        foreach (string oldFile in Directory.GetFiles(webViewerFolder, "mesh_tex_*.jpg"))
+                        {
+                            try { File.Delete(oldFile); } catch { }
+                        }
+                    }
+                    catch { }
                     string binFileName = string.Format("mesh_direct_{0}_{1}", DateTime.UtcNow.Ticks, fileName);
                     string binFullPath = Path.Combine(webViewerFolder, binFileName);
                     await Task.Run(() => File.Copy(filePath, binFullPath, true));
@@ -1064,10 +1135,13 @@ namespace RevitEnscapeCloud
 
         private void OnWindowClosed(object sender, EventArgs e)
         {
-            _handler.OnSceneExported -= HandleSceneExported;
-            _handler.OnDirectCloudLoaded -= HandleDirectCloudLoaded;
-            _handler.OnRevitCameraChanged -= HandleRevitCameraChanged;
-            _handler.OnStatusMessage -= HandleStatusMessage;
+            if (_handler != null)
+            {
+                _handler.OnSceneExported -= HandleSceneExported;
+                _handler.OnDirectCloudLoaded -= HandleDirectCloudLoaded;
+                _handler.OnRevitCameraChanged -= HandleRevitCameraChanged;
+                _handler.OnStatusMessage -= HandleStatusMessage;
+            }
 
             if (_webView != null)
             {
