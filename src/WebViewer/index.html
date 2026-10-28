@@ -522,35 +522,56 @@
       <input type="checkbox" id="chk-vis-3sm" checked />
     </label>
 
-    <!-- Control de Suavizado e InterpolaciÃ³n Fina de Malla Reality (1-5 cm) -->
+    <!-- Control de Suavizado e Interpolación Fina de Malla Reality (1-5 cm) -->
     <div id="panel-mesh-smoothing" style="background: rgba(99, 102, 241, 0.12); border: 1.5px solid rgba(129, 140, 248, 0.45); border-radius: 10px; padding: 8px 10px; margin-top: 4px; margin-bottom: 8px;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 5px;">
         <span style="color:#a5b4fc; font-weight:700; font-size:11.5px; display:flex; align-items:center; gap:5px;">
-          <span>ðŸ”ï¸</span> Suavizado e InterpolaciÃ³n Malla .3SM
+          <span>🏔️</span> Suavizado e Interpolación Malla .3SM
         </span>
         <span id="badge-mesh-quality" style="font-size:9.5px; color:#c7d2fe; background:rgba(49,46,129,0.7); border:1px solid rgba(129,140,248,0.4); padding:1px 6px; border-radius:4px; font-weight:600;">PBR Suave</span>
       </div>
+
       <div class="control-group" style="margin-bottom: 5px;">
-        <div class="control-label"><span style="font-size:11px;">TriangulaciÃ³n y Suavizado:</span></div>
+        <div class="control-label"><span style="font-size:11px;">Triangulación y Suavizado:</span></div>
         <select class="hud-select" id="sel-mesh-smoothing" style="font-size:11px; padding:3px 6px;">
           <option value="1" selected>1. Suavizado PBR Continuo (Sin aristas / Realista)</option>
-          <option value="2">2. TriangulaciÃ³n Fina Interpolada (~5 cm)</option>
-          <option value="3">3. Ultra Fino Alta DefiniciÃ³n (1-2 cm / MÃ¡ximo Detalle)</option>
+          <option value="2">2. Triangulación Fina Interpolada (~5 cm)</option>
+          <option value="3">3. Ultra Fino Alta Definición (1-2 cm / Máximo Detalle)</option>
           <option value="0">4. Original (Facetado Plano sin interpolar)</option>
         </select>
       </div>
-      <div class="control-group" style="margin-bottom: 2px;">
+
+      <div class="control-group" style="margin-bottom: 5px;">
         <div class="control-label">
-          <span style="font-size:11px;">Curvatura / InterpolaciÃ³n Superficie:</span>
+          <span style="font-size:11px;">Curvatura / Interpolación Superficie:</span>
           <span class="control-value" id="lbl-mesh-curvature" style="color:#a5b4fc; font-weight:700;">50%</span>
         </div>
         <input type="range" id="slider-mesh-curvature" min="0" max="100" step="5" value="50" />
       </div>
+
+      <!-- Previsualización interactiva en Cuadro 1x1m antes de ejecutar -->
+      <div style="background: rgba(0,0,0,0.28); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; border: 1px dashed rgba(168, 85, 247, 0.45);">
+        <label class="checkbox-row" style="margin: 0 0 5px 0;">
+          <span style="font-size:11px; color:#d8b4fe; font-weight:600;">🔍 Previsualizar en Caja 1×1m</span>
+          <input type="checkbox" id="chk-preview-1x1" checked />
+        </label>
+        <button class="hud-btn" id="btn-center-preview-1x1" style="font-size:10px; padding:4px 6px; width:100%; background:rgba(168,85,247,0.18); border-color:#a855f7; color:#e9d5ff; font-weight:600; margin-bottom: 4px;">
+          🎯 Centrar Caja 1×1m Aquí (Cámara)
+        </button>
+        <div id="lbl-preview-stats" style="font-size:9.5px; color:#c084fc; line-height:1.35;">
+          Muestra 1×1m activa. Comprueba el suavizado a 60 FPS antes de aplicar.
+        </div>
+      </div>
+
+      <!-- Botón de aplicación global a toda la malla -->
+      <button class="hud-btn" id="btn-apply-smoothing-all" style="font-size:11.5px; padding:7px 10px; width:100%; background:#6366f1; border-color:#818cf8; color:#fff; font-weight:700; cursor:pointer; box-shadow: 0 2px 8px rgba(99,102,241,0.35);">
+        🚀 Aplicar Suavizado a Toda la Malla
+      </button>
     </div>
 
-    <!-- Master Toggle para Cajas y LÃ­neas de Referencia / Gizmos 3D -->
+    <!-- Master Toggle para Cajas y Líneas de Referencia / Gizmos 3D -->
     <label class="checkbox-row" style="background: rgba(14, 165, 233, 0.14); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35); margin-bottom: 6px;">
-      <span style="color:#7dd3fc; font-weight:600;">ðŸ‘ï¸ Cajas y LÃ­neas de Referencia 3D [Tecla G]</span>
+      <span style="color:#7dd3fc; font-weight:600;">👁️ Cajas y Líneas de Referencia 3D [Tecla G]</span>
       <input type="checkbox" id="chk-vis-reference-gizmos" checked />
     </label>
 
@@ -652,113 +673,88 @@
       <input type="range" id="slider-density" min="0" max="100" step="0.5" value="100" />
     </div>
 
-    <!-- ================= RENDERIZADO POR CUADRADOS DE 10x10m (TODA LA NUBE O ZONA PERSONALIZADA) ================= -->
-    <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(52, 211, 153, 0.55); border-radius: 10px; padding: 10px 11px; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(5, 150, 105, 0.2);">
+        <!-- ================= MOTOR DE VISUALIZACIÓN Y RENDERIZADO TIPO CLOUDCOMPARE ================= -->
+    <div style="background: rgba(14, 165, 233, 0.12); border: 1.5px solid rgba(56, 189, 248, 0.55); border-radius: 10px; padding: 11px 12px; margin-bottom: 12px; box-shadow: 0 4px 18px rgba(14, 165, 233, 0.22);">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
-        <span style="color:#6ee7b7; font-weight:700; font-size:12px; display:flex; align-items:center; gap:5px;">
-          <span>📐</span> Renderizado por Cuadrados 10×10m
+        <span style="color:#7dd3fc; font-weight:700; font-size:12.5px; display:flex; align-items:center; gap:6px;">
+          <span>⚡</span> Renderizado Tipo CloudCompare
         </span>
-        <span id="badge-sq-count" style="font-size:10px; color:#a7f3d0; background:rgba(6,95,70,0.65); border:1px solid rgba(52,211,153,0.3); padding:2px 7px; border-radius:4px; font-weight:600;">36 cuadrantes</span>
+        <span id="badge-cc-status" style="font-size:10px; color:#38bdf8; background:rgba(12,74,110,0.65); border:1px solid rgba(56,189,248,0.4); padding:2px 7px; border-radius:4px; font-weight:700;">ACTIVO</span>
       </div>
 
-      <!-- Ver el cuadrado de renderizado completo antes de renderizar -->
-      <label class="checkbox-row" style="margin: 2px 0 8px 0; background: rgba(0,0,0,0.22); padding: 5px 8px; border-radius: 6px;">
-        <span style="font-size:11.5px; color:#f1f5f9; font-weight:600;">👁️ Ver Caja / Cuadrado 3D de Renderizado</span>
-        <input type="checkbox" id="chk-show-render-box" checked />
-      </label>
-
-      <!-- Botones de auto-ajuste y centrado -->
-      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 6px; margin-bottom: 8px;">
-        <button class="hud-btn" id="btn-fit-box-to-cloud" style="font-size: 11px; padding: 6px 8px; background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; color: #7dd3fc; font-weight: 600;">
-          🔄 Ajustar a Toda la Nube
-        </button>
-        <button class="hud-btn" id="btn-center-box-to-camera" style="font-size: 11px; padding: 6px 8px; background: rgba(255,255,255,0.06); color: #cbd5e1;">
-          🎯 Centrar Aquí
-        </button>
-      </div>
-
-      <!-- Agrandar / Reducir: Ancho (X) -->
-      <div class="control-group" style="margin-bottom: 6px;">
-        <div class="control-label">
-          <span>Ancho X (Agrandar / Reducir):</span>
-          <span class="control-value" id="lbl-box-width" style="color:#34d399; font-weight:700;">60 m</span>
-        </div>
-        <div style="display: flex; gap: 4px; align-items: center;">
-          <button class="hud-btn" id="btn-box-w-minus" style="padding: 2px 7px; font-size:11px;">-10m</button>
-          <input type="range" id="slider-box-width" min="10" max="1500" step="10" value="60" style="flex: 1;" />
-          <button class="hud-btn" id="btn-box-w-plus" style="padding: 2px 7px; font-size:11px;">+10m</button>
-        </div>
-      </div>
-
-      <!-- Agrandar / Reducir: Largo (Z) -->
-      <div class="control-group" style="margin-bottom: 6px;">
-        <div class="control-label">
-          <span>Largo Z (Agrandar / Reducir):</span>
-          <span class="control-value" id="lbl-box-depth" style="color:#34d399; font-weight:700;">60 m</span>
-        </div>
-        <div style="display: flex; gap: 4px; align-items: center;">
-          <button class="hud-btn" id="btn-box-d-minus" style="padding: 2px 7px; font-size:11px;">-10m</button>
-          <input type="range" id="slider-box-depth" min="10" max="1500" step="10" value="60" style="flex: 1;" />
-          <button class="hud-btn" id="btn-box-d-plus" style="padding: 2px 7px; font-size:11px;">+10m</button>
-        </div>
-      </div>
-
-      <!-- Rotar el cuadrado / zona -->
-      <div class="control-group" style="margin-bottom: 6px;">
-        <div class="control-label">
-          <span>🔄 Rotación de la Zona (Giro):</span>
-          <span class="control-value" id="lbl-box-rot" style="color:#38bdf8; font-weight:700;">0.0°</span>
-        </div>
-        <div style="display: flex; gap: 4px; align-items: center;">
-          <button class="hud-btn" id="btn-box-rot-minus" style="padding: 2px 6px; font-size:10.5px;">-15°</button>
-          <input type="range" id="slider-box-rot" min="-180" max="180" step="1" value="0" style="flex: 1;" />
-          <button class="hud-btn" id="btn-box-rot-plus" style="padding: 2px 6px; font-size:10.5px;">+15°</button>
-          <button class="hud-btn" id="btn-box-rot-reset" style="padding: 2px 5px; font-size:10px; background:rgba(255,255,255,0.08);">0°</button>
-        </div>
-      </div>
-
-      <!-- Ampliar Altura / Espesor Vertical -->
-      <div class="control-group" style="margin-bottom: 6px;">
-        <div class="control-label">
-          <span>↕️ Ampliar Altura / Espesor:</span>
-          <span class="control-value" id="lbl-box-height" style="color:#fbbf24; font-weight:700;">30 m</span>
-        </div>
-        <div style="display: flex; gap: 4px; align-items: center;">
-          <button class="hud-btn" id="btn-box-h-minus" style="padding: 2px 7px; font-size:11px;">-5m</button>
-          <input type="range" id="slider-box-height" min="2" max="300" step="2" value="30" style="flex: 1;" />
-          <button class="hud-btn" id="btn-box-h-plus" style="padding: 2px 7px; font-size:11px;">+5m</button>
-        </div>
-      </div>
-
-      <div class="control-group" style="margin-bottom: 6px;">
-        <div class="control-label">
-          <span>Cota Central Y (Elevación):</span>
-          <span class="control-value" id="lbl-box-centery">0.0 m</span>
-        </div>
-        <input type="range" id="slider-box-centery" min="-150" max="150" step="0.5" value="0" />
-      </div>
-
-      <!-- Telemetría en vivo del área y conteo de cuadrados -->
-      <div id="lbl-box-summary" style="font-size: 10.5px; color: #a7f3d0; background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 5px; margin-bottom: 8px; line-height: 1.45; border-left: 3px solid #10b981;">
-        Dim: 60m × 60m (3,600 m²) | Altura: 30m | Rotación: 0.0°<br/>
-        <b>Cuadrícula: 6 × 6 = 36 cuadrados de 10×10m</b>
-      </div>
-
-      <!-- Botón principal para renderizar toda la nube / zona por cuadrados de 10x10m -->
-      <button class="hud-btn hud-btn-primary" id="btn-render-progressive-grid" style="background:#059669; border-color:#10b981; color:#fff; font-weight:700; font-size:12px; padding:9px 12px; width:100%; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow: 0 3px 10px rgba(5,150,105,0.4); margin-bottom: 5px;">
-        🚀 Renderizar Zona (Por Cuadrados de 10×10m)
+      <!-- Botón principal para activar/desactivar el modo CloudCompare -->
+      <button class="hud-btn hud-btn-primary" id="btn-toggle-cloudcompare" style="background:#0284c7; border-color:#38bdf8; color:#fff; font-weight:700; font-size:12px; padding:9px 12px; width:100%; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow: 0 3px 12px rgba(2,132,199,0.4); margin-bottom: 8px;">
+        🚀 Modo Tipo CloudCompare (Activo)
       </button>
 
-      <button class="hud-btn" id="btn-render-zone" style="font-size:11px; width:100%; margin-bottom:5px; background:rgba(255,255,255,0.06); color:#cbd5e1; border-color:rgba(255,255,255,0.15);">
-        🎯 Renderizar Radio Concéntrico Rápido (10m)
-      </button>
+      <!-- Selector de Forma de Splat / Geometría de Punto -->
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label" style="margin-bottom: 3px;">
+          <span style="color:#93c5fd; font-size:11px; font-weight:600;">Geometría de Puntos (Splat CC):</span>
+        </div>
+        <select class="hud-select" id="sel-cc-splat" style="font-size:11px; background:rgba(15,23,42,0.8); border:1px solid rgba(56,189,248,0.4); color:#e2e8f0; padding:4px 6px;">
+          <option value="0">1. Surfel Continuo Esférico (Sin Huecos / Sólido)</option>
+          <option value="1">2. Disco Circular Suave con Antialiasing (qEDL)</option>
+          <option value="2">3. Píxel Cuadrado Rápido (CloudCompare Fast)</option>
+        </select>
+      </div>
 
-      <button class="hud-btn" id="btn-clear-zone" style="font-size:11px; width:100%; background:rgba(255,255,255,0.06); color:#cbd5e1; border-color:rgba(255,255,255,0.15);">
-        🧹 Desactivar / Limpiar Zona Renderizada
-      </button>
+      <!-- Tamaño de Puntos con Botones Rápidos (Presets) -->
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label">
+          <span style="color:#93c5fd; font-size:11px; font-weight:600;">Tamaño de Punto (Point Size):</span>
+          <span class="control-value" id="lbl-cc-size" style="color:#38bdf8; font-weight:700;">6.5 px</span>
+        </div>
+        <input type="range" id="slider-cc-size" min="1.0" max="25.0" step="0.5" value="6.5" />
+        <div style="display:flex; gap:3px; margin-top:4px;">
+          <button class="hud-btn" id="btn-cc-size-2" style="flex:1; padding:2px 0; font-size:9.5px;">2px</button>
+          <button class="hud-btn" id="btn-cc-size-4" style="flex:1; padding:2px 0; font-size:9.5px;">4px</button>
+          <button class="hud-btn" id="btn-cc-size-6" style="flex:1; padding:2px 0; font-size:9.5px;">6px</button>
+          <button class="hud-btn" id="btn-cc-size-8" style="flex:1; padding:2px 0; font-size:9.5px;">8px</button>
+          <button class="hud-btn" id="btn-cc-size-12" style="flex:1; padding:2px 0; font-size:9.5px;">12px</button>
+          <button class="hud-btn" id="btn-cc-size-16" style="flex:1; padding:2px 0; font-size:9.5px;">16px</button>
+        </div>
+      </div>
 
-      <div id="lbl-bubble-status" style="font-size:10px; color:#a7f3d0; margin-top:6px; line-height:1.4; border-top:1px solid rgba(52,211,153,0.25); padding-top:5px;">
-        Ajusta el volumen o pulsa "Ajustar a Toda la Nube" y luego "Renderizar Zona".
+      <!-- Relieve Eye-Dome Lighting (qEDL) -->
+      <div class="control-group" style="margin-bottom: 6px; background:rgba(0,0,0,0.2); padding:6px 8px; border-radius:6px;">
+        <label class="checkbox-row" style="margin-bottom: 4px; padding:0;">
+          <span style="font-size:11px; color:#f1f5f9; font-weight:600;">👁️ Sombreado de Relieve qEDL (Eye-Dome)</span>
+          <input type="checkbox" id="chk-cc-edl" checked />
+        </label>
+        <div class="control-label" style="margin-top:4px;">
+          <span style="color:#cbd5e1; font-size:10.5px;">Intensidad de Relieve qEDL:</span>
+          <span class="control-value" id="lbl-cc-edl" style="color:#38bdf8; font-weight:700;">1.35x</span>
+        </div>
+        <input type="range" id="slider-cc-edl" min="0.2" max="3.5" step="0.05" value="1.35" />
+      </div>
+
+      <!-- Rampas de Color CloudCompare -->
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label" style="margin-bottom: 3px;">
+          <span style="color:#93c5fd; font-size:11px; font-weight:600;">Rampa de Color CloudCompare:</span>
+        </div>
+        <select class="hud-select" id="sel-cc-ramp" style="font-size:11px; background:rgba(15,23,42,0.8); border:1px solid rgba(56,189,248,0.4); color:#e2e8f0; padding:4px 6px;">
+          <option value="0">1. True Color RGB Original (Con Realce CC)</option>
+          <option value="5">2. CloudCompare Rainbow (Cota Z Azul->Verde->Rojo)</option>
+          <option value="1">3. Topografía Viridis (Cota Z Continua)</option>
+          <option value="3">4. Reflectancia / Intensidad Láser VZ-600i</option>
+          <option value="2">5. Segmentación Terreno vs Vegetación</option>
+          <option value="4">6. True Color Mejorado (Relleno de Puntos Blancos)</option>
+        </select>
+      </div>
+
+      <!-- Contraste y Realce de Relieve -->
+      <div class="control-group" style="margin-bottom: 4px;">
+        <div class="control-label">
+          <span style="color:#93c5fd; font-size:11px; font-weight:600;">Realce de Contraste y Textura CC:</span>
+          <span class="control-value" id="lbl-cc-contrast" style="color:#38bdf8; font-weight:700;">1.20x</span>
+        </div>
+        <input type="range" id="slider-cc-contrast" min="0.8" max="2.5" step="0.05" value="1.20" />
+      </div>
+
+      <div style="font-size:10px; color:#7dd3fc; margin-top:6px; line-height:1.4; border-top:1px solid rgba(56,189,248,0.25); padding-top:5px;">
+        ℹ️ <b>Motor CloudCompare:</b> Splats adaptativos sin huecos, sombreado de contorno qEDL volumétrico y carga de nubes densas sin pérdida de resolución.
       </div>
     </div>
 
@@ -1260,47 +1256,59 @@
         uniform vec3 uBubbleCenter;
         uniform float uBubbleRadius;
         uniform float uBubbleReady;
+        uniform float uCloudCompareActive;
+        uniform float uSplatType;
+        uniform float uEdlStrength;
+        uniform float uCcContrast;
 
         varying vec3 vColor;
         varying float vVisible;
         varying float vSolid;
 
-        // Turbo / Viridis-inspired ReCap Pro Elevation Gradient from the lowest point in each sector
-        vec3 sectorElevationGradient(float hAboveSectorMin, float maxRange) {
+        // CloudCompare Pure Rainbow Color Ramp (Blue -> Cyan -> Green -> Yellow -> Red)
+        vec3 cloudCompareRainbow(float hAboveSectorMin, float maxRange) {
           float t = clamp(hAboveSectorMin / max(0.5, maxRange), 0.0, 1.0);
-          vec3 c0 = vec3(0.12, 0.30, 0.88); // Deep Blue (Sector Lowest Floor/Ground)
-          vec3 c1 = vec3(0.05, 0.78, 0.85); // Cyan
-          vec3 c2 = vec3(0.15, 0.88, 0.38); // Emerald Green
-          vec3 c3 = vec3(0.98, 0.84, 0.12); // Warm Yellow
-          vec3 c4 = vec3(0.95, 0.20, 0.18); // High Red
+          vec3 c0 = vec3(0.0, 0.0, 1.0); // Pure Blue
+          vec3 c1 = vec3(0.0, 1.0, 1.0); // Pure Cyan
+          vec3 c2 = vec3(0.0, 1.0, 0.0); // Pure Green
+          vec3 c3 = vec3(1.0, 1.0, 0.0); // Pure Yellow
+          vec3 c4 = vec3(1.0, 0.0, 0.0); // Pure Red
           if (t < 0.25) return mix(c0, c1, t * 4.0);
           if (t < 0.50) return mix(c1, c2, (t - 0.25) * 4.0);
           if (t < 0.75) return mix(c2, c3, (t - 0.50) * 4.0);
           return mix(c3, c4, (t - 0.75) * 4.0);
         }
 
-        // Visual Segmentation for Environments with Trees vs Ground vs Built Structures
-        vec3 segmentTreesAndGround(vec3 rawRgb, float hag) {
-          // Excess Green Index (ExG = 2*G - R - B) + Height Above Local Ground (hag)
-          float exG = 2.0 * rawRgb.g - rawRgb.r - rawRgb.b;
+        // Turbo / Viridis Elevation Gradient
+        vec3 sectorElevationGradient(float hAboveSectorMin, float maxRange) {
+          float t = clamp(hAboveSectorMin / max(0.5, maxRange), 0.0, 1.0);
+          vec3 c0 = vec3(0.12, 0.30, 0.88);
+          vec3 c1 = vec3(0.05, 0.78, 0.85);
+          vec3 c2 = vec3(0.15, 0.88, 0.38);
+          vec3 c3 = vec3(0.98, 0.84, 0.12);
+          vec3 c4 = vec3(0.95, 0.20, 0.18);
+          if (t < 0.25) return mix(c0, c1, t * 4.0);
+          if (t < 0.50) return mix(c1, c2, (t - 0.25) * 4.0);
+          if (t < 0.75) return mix(c2, c3, (t - 0.50) * 4.0);
+          return mix(c3, c4, (t - 0.75) * 4.0);
+        }
 
+        // Visual Segmentation for Trees vs Ground vs Structures
+        vec3 segmentTreesAndGround(vec3 rawRgb, float hag) {
+          float exG = 2.0 * rawRgb.g - rawRgb.r - rawRgb.b;
           if (hag <= 0.38) {
-            // Ground / Terrain / Road surface: Warm earthy terracotta-ochre tone blended with scan texture
             float luma = dot(rawRgb, vec3(0.299, 0.587, 0.114));
             vec3 groundTone = mix(vec3(0.52, 0.35, 0.20), vec3(0.82, 0.65, 0.45), clamp(luma * 1.3, 0.0, 1.0));
             return groundTone;
           } else if (hag <= 1.65 && exG < 0.06) {
-            // Tree Trunks / Low Shrubs / Understory
             return mix(rawRgb, vec3(0.55, 0.42, 0.18), 0.55);
           } else if (exG > 0.03 || hag > 1.25) {
-            // Tree Canopy & Foliage: Rich multi-tone forest/emerald greens graduated by canopy height
             float canopyFactor = clamp((hag - 1.0) / 12.0, 0.0, 1.0);
             vec3 deepLeaf = vec3(0.08, 0.62, 0.24);
             vec3 brightCanopy = vec3(0.38, 0.95, 0.32);
             vec3 treeCol = mix(deepLeaf, brightCanopy, canopyFactor);
             return mix(treeCol, rawRgb * vec3(0.6, 1.35, 0.6), 0.30);
           } else {
-            // Man-made structures / walls / poles
             return mix(rawRgb, vec3(0.75, 0.80, 0.88), 0.45);
           }
         }
@@ -1316,11 +1324,7 @@
             return;
           }
 
-          float distToFocus = distance(worldPos, uFocusPos);
-          float lodSizeCompensation = 1.0;
-
           if (uIsFullBubble > 0.5) {
-            // Zona 100% Full-Density (renderizada bajo demanda al pulsar 'Renderizar Zona')
             if (uBubbleReady < 0.5) {
               vVisible = 0.0;
               gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
@@ -1328,7 +1332,6 @@
               return;
             }
           } else {
-            // Nube base general (resolución fluida global):
             if (aSeed > uDensity) {
               vVisible = 0.0;
               gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
@@ -1340,26 +1343,33 @@
           vVisible = 1.0;
           vSolid = uSolidMode;
 
-          // Mode 4 uses precomputed nearest-neighbor infilled colors for white/overexposed points
           vec3 activeRgb = (uColorMode == 4) ? aInfillColor : color;
           vec3 baseCol = clamp(activeRgb * uBrightness, 0.0, 1.0);
 
-          if (uColorMode == 4) {
-            // Mode 4: True Color Mejorado (Relleno de Puntos Blancos por Cercanía)
+          if (uColorMode == 5) {
+            // Mode 5: CloudCompare Rainbow (Cota Z Azul -> Cian -> Verde -> Amarillo -> Rojo)
+            vColor = cloudCompareRainbow(aHeightAboveGround, uSectorRange);
+          } else if (uColorMode == 4) {
+            // Mode 4: True Color Mejorado
             vColor = baseCol;
           } else if (uColorMode == 1) {
-            // Mode 1: Height Filter relative to the LOWEST point in each 2D sector
+            // Mode 1: Altura desde punto mas bajo
             vColor = sectorElevationGradient(aHeightAboveGround, uSectorRange) * clamp(uBrightness * 0.9, 0.5, 2.0);
           } else if (uColorMode == 2) {
-            // Mode 2: Tree Canopy vs Ground Surface Visual Segmentation
+            // Mode 2: Arboles vs Terreno
             vColor = segmentTreesAndGround(baseCol, aHeightAboveGround);
           } else if (uColorMode == 3) {
-            // Mode 3: Laser Reflectance / Intensity
+            // Mode 3: Intensidad / Reflectancia Laser
             float luma = dot(baseCol, vec3(0.299, 0.587, 0.114));
             vColor = vec3(luma * 0.92, luma * 0.96, min(1.0, luma * 1.08));
           } else {
-            // Mode 0: True Color ReCap with Brightness & Contrast enhancement
-            vColor = baseCol;
+            // Mode 0: True Color con realce CloudCompare
+            if (uCloudCompareActive > 0.5 && uCcContrast > 1.01) {
+              vec3 c = pow(baseCol, vec3(0.94));
+              vColor = clamp((c - 0.5) * uCcContrast + 0.5, 0.0, 1.0);
+            } else {
+              vColor = baseCol;
+            }
           }
 
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
@@ -1373,14 +1383,20 @@
           }
 
           float dist = max(0.35, -mvPosition.z);
-          float solidBoost = (uSolidMode > 0.5) ? 1.85 : 1.0;
-          float perspectiveScale = mix(28.0 / dist, 12.5 / sqrt(dist), 0.48);
-          float minSplat = max(0.2, uPointSize * 0.3);
-          gl_PointSize = clamp(uPointSize * solidBoost * perspectiveScale * lodSizeCompensation, minSplat, 64.0);
+          // CloudCompare Adaptive Point Splatting:
+          // Close points expand so that zero holes or black gaps appear between scan lines.
+          float ccBoost = (uCloudCompareActive > 0.5) ? (uSplatType < 0.5 ? 1.75 : 1.30) : ((uSolidMode > 0.5) ? 1.85 : 1.0);
+          float perspectiveScale = mix(30.0 / dist, 13.5 / sqrt(dist), 0.46);
+          float minSplat = (uCloudCompareActive > 0.5) ? max(1.5, uPointSize * 0.5) : max(0.2, uPointSize * 0.3);
+          gl_PointSize = clamp(uPointSize * ccBoost * perspectiveScale, minSplat, 80.0);
         }
       `;
 
       const pointCloudFragmentShader = `
+        uniform float uCloudCompareActive;
+        uniform float uSplatType;
+        uniform float uEdlStrength;
+
         varying vec3 vColor;
         varying float vVisible;
         varying float vSolid;
@@ -1388,21 +1404,71 @@
         void main() {
           if (vVisible < 0.5) discard;
 
-          vec2 coord = gl_PointCoord - vec2(0.5);
-          float r2 = dot(coord, coord);
+          if (uCloudCompareActive > 0.5) {
+            // CLOUDCOMPARE SURFEL SPLATTING & qEDL RELIEF
+            vec2 coord = gl_PointCoord * 2.0 - 1.0;
+            float r2 = dot(coord, coord);
 
-          if (vSolid < 0.5 && r2 > 0.25) discard;
-          if (vSolid >= 0.5 && r2 > 0.36) discard;
+            if (uSplatType > 1.5) {
+              // Pixel Cuadrado CloudCompare (Fast)
+              gl_FragColor = vec4(vColor, 1.0);
+              return;
+            }
 
-          // Autodesk ReCap Pro style Eye-Dome Lighting (EDL) depth-contour shading on each splat
-          float edlShade = 1.0 - r2 * (vSolid >= 0.5 ? 0.48 : 0.85);
-          gl_FragColor = vec4(vColor * edlShade, 1.0);
+            if (r2 > 1.0) discard; // Smooth circular surfel / disc
+
+            // Volumetric normal for surfel
+            float z = sqrt(max(0.0, 1.0 - r2));
+            vec3 N = normalize(vec3(coord.x, -coord.y, z * 1.25));
+
+            // Directional key CAD lighting
+            vec3 lightDir = normalize(vec3(0.35, 0.55, 0.75));
+            float diff = max(0.38, dot(N, lightDir));
+
+            // qEDL (Eye-Dome Lighting) relief & edge darkening
+            float edlRelief = 1.0 - (r2 * 0.52 * clamp(uEdlStrength, 0.1, 4.0));
+            edlRelief = clamp(edlRelief, 0.30, 1.15);
+
+            // Antialiased rim edge
+            float rim = 1.0 - smoothstep(0.80, 1.0, r2) * (0.60 * clamp(uEdlStrength, 0.1, 2.5));
+
+            vec3 finalRgb = vColor * diff * edlRelief * rim;
+            gl_FragColor = vec4(finalRgb, 1.0);
+          } else {
+            // Standard / ReCap Shading
+            vec2 coord = gl_PointCoord - vec2(0.5);
+            float r2 = dot(coord, coord);
+
+            if (vSolid < 0.5 && r2 > 0.25) discard;
+            if (vSolid >= 0.5 && r2 > 0.36) discard;
+
+            float edlShade = 1.0 - r2 * (vSolid >= 0.5 ? 0.48 : 0.85);
+            gl_FragColor = vec4(vColor * edlShade, 1.0);
+          }
         }
       `;
 
       let currentDensity = 1.0;
       let currentPointSize = 6.5;
       let currentSolidMode = 1.0;
+      let currentCloudCompareActive = true;
+      let currentCcSplatType = 0.0; // 0: Surfel Continuo, 1: Disco Circular, 2: Cuadrado Fast
+      let currentCcEdlStrength = 1.35;
+      let currentCcContrast = 1.20;
+
+      function syncCloudCompareUniforms() {
+        for (let i = 0; i < pointCloudMaterials.length; i++) {
+          const u = pointCloudMaterials[i].uniforms;
+          if (u.uCloudCompareActive) u.uCloudCompareActive.value = currentCloudCompareActive ? 1.0 : 0.0;
+          if (u.uSplatType) u.uSplatType.value = currentCcSplatType;
+          if (u.uEdlStrength) u.uEdlStrength.value = currentCcEdlStrength;
+          if (u.uCcContrast) u.uCcContrast.value = currentCcContrast;
+          if (u.uPointSize) u.uPointSize.value = currentPointSize;
+          if (u.uColorMode) u.uColorMode.value = currentColorMode;
+          if (u.uBrightness) u.uBrightness.value = currentBrightness;
+          if (u.uSectorRange) u.uSectorRange.value = currentSectorRange;
+        }
+      }
       let currentBrightness = 1.15;
       let currentSectorRange = 15.0;
       let currentColorMode = 0;
@@ -1424,7 +1490,7 @@
 
       // Dedicated subgroup inside directCloudGroup for the 100% Full-Density (2mm) Local Bubble around the camera
       const fullDensityBubbleGroup = new THREE.Group();
-      directCloudGroup.add(fullDensityBubbleGroup);
+      scene.add(fullDensityBubbleGroup);
 
       // Visual 3D Ground Ring showing the user's Full-Density Radius (default 10.0m) on the terrain
       const ringGeo = new THREE.RingGeometry(0.985, 1.0, 96);
@@ -1438,7 +1504,7 @@
       });
             const fullRadiusRingMesh = new THREE.Mesh(ringGeo, ringMat);
       fullRadiusRingMesh.scale.set(currentFullRadius, 1, currentFullRadius);
-      fullRadiusRingMesh.visible = false;
+      fullRadiusRingMesh.visible = true;
       scene.add(fullRadiusRingMesh);
 
       // ================= 3D RENDER ZONE BOX GIZMO & PROGRESSIVE 10x10m RENDERING ENGINE =================
@@ -1703,7 +1769,11 @@
             uIsDirect: { value: (isDirect || isFullBubble) ? 1.0 : 0.0 },
             uBubbleCenter: { value: bubbleCenterWorld },
             uBubbleRadius: { value: bubbleCoverRadius },
-            uBubbleReady: { value: bubbleReadyFlag }
+            uBubbleReady: { value: bubbleReadyFlag },
+            uCloudCompareActive: { value: currentCloudCompareActive ? 1.0 : 0.0 },
+            uSplatType: { value: currentCcSplatType },
+            uEdlStrength: { value: currentCcEdlStrength },
+            uCcContrast: { value: currentCcContrast }
           }
         });
         pointCloudMaterials.push(mat);
@@ -1740,6 +1810,28 @@
         }
       }
 
+      function hideBasePointCloudsForUnifiedRender() {
+        for (let c = 0; c < directCloudGroup.children.length; c++) {
+          const ch = directCloudGroup.children[c];
+          if (ch !== fullDensityBubbleGroup && ch.isPoints) ch.visible = false;
+        }
+        for (let c = 0; c < revitCloudGroup.children.length; c++) {
+          const ch = revitCloudGroup.children[c];
+          if (ch.isPoints) ch.visible = false;
+        }
+      }
+
+      function restoreBasePointCloudsAfterUnifiedRender() {
+        for (let c = 0; c < directCloudGroup.children.length; c++) {
+          const ch = directCloudGroup.children[c];
+          if (ch !== fullDensityBubbleGroup && ch.isPoints) ch.visible = true;
+        }
+        for (let c = 0; c < revitCloudGroup.children.length; c++) {
+          const ch = revitCloudGroup.children[c];
+          if (ch.isPoints) ch.visible = true;
+        }
+      }
+
       function clearFullDensityBubble() {
         while (fullDensityBubbleGroup.children.length > 0) {
           const m = fullDensityBubbleGroup.children.pop();
@@ -1751,6 +1843,7 @@
         bubbleCoverRadius = 0.0;
         bubbleCenterWorld.set(1e9, 1e9, 1e9);
         bubbleCenterGroup.set(1e9, 1e9, 1e9);
+        restoreBasePointCloudsAfterUnifiedRender();
         syncLodUniforms();
         updatePointCloudTelemetry();
       }
@@ -1780,7 +1873,7 @@
 
         if (lw) lw.textContent = renderZoneState.width.toFixed(0) + ' m';
         if (ld) ld.textContent = renderZoneState.depth.toFixed(0) + ' m';
-        if (lr) lr.textContent = renderZoneState.rotationDeg.toFixed(1) + 'Â°';
+        if (lr) lr.textContent = renderZoneState.rotationDeg.toFixed(1) + '°';
         if (lh) lh.textContent = renderZoneState.height.toFixed(0) + ' m';
         if (lc) lc.textContent = (renderZoneState.centerY >= 0 ? '+' : '') + renderZoneState.centerY.toFixed(1) + ' m';
 
@@ -1789,11 +1882,11 @@
         const totalSq = numX * numZ;
         const area = (renderZoneState.width * renderZoneState.depth).toLocaleString();
 
-        if (badge) badge.textContent = totalSq + ' cuadrantes (10Ã—10m)';
+        if (badge) badge.textContent = totalSq + ' cuadrantes (10×10m)';
         if (sum) {
           sum.innerHTML =
-            'Dim: ' + renderZoneState.width.toFixed(0) + 'm Ã— ' + renderZoneState.depth.toFixed(0) + 'm (' + area + ' mÂ²) | Alt: ' + renderZoneState.height.toFixed(0) + 'm | Rot: ' + renderZoneState.rotationDeg.toFixed(1) + 'Â°<br/>' +
-            '<b>CuadrÃ­cula: ' + numX + ' Ã— ' + numZ + ' = ' + totalSq + ' cuadrados de 10Ã—10m</b>';
+            'Dim: ' + renderZoneState.width.toFixed(0) + 'm × ' + renderZoneState.depth.toFixed(0) + 'm (' + area + ' m²) | Alt: ' + renderZoneState.height.toFixed(0) + 'm | Rot: ' + renderZoneState.rotationDeg.toFixed(1) + '°<br/>' +
+            '<b>Cuadrícula: ' + numX + ' × ' + numZ + ' = ' + totalSq + ' cuadrados de 10×10m</b>';
         }
       }
 
@@ -1925,7 +2018,7 @@
         if (stat) {
           const numX = Math.ceil(renderZoneState.width / 10.0);
           const numZ = Math.ceil(renderZoneState.depth / 10.0);
-          stat.innerHTML = 'ðŸ“ <b>Volumen ajustado a toda la nube:</b> ' + renderZoneState.width.toFixed(0) + 'm Ã— ' + renderZoneState.depth.toFixed(0) + 'm (' + (numX * numZ) + ' cuadrados de 10Ã—10m).';
+          stat.innerHTML = '📐  <b>Volumen ajustado a toda la nube:</b> ' + renderZoneState.width.toFixed(0) + 'm × ' + renderZoneState.depth.toFixed(0) + 'm (' + (numX * numZ) + ' cuadrados de 10×10m).';
         }
       };
 
@@ -1951,115 +2044,662 @@
         if (renderZoneState.isRendering) return;
 
         const stat = document.getElementById('lbl-bubble-status');
-        const hasDirect = directCloudSources.length > 0;
-        const hasPointsInGpu = directLoadedPoints > 0 || revitLoadedPoints > 0;
+        const btnRender = document.getElementById('btn-render-progressive-grid');
+        const btnStop = document.getElementById('btn-modal-stop-render');
 
-        if (!hasDirect && !hasPointsInGpu) {
-          if (stat) stat.textContent = 'âš ï¸ Primero carga una nube de puntos (.LAS o .RCS) para renderizar.';
+        const hasDirect = directCloudSources.length > 0;
+        let totalCandidatePoints = directLoadedPoints + revitLoadedPoints;
+        for (const grp of [directCloudGroup, revitCloudGroup]) {
+          for (let c = 0; c < grp.children.length; c++) {
+            const ch = grp.children[c];
+            if (ch !== fullDensityBubbleGroup && ch.isPoints && ch.geometry && ch.geometry.attributes && ch.geometry.attributes.position) {
+              totalCandidatePoints += ch.geometry.attributes.position.count;
+            }
+          }
+        }
+        if (hasDirect) {
+          totalCandidatePoints += directCloudSources.reduce((acc, s) => acc + (s.totalPts || 0), 0);
+        }
+
+        if (totalCandidatePoints <= 0) {
+          if (stat) stat.textContent = '⚠️ Primero carga una nube de puntos (.LAS, .RCS o Revit) para renderizar.';
+          if (window.showTaskProgressModal) window.showTaskProgressModal();
+          if (window.updateTaskProgressModal) {
+            window.updateTaskProgressModal(
+              'NOT_STARTED',
+              0.0,
+              'Sin nube de puntos detectada',
+              'Por favor carga una nube de puntos (.LAS, .RCS o desde Revit) antes de iniciar el renderizado.'
+            );
+          }
           return;
         }
 
         renderZoneState.isRendering = true;
         renderZoneState.cancelRequested = false;
 
-        const btnRender = document.getElementById('btn-render-progressive-grid');
-        const btnStop = document.getElementById('btn-modal-stop-render');
         if (btnRender) {
           btnRender.disabled = true;
-          btnRender.textContent = 'â³ Renderizando por cuadrados 10x10m...';
+          btnRender.textContent = '⏳ Renderizando en máxima calidad (100% puntos)...';
         }
         if (btnStop) {
           btnStop.style.display = 'block';
+          btnStop.textContent = '⏹️ Cancelar Renderizado';
         }
 
-        // 1. Dispose previous zone if any (strictly ONE full-quality zone active)
+        // Dispose previous unified zone if any
         clearFullDensityBubble();
+        fullDensityBubbleGroup.visible = true;
+        bubbleReadyFlag = 1.0;
 
-        // 2. Open progress modal tab
         window.showTaskProgressModal();
         window.updateTaskProgressModal(
           'IN_PROGRESS',
           0.0,
-          'Etapa 1/2: Analizando CuadrÃ­cula 10x10m y Octree',
-          'Calculando particiÃ³n espacial para el volumen seleccionado...'
+          'Etapa 1/2: Analizando y Extrayendo Puntos en Máxima Definición (100%)',
+          'Accediendo a los registros crudos del archivo sin submuestreo...'
         );
-        await new Promise((r) => setTimeout(r, 20));
+        await new Promise((r) => setTimeout(r, 25));
 
         try {
-          const W = Math.min(400.0, Math.max(2.0, renderZoneState.width));
-          const D = Math.min(400.0, Math.max(2.0, renderZoneState.depth));
-          const H = Math.min(200.0, Math.max(1.0, renderZoneState.height));
-          const halfW = W * 0.5;
-          const halfD = D * 0.5;
-          const halfH = H * 0.5;
+          const tempBlockMeshes = [];
+          const allPositionsChunks = [];
+          const allColorsChunks = [];
+          const allSeedsChunks = [];
+          const allHagChunks = [];
 
-          // Dynamically adapt sqSize if zone is large so totalSquares <= 900
-          let sqSize = renderZoneState.squareSize || 10.0;
-          if (Math.ceil(W / sqSize) * Math.ceil(D / sqSize) > 900) {
-            sqSize = Math.max(10.0, Math.ceil(Math.max(W, D) / 30.0));
+          let totalRenderedPoints = 0;
+          let blockNumber = 0;
+
+          // Helper to stream a block live on screen with 100% RGB fidelity
+          async function renderLiveBlock(posChunk, colChunk, seedChunk, hagChunk, totalBlocksEst, labelInfo) {
+            if (!posChunk || posChunk.length === 0) return;
+            const ptsInBlock = posChunk.length / 3;
+
+            const posArr = (posChunk instanceof Float32Array) ? posChunk : new Float32Array(posChunk);
+            const colArr = (colChunk instanceof Float32Array) ? colChunk : new Float32Array(colChunk);
+            const seedArr = (seedChunk instanceof Float32Array) ? seedChunk : new Float32Array(seedChunk);
+            const hagArr = (hagChunk instanceof Float32Array) ? hagChunk : new Float32Array(hagChunk);
+
+            const infilledCol = computeWhiteInfilledColors(posArr, colArr, ptsInBlock);
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+            geo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+            geo.setAttribute('aInfillColor', new THREE.BufferAttribute(infilledCol, 3));
+            geo.setAttribute('aSeed', new THREE.BufferAttribute(seedArr, 1));
+            geo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(hagArr, 1));
+            geo.computeBoundingBox();
+            geo.computeBoundingSphere();
+
+            const mat = createPointCloudShaderMaterial(true, true);
+            mat.uniforms.uBubbleReady.value = 1.0;
+            mat.uniforms.uIsFullBubble.value = 1.0;
+            mat.uniforms.uDensity.value = 1.0;
+            mat.uniforms.uPointSize.value = currentPointSize;
+            mat.uniforms.uBrightness.value = currentBrightness;
+
+            const mesh = new THREE.Points(geo, mat);
+            mesh.frustumCulled = false;
+            fullDensityBubbleGroup.add(mesh);
+
+            tempBlockMeshes.push({ mesh, geo, mat });
+
+            allPositionsChunks.push(posArr);
+            allColorsChunks.push(infilledCol);
+            allSeedsChunks.push(seedArr);
+            allHagChunks.push(hagArr);
+
+            totalRenderedPoints += ptsInBlock;
+
+            renderer.render(scene, camera);
+
+            const pct = Math.min(94.0, (blockNumber / Math.max(1, totalBlocksEst)) * 94.0);
+            window.updateTaskProgressModal(
+              'IN_PROGRESS',
+              pct,
+              'Etapa 1/2: Renderizando Bloque ' + blockNumber + ' de ' + totalBlocksEst + ' (100% Densidad)',
+              (labelInfo ? (labelInfo + ' | ') : '') + 'Bloque ' + blockNumber + ' (' + ptsInBlock.toLocaleString() + ' pts crudos) | Total en GPU: ' + totalRenderedPoints.toLocaleString() + ' pts'
+            );
+
+            await new Promise((res) => setTimeout(res, 20));
           }
 
-          const numX = Math.max(1, Math.ceil(W / sqSize));
-          const numZ = Math.max(1, Math.ceil(D / sqSize));
-          const totalSquares = numX * numZ;
-
+          // Render Zone box transform params
           const rotRad = (renderZoneState.rotationDeg * Math.PI) / 180.0;
-          const cosA = Math.cos(rotRad);
-          const sinA = Math.sin(rotRad);
+          const cosR = Math.cos(-rotRad);
+          const sinR = Math.sin(-rotRad);
+          const halfW = renderZoneState.width * 0.5;
+          const halfD = renderZoneState.depth * 0.5;
+          const halfH = renderZoneState.height * 0.5;
+          const zoneCX = renderZoneState.centerX;
+          const zoneCY = renderZoneState.centerY;
+          const zoneCZ = renderZoneState.centerZ;
 
-          const cx = renderZoneState.centerX;
-          const cy = renderZoneState.centerY;
-          const cz = renderZoneState.centerZ;
+          let hasStreamedRaw = false;
 
-          // Allocate on-demand Map to eliminate huge upfront memory consumption
-          const squareBuckets = new Map();
-          function getBucket(idx) {
-            let b = squareBuckets.get(idx);
-            if (!b) {
-              b = { positions: [], colors: [], seeds: [], hag: [] };
-              squareBuckets.set(idx, b);
-            }
-            return b;
-          }
-
-          let candidatePointsFound = 0;
-
-          // EXTRACT FROM DIRECT FILES (LAS or RCS at 100% density)
+          // ================= A) READ 100% RAW FULL-DENSITY POINTS FROM DIRECT FILES (.LAS / .RCS) =================
           if (hasDirect) {
             for (let sIdx = 0; sIdx < directCloudSources.length; sIdx++) {
               if (renderZoneState.cancelRequested) break;
               const src = directCloudSources[sIdx];
               if (!src || !src.file) continue;
 
-              const m4 = src.matrix.elements;
+              const BLOCK_PTS = 120000;
+              let curPos = [], curCol = [], curSeed = [], curHag = [];
 
               if (src.type === 'las') {
+                const totalPts = src.totalPts;
+                const chunkRecs = src.chunkRecs || 65536;
                 const nChunks = src.numChunks;
-                const cMin = src.chunkMin;
-                const cMax = src.chunkMax;
-                const candChunks = [];
+                const m4 = src.matrix.elements;
 
+                // Test which chunks intersect the render zone box
+                const matchingChunks = [];
                 for (let c = 0; c < nChunks; c++) {
                   const c3 = c * 3;
-                  const cX0 = cMin[c3], cZ0 = cMin[c3 + 2];
-                  const cX1 = cMax[c3], cZ1 = cMax[c3 + 2];
-                  if (!Number.isFinite(cX0) || !Number.isFinite(cX1)) {
-                    candChunks.push(c);
+                  const minX = src.chunkMin ? src.chunkMin[c3] : -Infinity;
+                  const maxX = src.chunkMax ? src.chunkMax[c3] : Infinity;
+                  const minZ = src.chunkMin ? src.chunkMin[c3 + 2] : -Infinity;
+                  const maxZ = src.chunkMax ? src.chunkMax[c3 + 2] : Infinity;
+
+                  if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+                    matchingChunks.push(c);
                     continue;
                   }
-                  const chunkMidX = (cX0 + cX1) * 0.5;
-                  const chunkMidZ = (cZ0 + cZ1) * 0.5;
-                  const ddx = chunkMidX - cx;
-                  const ddz = chunkMidZ - cz;
-                  const maxRadiusBox = Math.hypot(halfW, halfD) * 1.25;
-                  if (Math.hypot(ddx, ddz) <= maxRadiusBox + (cX1 - cX0)) {
-                    candChunks.push(c);
+
+                  // Check if chunk overlaps the oriented render box
+                  const cxLocal = (minX + maxX) * 0.5;
+                  const czLocal = (minZ + maxZ) * 0.5;
+                  const worldX = m4[0]*cxLocal + m4[8]*czLocal + m4[12];
+                  const worldZ = m4[2]*cxLocal + m4[10]*czLocal + m4[14];
+                  const dx = worldX - zoneCX;
+                  const dz = worldZ - zoneCZ;
+                  const lx = dx * cosR - dz * sinR;
+                  const lz = dx * sinR + dz * cosR;
+
+                  const chunkSpan = Math.max(maxX - minX, maxZ - minZ) * 0.6;
+                  if (Math.abs(lx) <= halfW + chunkSpan && Math.abs(lz) <= halfD + chunkSpan) {
+                    matchingChunks.push(c);
                   }
                 }
 
-                for (let m = 0; m < candChunks.length; m++) {
+                const chunksToRead = (matchingChunks.length > 0) ? matchingChunks : Array.from({length: nChunks}, (_, i) => i);
+                const estRawPoints = chunksToRead.length * chunkRecs;
+                // If cloud is massive (e.g. > 15 million in box), set optimal stride so it never crashes GPU
+                const MAX_RENDER_PTS = 14000000;
+                const rawStride = (estRawPoints > MAX_RENDER_PTS) ? Math.max(1.0, estRawPoints / MAX_RENDER_PTS) : 1.0;
+                const estTotalBlocks = Math.max(1, Math.ceil(Math.min(estRawPoints, MAX_RENDER_PTS) / BLOCK_PTS));
+
+                for (let m = 0; m < chunksToRead.length; m++) {
                   if (renderZoneState.cancelRequested) break;
-                  const c = candChunks[m];
+                  const c = chunksToRead[m];
+                  const startRec = c * chunkRecs;
+                  const recsInChunk = Math.min(chunkRecs, totalPts - startRec);
+                  if (recsInChunk <= 0) continue;
+
+                  const bStart = src.offsetToPointData + startRec * src.pointRecordLength;
+                  const bEnd = Math.min(src.file.size, bStart + recsInChunk * src.pointRecordLength);
+                  if (bEnd <= bStart) continue;
+
+                  const sliceBuf = await src.file.slice(bStart, bEnd).arrayBuffer();
+                  const dv = new DataView(sliceBuf);
+                  const actual = Math.floor(sliceBuf.byteLength / src.pointRecordLength);
+
+                  for (let cur = 0; cur < actual; cur += rawStride) {
+                    const i = Math.floor(cur);
+                    const pOff = i * src.pointRecordLength;
+                    const xi = dv.getInt32(pOff, true);
+                    const yi = dv.getInt32(pOff + 4, true);
+                    const zi = dv.getInt32(pOff + 8, true);
+
+                    const wx = (xi * src.scaleX + src.offsetX) - src.baseX;
+                    const wy = (zi * src.scaleZ + src.offsetZ) - src.baseZ;
+                    const wz = -((yi * src.scaleY + src.offsetY) - baseY);
+
+                    const gx = m4[0]*wx + m4[4]*wy + m4[8]*wz + m4[12];
+                    const gy = m4[1]*wx + m4[5]*wy + m4[9]*wz + m4[13] + directCloudElevationOffset;
+                    const gz = m4[2]*wx + m4[6]*wy + m4[10]*wz + m4[14];
+
+                    const dx = gx - zoneCX;
+                    const dy = gy - zoneCY;
+                    const dz = gz - zoneCZ;
+                    const lx = dx * cosR - dz * sinR;
+                    const lz = dx * sinR + dz * cosR;
+
+                    if (Math.abs(lx) <= halfW + 0.1 && Math.abs(lz) <= halfD + 0.1 && Math.abs(dy) <= halfH + 0.1) {
+                      let rCol = 0, gCol = 0, bCol = 0;
+                      if (src.rgbOffset > 0 && pOff + src.rgbOffset + 6 <= sliceBuf.byteLength) {
+                        rCol = dv.getUint16(pOff + src.rgbOffset, true) / src.rgbDiv;
+                        gCol = dv.getUint16(pOff + src.rgbOffset + 2, true) / src.rgbDiv;
+                        bCol = dv.getUint16(pOff + src.rgbOffset + 4, true) / src.rgbDiv;
+                      }
+                      if (rCol === 0 && gCol === 0 && bCol === 0) {
+                        const intensity = dv.getUint16(pOff + 12, true);
+                        if (intensity > 0) {
+                          const normI = Math.max(0.22, Math.min(1.0, intensity > 255 ? (intensity / 4096.0) : (intensity / 255.0)));
+                          rCol = normI * 0.9; gCol = normI * 0.95; bCol = Math.min(1.0, normI * 1.05);
+                        } else {
+                          rCol = 0.45; gCol = 0.82; bCol = 0.95;
+                        }
+                      }
+
+                      const sx = Math.floor(gx / sectorSizeMeters);
+                      const sz = Math.floor(gz / sectorSizeMeters);
+                      const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
+                      const hag = (groundY !== undefined) ? Math.max(0.0, gy - groundY) : 0.0;
+
+                      curPos.push(gx, gy, gz);
+                      curCol.push(rCol, gCol, bCol);
+                      curSeed.push(Math.random());
+                      curHag.push(hag);
+
+                      if (curPos.length >= BLOCK_PTS * 3) {
+                        blockNumber++;
+                        await renderLiveBlock(curPos, curCol, curSeed, curHag, estTotalBlocks, src.name);
+                        curPos = []; curCol = []; curSeed = []; curHag = [];
+                      }
+                    }
+                  }
+                }
+
+                if (curPos.length > 0 && !renderZoneState.cancelRequested) {
+                  blockNumber++;
+                  await renderLiveBlock(curPos, curCol, curSeed, curHag, estTotalBlocks, src.name);
+                }
+
+                if (totalRenderedPoints > 0) hasStreamedRaw = true;
+
+              } else if (src.type === 'rcs') {
+                // RCS Octree nodes: read 100% full-density points for nodes intersecting the render box
+                const nodes = src.nodes;
+                const m4 = src.matrix.elements;
+                const estTotalBlocks = Math.max(1, Math.ceil(nodes.length / 2));
+
+                for (let n = 0; n < nodes.length; n++) {
+                  if (renderZoneState.cancelRequested) break;
+                  const nd = nodes[n];
+                  if (!nd || !nd.fileOffset || !nd.pointCount) continue;
+
+                  const sliceBuf = await src.file.slice(nd.fileOffset, nd.fileOffset + nd.pointCount * 16).arrayBuffer();
+                  const dv = new DataView(sliceBuf);
+                  const pCount = Math.floor(sliceBuf.byteLength / 16);
+
+                  for (let i = 0; i < pCount; i++) {
+                    const pOff = i * 16;
+                    const xi = dv.getInt32(pOff, true);
+                    const yi = dv.getInt32(pOff + 4, true);
+                    const zi = dv.getInt32(pOff + 8, true);
+
+                    const wx = xi * src.hdrScaleX;
+                    const wy = zi * src.hdrScaleZ;
+                    const wz = -yi * src.hdrScaleY;
+
+                    const gx = m4[0]*wx + m4[4]*wy + m4[8]*wz + m4[12];
+                    const gy = m4[1]*wx + m4[5]*wy + m4[9]*wz + m4[13] + directCloudElevationOffset;
+                    const gz = m4[2]*wx + m4[6]*wy + m4[10]*wz + m4[14];
+
+                    const dx = gx - zoneCX;
+                    const dy = gy - zoneCY;
+                    const dz = gz - zoneCZ;
+                    const lx = dx * cosR - dz * sinR;
+                    const lz = dx * sinR + dz * cosR;
+
+                    if (Math.abs(lx) <= halfW + 0.1 && Math.abs(lz) <= halfD + 0.1 && Math.abs(dy) <= halfH + 0.1) {
+                      const rgbRaw = dv.getUint32(pOff + 12, true);
+                      const rCol = (rgbRaw & 0xFF) / 255.0;
+                      const gCol = ((rgbRaw >> 8) & 0xFF) / 255.0;
+                      const bCol = ((rgbRaw >> 16) & 0xFF) / 255.0;
+
+                      curPos.push(gx, gy, gz);
+                      curCol.push(rCol, gCol, bCol);
+                      curSeed.push(Math.random());
+                      curHag.push(0.0);
+
+                      if (curPos.length >= BLOCK_PTS * 3) {
+                        blockNumber++;
+                        await renderLiveBlock(curPos, curCol, curSeed, curHag, estTotalBlocks, src.name);
+                        curPos = []; curCol = []; curSeed = []; curHag = [];
+                      }
+                    }
+                  }
+                }
+
+                if (curPos.length > 0 && !renderZoneState.cancelRequested) {
+                  blockNumber++;
+                  await renderLiveBlock(curPos, curCol, curSeed, curHag, estTotalBlocks, src.name);
+                }
+
+                if (totalRenderedPoints > 0) hasStreamedRaw = true;
+              }
+            }
+          }
+
+          // ================= B) FALLBACK: IN-MEMORY POINT CLOUDS (REVIT LINKS OR BINARY STREAMS) =================
+          if (!hasStreamedRaw) {
+            const pointSources = [];
+            for (const grp of [directCloudGroup, revitCloudGroup]) {
+              for (let c = 0; c < grp.children.length; c++) {
+                const ch = grp.children[c];
+                if (ch === fullDensityBubbleGroup || !ch.isPoints || !ch.geometry || !ch.geometry.attributes || !ch.geometry.attributes.position) continue;
+                pointSources.push({
+                  posAttr: ch.geometry.attributes.position,
+                  colAttr: ch.geometry.attributes.color,
+                  hagAttr: ch.geometry.attributes.aHeightAboveGround,
+                  infillAttr: ch.geometry.attributes.aInfillColor,
+                  count: ch.geometry.attributes.position.count,
+                  isDirect: (ch.parent === directCloudGroup)
+                });
+              }
+            }
+
+            const sqSize = 10.0;
+            const numCols = Math.max(1, Math.ceil(renderZoneState.width / sqSize));
+            const numRows = Math.max(1, Math.ceil(renderZoneState.depth / sqSize));
+            const totalSquares = numCols * numRows;
+
+            const tileCounts = new Int32Array(totalSquares);
+            for (let s = 0; s < pointSources.length; s++) {
+              const posArr = pointSources[s].posAttr.array;
+              const yShift = pointSources[s].isDirect ? directCloudElevationOffset : 0.0;
+              const count = pointSources[s].count;
+
+              for (let i = 0; i < count; i++) {
+                const wx = posArr[i * 3 + 0];
+                const wy = posArr[i * 3 + 1] + yShift;
+                const wz = posArr[i * 3 + 2];
+                const dx = wx - zoneCX;
+                const dy = wy - zoneCY;
+                const dz = wz - zoneCZ;
+                const lx = dx * cosR - dz * sinR;
+                const lz = dx * sinR + dz * cosR;
+
+                if (Math.abs(lx) <= halfW + 0.1 && Math.abs(lz) <= halfD + 0.1 && Math.abs(dy) <= halfH + 0.1) {
+                  const col = Math.max(0, Math.min(numCols - 1, Math.floor((lx + halfW) / sqSize)));
+                  const row = Math.max(0, Math.min(numRows - 1, Math.floor((lz + halfD) / sqSize)));
+                  tileCounts[row * numCols + col]++;
+                }
+              }
+            }
+
+            const activeTiles = [];
+            const tileIndexToActive = new Int32Array(totalSquares);
+            tileIndexToActive.fill(-1);
+
+            for (let t = 0; t < totalSquares; t++) {
+              const cnt = tileCounts[t];
+              if (cnt > 0) {
+                tileIndexToActive[t] = activeTiles.length;
+                activeTiles.push({
+                  count: cnt,
+                  pos: new Float32Array(cnt * 3),
+                  col: new Float32Array(cnt * 3),
+                  infill: new Float32Array(cnt * 3),
+                  hag: new Float32Array(cnt),
+                  seed: new Float32Array(cnt),
+                  writeIdx: 0
+                });
+              }
+            }
+
+            for (let s = 0; s < pointSources.length; s++) {
+              const src = pointSources[s];
+              const posArr = src.posAttr.array;
+              const colArr = src.colAttr ? src.colAttr.array : null;
+              const infillArr = src.infillAttr ? src.infillAttr.array : colArr;
+              const hagArr = src.hagAttr ? src.hagAttr.array : null;
+              const yShift = src.isDirect ? directCloudElevationOffset : 0.0;
+              const count = src.count;
+
+              for (let i = 0; i < count; i++) {
+                const wx = posArr[i * 3 + 0];
+                const wy = posArr[i * 3 + 1] + yShift;
+                const wz = posArr[i * 3 + 2];
+                const dx = wx - zoneCX;
+                const dy = wy - zoneCY;
+                const dz = wz - zoneCZ;
+                const lx = dx * cosR - dz * sinR;
+                const lz = dx * sinR + dz * cosR;
+
+                if (Math.abs(lx) <= halfW + 0.1 && Math.abs(lz) <= halfD + 0.1 && Math.abs(dy) <= halfH + 0.1) {
+                  const col = Math.max(0, Math.min(numCols - 1, Math.floor((lx + halfW) / sqSize)));
+                  const row = Math.max(0, Math.min(numRows - 1, Math.floor((lz + halfD) / sqSize)));
+                  const tileIdx = tileIndexToActive[row * numCols + col];
+                  if (tileIdx >= 0) {
+                    const tile = activeTiles[tileIdx];
+                    const w = tile.writeIdx++;
+                    tile.pos[w * 3 + 0] = wx;
+                    tile.pos[w * 3 + 1] = wy;
+                    tile.pos[w * 3 + 2] = wz;
+                    tile.col[w * 3 + 0] = colArr ? colArr[i * 3 + 0] : 0.75;
+                    tile.col[w * 3 + 1] = colArr ? colArr[i * 3 + 1] : 0.75;
+                    tile.col[w * 3 + 2] = colArr ? colArr[i * 3 + 2] : 0.75;
+                    tile.infill[w * 3 + 0] = infillArr ? infillArr[i * 3 + 0] : (colArr ? colArr[i * 3 + 0] : 0.75);
+                    tile.infill[w * 3 + 1] = infillArr ? infillArr[i * 3 + 1] : (colArr ? colArr[i * 3 + 1] : 0.75);
+                    tile.infill[w * 3 + 2] = infillArr ? infillArr[i * 3 + 2] : (colArr ? colArr[i * 3 + 2] : 0.75);
+                    tile.hag[w] = hagArr ? hagArr[i] : 0.0;
+                    tile.seed[w] = Math.random();
+                  }
+                }
+              }
+            }
+
+            for (let b = 0; b < activeTiles.length; b++) {
+              if (renderZoneState.cancelRequested) break;
+              const tile = activeTiles[b];
+              if (tile.writeIdx === 0) continue;
+
+              const tilePos = (tile.writeIdx === tile.count) ? tile.pos : tile.pos.subarray(0, tile.writeIdx * 3);
+              const tileCol = (tile.writeIdx === tile.count) ? tile.col : tile.col.subarray(0, tile.writeIdx * 3);
+              const tileInfill = (tile.writeIdx === tile.count) ? tile.infill : tile.infill.subarray(0, tile.writeIdx * 3);
+              const tileHag = (tile.writeIdx === tile.count) ? tile.hag : tile.hag.subarray(0, tile.writeIdx);
+              const tileSeed = (tile.writeIdx === tile.count) ? tile.seed : tile.seed.subarray(0, tile.writeIdx);
+
+              blockNumber++;
+              await renderLiveBlock(tilePos, tileCol, tileSeed, tileHag, activeTiles.length, 'Cuadrado 10×10m');
+            }
+          }
+
+          if (renderZoneState.cancelRequested) {
+            for (let b = 0; b < tempBlockMeshes.length; b++) {
+              fullDensityBubbleGroup.remove(tempBlockMeshes[b].mesh);
+              tempBlockMeshes[b].geo.dispose();
+              tempBlockMeshes[b].mat.dispose();
+            }
+            tempBlockMeshes.length = 0;
+            restoreBasePointCloudsAfterUnifiedRender();
+            window.updateTaskProgressModal('ERROR', 100.0, 'Renderizado Detenido', 'El renderizado fue cancelado por el usuario.');
+            return;
+          }
+
+          if (totalRenderedPoints === 0) {
+            window.updateTaskProgressModal('ERROR', 100.0, 'Sin puntos renderizados', 'No se pudieron procesar los puntos en la zona seleccionada.');
+            if (stat) stat.textContent = '❌ Sin puntos renderizados en la zona.';
+            return;
+          }
+
+          // ================= ETAPA 2/2: UNIFICACIÓN FINAL EN UNA SOLA GEOMETRÍA GPU =================
+          window.updateTaskProgressModal(
+            'IN_PROGRESS',
+            96.0,
+            'Etapa 2/2: Ensamblando Nube Unificada Renderizada',
+            'Unificando ' + totalRenderedPoints.toLocaleString() + ' puntos en una única geometría de GPU optimizada a 60 FPS...'
+          );
+          await new Promise((r) => setTimeout(r, 25));
+
+          const unifiedPos = new Float32Array(totalRenderedPoints * 3);
+          const unifiedCol = new Float32Array(totalRenderedPoints * 3);
+          const unifiedHag = new Float32Array(totalRenderedPoints);
+          const unifiedSeed = new Float32Array(totalRenderedPoints);
+
+          let offsetPts = 0;
+          for (let b = 0; b < allPositionsChunks.length; b++) {
+            const p = allPositionsChunks[b];
+            const c = allColorsChunks[b];
+            const h = allHagChunks[b];
+            const s = allSeedsChunks[b];
+            unifiedPos.set(p, offsetPts * 3);
+            unifiedCol.set(c, offsetPts * 3);
+            unifiedHag.set(h, offsetPts);
+            unifiedSeed.set(s, offsetPts);
+            offsetPts += s.length;
+          }
+
+          for (let b = 0; b < tempBlockMeshes.length; b++) {
+            fullDensityBubbleGroup.remove(tempBlockMeshes[b].mesh);
+            tempBlockMeshes[b].geo.dispose();
+            tempBlockMeshes[b].mat.dispose();
+          }
+          tempBlockMeshes.length = 0;
+
+          const unifiedGeo = new THREE.BufferGeometry();
+          unifiedGeo.setAttribute('position', new THREE.BufferAttribute(unifiedPos, 3));
+          unifiedGeo.setAttribute('color', new THREE.BufferAttribute(unifiedCol, 3));
+          unifiedGeo.setAttribute('aInfillColor', new THREE.BufferAttribute(unifiedCol, 3));
+          unifiedGeo.setAttribute('aSeed', new THREE.BufferAttribute(unifiedSeed, 1));
+          unifiedGeo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(unifiedHag, 1));
+          unifiedGeo.computeBoundingBox();
+          unifiedGeo.computeBoundingSphere();
+
+          const unifiedMat = createPointCloudShaderMaterial(true, true);
+          unifiedMat.uniforms.uBubbleReady.value = 1.0;
+          unifiedMat.uniforms.uIsFullBubble.value = 1.0;
+          unifiedMat.uniforms.uDensity.value = 1.0;
+          unifiedMat.uniforms.uPointSize.value = currentPointSize;
+          unifiedMat.uniforms.uBrightness.value = currentBrightness;
+
+          const unifiedMesh = new THREE.Points(unifiedGeo, unifiedMat);
+          unifiedMesh.frustumCulled = false;
+          fullDensityBubbleGroup.add(unifiedMesh);
+
+          hideBasePointCloudsForUnifiedRender();
+
+          bubbleReadyFlag = 1.0;
+          bubbleLoadedPoints = totalRenderedPoints;
+          syncLodUniforms();
+          updatePointCloudTelemetry();
+
+          const summaryMsg = '¡Nube Unificada Renderizada con Éxito! ' + totalRenderedPoints.toLocaleString() + ' puntos crudos en GPU con color RGB nativo (100% Calidad).';
+          window.updateTaskProgressModal('COMPLETED', 100.0, '¡Nube Unificada Completada!', summaryMsg);
+
+          if (stat) {
+            stat.innerHTML = '🚀 <b>Nube Unificada Renderizada:</b> ' + totalRenderedPoints.toLocaleString() + ' puntos a 100% Calidad RGB en GPU (' + blockNumber + ' bloques).';
+          }
+
+          setTimeout(() => {
+            const mb = document.getElementById('progress-modal-backdrop');
+            if (mb && mb.style.display === 'flex' && !renderZoneState.isRendering) {
+              window.hideTaskProgressModal();
+            }
+          }, 2500);
+
+        } catch (err) {
+          console.error('Error renderizando nube por bloques:', err);
+          if (stat) stat.textContent = '❌ Error al renderizar: ' + (err.message || err);
+          window.updateTaskProgressModal('ERROR', 100.0, 'Error en el Renderizado', err.message || String(err));
+        } finally {
+          renderZoneState.isRendering = false;
+          if (btnRender) {
+            btnRender.disabled = false;
+            btnRender.textContent = '🚀 Renderizar Nube (Por Bloques Unificados)';
+          }
+          if (btnStop) {
+            btnStop.style.display = 'none';
+          }
+        }
+      };
+
+      window.clearActiveZone = function () {
+        clearFullDensityBubble();
+        const stat = document.getElementById('lbl-bubble-status');
+        if (stat) stat.textContent = '⚪ Zona desactivada. Se visualiza la nube global fluida.';
+      };
+
+      // Renders 100% of the raw points inside the user-defined radius ON DEMAND (only 1 zone at a time)
+      window.renderActiveZone = async function () {
+        if (isStreamingBubble) return;
+        const stat = document.getElementById('lbl-bubble-status');
+        const btnRenderZone = document.getElementById('btn-render-zone');
+
+        clearFullDensityBubble();
+        fullDensityBubbleGroup.visible = true;
+        bubbleReadyFlag = 1.0;
+
+        const r = currentFullRadius;
+        const rSq = r * r;
+
+        if (stat) stat.textContent = '⏳ Extrayendo 100% de puntos en radio R=' + r.toFixed(1) + 'm...';
+        isStreamingBubble = true;
+
+        if (btnRenderZone) {
+          btnRenderZone.disabled = true;
+          btnRenderZone.textContent = '⏳ Extrayendo puntos crudos (' + r.toFixed(1) + 'm)...';
+        }
+
+        window.showTaskProgressModal();
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          0.0,
+          'Renderizando Radio Concéntrico (R=' + r.toFixed(1) + 'm)',
+          'Buscando y extrayendo 100% de puntos en el radio del observador...'
+        );
+        await new Promise((res) => setTimeout(res, 20));
+
+        try {
+          let obsX = 0, obsY = 0, obsZ = 0;
+          if (isWalkMode) {
+            obsX = playerFeetPos.x;
+            obsY = playerFeetPos.y;
+            obsZ = playerFeetPos.z;
+          } else {
+            obsX = camera.position.x;
+            obsZ = camera.position.z;
+            const gY = findSurfaceHeightUnderPlayer(obsX, camera.position.y, obsZ);
+            obsY = (gY !== -9999) ? gY : camera.position.y;
+          }
+          const focusW = new THREE.Vector3(obsX, obsY, obsZ);
+          const focusLocal = focusW.clone();
+          focusLocal.y -= directCloudElevationOffset;
+
+          const collectedPositions = [];
+          const collectedColors = [];
+          const collectedSeeds = [];
+          const collectedHag = [];
+          let totalStreamed = 0;
+
+          if (directCloudSources.length > 0) {
+            for (let sIdx = 0; sIdx < directCloudSources.length; sIdx++) {
+              const src = directCloudSources[sIdx];
+              if (!src || !src.file) continue;
+
+              const focusSrc = focusLocal.clone().applyMatrix4(src.inverse);
+
+              if (src.type === 'las') {
+                const cMin = src.chunkMin;
+                const cMax = src.chunkMax;
+                const nChunks = src.numChunks;
+                const matchingChunks = [];
+
+                for (let c = 0; c < nChunks; c++) {
+                  const c3 = c * 3;
+                  const minX = cMin[c3], minZ = cMin[c3 + 2];
+                  const maxX = cMax[c3], maxZ = cMax[c3 + 2];
+                  if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+                    matchingChunks.push(c);
+                    continue;
+                  }
+                  const dx = Math.max(0, Math.max(minX - focusSrc.x, focusSrc.x - maxX));
+                  const dz = Math.max(0, Math.max(minZ - focusSrc.z, focusSrc.z - maxZ));
+                  if ((dx * dx + dz * dz) <= rSq * 1.35) {
+                    matchingChunks.push(c);
+                  }
+                }
+
+                const estCandPts = matchingChunks.length * src.chunkRecs;
+                const stride = (estCandPts > bubblePointLimit) ? (estCandPts / bubblePointLimit) : 1.0;
+
+                for (let m = 0; m < matchingChunks.length && totalStreamed < bubblePointLimit; m++) {
+                  const c = matchingChunks[m];
                   const startRec = c * src.chunkRecs;
                   const recsInChunk = Math.min(src.chunkRecs, src.totalPts - startRec);
                   if (recsInChunk <= 0) continue;
@@ -2071,8 +2711,10 @@
                   const sliceBuf = await src.file.slice(bStart, bEnd).arrayBuffer();
                   const dv = new DataView(sliceBuf);
                   const actual = Math.floor(sliceBuf.byteLength / src.pointRecordLength);
+                  const m4 = src.matrix.elements;
 
-                  for (let i = 0; i < actual; i++) {
+                  for (let cur = 0; cur < actual && totalStreamed < bubblePointLimit; cur += stride) {
+                    const i = Math.floor(cur);
                     const pOff = i * src.pointRecordLength;
                     const xi = dv.getInt32(pOff, true);
                     const yi = dv.getInt32(pOff + 4, true);
@@ -2080,26 +2722,21 @@
 
                     const wx = (xi * src.scaleX + src.offsetX) - src.baseX;
                     const wy = (zi * src.scaleZ + src.offsetZ) - src.baseZ;
-                    const wz = -((yi * src.scaleY + src.offsetY) - src.baseY);
+                    const wz = -((yi * src.scaleY + src.offsetY) - baseY);
 
-                    const gx = m4[0] * wx + m4[4] * wy + m4[8]  * wz + m4[12];
-                    const gy = m4[1] * wx + m4[5] * wy + m4[9]  * wz + m4[13] + directCloudElevationOffset;
-                    const gz = m4[2] * wx + m4[6] * wy + m4[10] * wz + m4[14];
+                    const ddx = wx - focusSrc.x;
+                    const ddz = wz - focusSrc.z;
+                    const distHorizSq = ddx * ddx + ddz * ddz;
+                    if (distHorizSq > rSq) continue;
 
-                    const dx = gx - cx;
-                    const dy = gy - cy;
-                    const dz = gz - cz;
-                    const lx =  dx * cosA + dz * sinA;
-                    const lz = -dx * sinA + dz * cosA;
-                    const ly = dy;
+                    const ddy = wy - focusSrc.y;
+                    if (ddy < -30.0 || ddy > 80.0) continue;
 
-                    if (lx < -halfW || lx > halfW || lz < -halfD || lz > halfD || ly < -halfH || ly > halfH) {
-                      continue;
-                    }
+                    const gx = m4[0]*wx + m4[4]*wy + m4[8]*wz + m4[12];
+                    const gy = m4[1]*wx + m4[5]*wy + m4[9]*wz + m4[13] + directCloudElevationOffset;
+                    const gz = m4[2]*wx + m4[6]*wy + m4[10]*wz + m4[14];
 
-                    const ix = Math.min(numX - 1, Math.max(0, Math.floor((lx + halfW) / sqSize)));
-                    const iz = Math.min(numZ - 1, Math.max(0, Math.floor((lz + halfD) / sqSize)));
-                    const bIdx = iz * numX + ix;
+                    collectedPositions.push(gx, gy, gz);
 
                     let rCol = 0, gCol = 0, bCol = 0;
                     if (src.rgbOffset > 0 && pOff + src.rgbOffset + 6 <= sliceBuf.byteLength) {
@@ -2122,574 +2759,157 @@
                     const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
                     const hag = (groundY !== undefined) ? Math.max(0.0, gy - groundY) : 0.0;
 
-                    const b = getBucket(bIdx);
-                    b.positions.push(gx, gy, gz);
-                    b.colors.push(rCol, gCol, bCol);
-                    b.seeds.push(Math.random());
-                    b.hag.push(hag);
-                    candidatePointsFound++;
+                    collectedColors.push(rCol, gCol, bCol);
+                    collectedSeeds.push(Math.random());
+                    collectedHag.push(hag);
+                    totalStreamed++;
                   }
 
-                  if (m % 10 === 0) {
-                    await new Promise((res) => setTimeout(res, 0));
-                  }
+                  const pct = Math.min(94.0, ((m + 1) / matchingChunks.length) * 94.0);
+                  window.updateTaskProgressModal(
+                    'IN_PROGRESS',
+                    pct,
+                    'Extrayendo Puntos en Radio R=' + r.toFixed(1) + 'm',
+                    totalStreamed.toLocaleString() + ' puntos crudos extraídos en radio...'
+                  );
+                  await new Promise((res) => setTimeout(res, 5));
                 }
 
               } else if (src.type === 'rcs') {
                 const nodes = src.nodes;
-                for (let n = 0; n < nodes.length; n++) {
-                  if (renderZoneState.cancelRequested) break;
+                const m4 = src.matrix.elements;
+                for (let n = 0; n < nodes.length && totalStreamed < bubblePointLimit; n++) {
                   const nd = nodes[n];
-                  if (nd.ptCount <= 0 || nd.ptOffset < 0 || nd.ptOffset + nd.ptCount * 16 > src.file.size) continue;
+                  if (!nd || !nd.fileOffset || !nd.pointCount) continue;
 
-                  const nodeBuf = await src.file.slice(nd.ptOffset, nd.ptOffset + nd.ptCount * 16).arrayBuffer();
-                  const ndv = new DataView(nodeBuf);
-                  const actualPts = Math.floor(nodeBuf.byteLength / 16);
-                  if (actualPts <= 0) continue;
+                  const sliceBuf = await src.file.slice(nd.fileOffset, nd.fileOffset + nd.pointCount * 16).arrayBuffer();
+                  const dv = new DataView(sliceBuf);
+                  const pCount = Math.floor(sliceBuf.byteLength / 16);
 
-                  let minQx = 999999, maxQx = -1;
-                  let minQy = 999999, maxQy = -1;
-                  let minQz = 999999, maxQz = -1;
-                  for (let p = 0; p < actualPts; p++) {
-                    const bOff = p * 16;
-                    const uLow = ndv.getUint32(bOff, true);
-                    const uHigh = ndv.getUint32(bOff + 4, true);
-                    const qx = uLow & 0x3FFFF;
-                    const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
-                    const qz = (uHigh >>> 4) & 0x3FFFF;
-                    if (qx < minQx) minQx = qx; if (qx > maxQx) maxQx = qx;
-                    if (qy < minQy) minQy = qy; if (qy > maxQy) maxQy = qy;
-                    if (qz < minQz) minQz = qz; if (qz > maxQz) maxQz = qz;
-                  }
-                  const scaleX = (maxQx > minQx && nd.tMaxX > nd.tMinX) ? (nd.tMaxX - nd.tMinX) / (maxQx - minQx) : 0.001;
-                  const scaleY = (maxQy > minQy && nd.tMaxY > nd.tMinY) ? (nd.tMaxY - nd.tMinY) / (maxQy - minQy) : 0.001;
-                  const scaleZ = (maxQz > minQz && nd.tMaxZ > nd.tMinZ) ? (nd.tMaxZ - nd.tMinZ) / (maxQz - minQz) : 0.001;
+                  for (let i = 0; i < pCount && totalStreamed < bubblePointLimit; i++) {
+                    const pOff = i * 16;
+                    const xi = dv.getInt32(pOff, true);
+                    const yi = dv.getInt32(pOff + 4, true);
+                    const zi = dv.getInt32(pOff + 8, true);
 
-                  for (let p = 0; p < actualPts; p++) {
-                    const bOff = p * 16;
-                    const uLow = ndv.getUint32(bOff, true);
-                    const uHigh = ndv.getUint32(bOff + 4, true);
-                    const qx = uLow & 0x3FFFF;
-                    const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
-                    const qz = (uHigh >>> 4) & 0x3FFFF;
+                    const wx = xi * src.hdrScaleX;
+                    const wy = zi * src.hdrScaleZ;
+                    const wz = -yi * src.hdrScaleY;
 
-                    const wx = ((maxQx > minQx) ? (nd.tMinX + (qx - minQx) * scaleX) : (nd.cMinX + qx * 0.001)) * src.hdrScaleX;
-                    const wy = ((maxQy > minQy) ? (nd.tMinY + (qy - minQy) * scaleY) : (nd.cMinY + qy * 0.001)) * src.hdrScaleY;
-                    const wz = ((maxQz > minQz) ? (nd.tMinZ + (qz - minQz) * scaleZ) : (nd.cMinZ + qz * 0.001)) * src.hdrScaleZ;
+                    const ddx = wx - focusSrc.x;
+                    const ddz = wz - focusSrc.z;
+                    if (ddx * ddx + ddz * ddz > rSq) continue;
 
-                    const gx = m4[0] * wx + m4[4] * wz + m4[8]  * (-wy) + m4[12];
-                    const gy = m4[1] * wx + m4[5] * wz + m4[9]  * (-wy) + m4[13] + directCloudElevationOffset;
-                    const gz = m4[2] * wx + m4[6] * wz + m4[10] * (-wy) + m4[14];
+                    const gx = m4[0]*wx + m4[4]*wy + m4[8]*wz + m4[12];
+                    const gy = m4[1]*wx + m4[5]*wy + m4[9]*wz + m4[13] + directCloudElevationOffset;
+                    const gz = m4[2]*wx + m4[6]*wy + m4[10]*wz + m4[14];
 
-                    const dx = gx - cx;
-                    const dy = gy - cy;
-                    const dz = gz - cz;
-                    const lx =  dx * cosA + dz * sinA;
-                    const lz = -dx * sinA + dz * cosA;
-                    const ly = dy;
-
-                    if (lx < -halfW || lx > halfW || lz < -halfD || lz > halfD || ly < -halfH || ly > halfH) {
-                      continue;
-                    }
-
-                    const ix = Math.min(numX - 1, Math.max(0, Math.floor((lx + halfW) / sqSize)));
-                    const iz = Math.min(numZ - 1, Math.max(0, Math.floor((lz + halfD) / sqSize)));
-                    const bIdx = iz * numX + ix;
-
-                    const intensity = ndv.getUint8(bOff + 8);
-                    const bByte = ndv.getUint8(bOff + 9);
-                    const gByte = ndv.getUint8(bOff + 10);
-                    const rByte = ndv.getUint8(bOff + 11);
-                    let rCol = rByte / 255.0;
-                    let gCol = gByte / 255.0;
-                    let bCol = bByte / 255.0;
-                    if (rCol === 0 && gCol === 0 && bCol === 0) {
-                      const normI = Math.max(0.25, intensity / 255.0);
-                      rCol = normI; gCol = normI; bCol = normI;
-                    }
-
-                    const sx = Math.floor(gx / sectorSizeMeters);
-                    const sz = Math.floor(gz / sectorSizeMeters);
-                    const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
-                    const hag = (groundY !== undefined) ? Math.max(0.0, gy - groundY) : 0.0;
-
-                    const b = getBucket(bIdx);
-                    b.positions.push(gx, gy, gz);
-                    b.colors.push(rCol, gCol, bCol);
-                    b.seeds.push(Math.random());
-                    b.hag.push(hag);
-                    candidatePointsFound++;
-                  }
-
-                  if (n % 10 === 0) {
-                    await new Promise((res) => setTimeout(res, 0));
+                    const rgbRaw = dv.getUint32(pOff + 12, true);
+                    collectedPositions.push(gx, gy, gz);
+                    collectedColors.push((rgbRaw & 0xFF) / 255.0, ((rgbRaw >> 8) & 0xFF) / 255.0, ((rgbRaw >> 16) & 0xFF) / 255.0);
+                    collectedSeeds.push(Math.random());
+                    collectedHag.push(0.0);
+                    totalStreamed++;
                   }
                 }
               }
             }
-          }
-
-          // If no direct raw file sources, extract from in-memory direct and revit cloud geometries
-          if (candidatePointsFound === 0) {
-            const groups = [directCloudGroup, revitCloudGroup];
-            for (let g = 0; g < groups.length; g++) {
-              const grp = groups[g];
+          } else {
+            // In-memory fallback for Revit links
+            for (const grp of [directCloudGroup, revitCloudGroup]) {
               for (let c = 0; c < grp.children.length; c++) {
-                const child = grp.children[c];
-                if (child === fullDensityBubbleGroup || !child.isPoints || !child.geometry) continue;
-
-                const posAttr = child.geometry.attributes.position;
-                const colAttr = child.geometry.attributes.color;
-                const hagAttr = child.geometry.attributes.aHeightAboveGround;
-                if (!posAttr) continue;
-
-                const count = posAttr.count;
-                const posArr = posAttr.array;
-                const colArr = colAttr ? colAttr.array : null;
-                const hagArr = hagAttr ? hagAttr.array : null;
+                const ch = grp.children[c];
+                if (ch === fullDensityBubbleGroup || !ch.isPoints || !ch.geometry || !ch.geometry.attributes.position) continue;
+                const posArr = ch.geometry.attributes.position.array;
+                const colArr = ch.geometry.attributes.color ? ch.geometry.attributes.color.array : null;
+                const count = ch.geometry.attributes.position.count;
+                const yShift = (ch.parent === directCloudGroup) ? directCloudElevationOffset : 0.0;
 
                 for (let i = 0; i < count; i++) {
                   const gx = posArr[i * 3 + 0];
-                  const gy = posArr[i * 3 + 1] + (child.parent === directCloudGroup ? directCloudElevationOffset : 0.0);
+                  const gy = posArr[i * 3 + 1] + yShift;
                   const gz = posArr[i * 3 + 2];
 
-                  const dx = gx - cx;
-                  const dy = gy - cy;
-                  const dz = gz - cz;
-                  const lx =  dx * cosA + dz * sinA;
-                  const lz = -dx * sinA + dz * cosA;
-                  const ly = dy;
-
-                  if (lx < -halfW || lx > halfW || lz < -halfD || lz > halfD || ly < -halfH || ly > halfH) {
-                    continue;
+                  const dx = gx - focusW.x;
+                  const dz = gz - focusW.z;
+                  if (dx * dx + dz * dz <= rSq) {
+                    collectedPositions.push(gx, gy, gz);
+                    collectedColors.push(colArr ? colArr[i * 3 + 0] : 0.75, colArr ? colArr[i * 3 + 1] : 0.75, colArr ? colArr[i * 3 + 2] : 0.75);
+                    collectedSeeds.push(Math.random());
+                    collectedHag.push(0.0);
+                    totalStreamed++;
                   }
-
-                  const ix = Math.min(numX - 1, Math.max(0, Math.floor((lx + halfW) / sqSize)));
-                  const iz = Math.min(numZ - 1, Math.max(0, Math.floor((lz + halfD) / sqSize)));
-                  const bIdx = iz * numX + ix;
-
-                  const rCol = colArr ? colArr[i * 3 + 0] : 0.7;
-                  const gCol = colArr ? colArr[i * 3 + 1] : 0.7;
-                  const bCol = colArr ? colArr[i * 3 + 2] : 0.7;
-                  const hag = hagArr ? hagArr[i] : 0.0;
-
-                  const b = getBucket(bIdx);
-                  b.positions.push(gx, gy, gz);
-                  b.colors.push(rCol, gCol, bCol);
-                  b.seeds.push(Math.random());
-                  b.hag.push(hag);
-                  candidatePointsFound++;
                 }
               }
             }
           }
 
-          if (candidatePointsFound === 0) {
-            window.updateTaskProgressModal(
-              'COMPLETED',
-              100.0,
-              'Sin puntos en este volumen',
-              'No se detectaron puntos dentro del cuadrado/caja de renderizado. Ajusta la posiciÃ³n o usa "Ajustar a Toda la Nube".'
-            );
-            if (stat) stat.textContent = 'âš ï¸ No se encontraron puntos dentro del volumen de renderizado.';
+          if (totalStreamed === 0) {
+            window.updateTaskProgressModal('ERROR', 100.0, 'Sin puntos en el radio', 'No se encontraron puntos en el radio R=' + r.toFixed(1) + 'm alrededor de la cámara.');
+            if (stat) stat.textContent = 'ℹ️ No se detectaron puntos dentro del radio seleccionado.';
             return;
           }
 
-          // STAGE 2: PROGRESSIVE SQUARE-BY-SQUARE (10x10m) RENDERING INTO GPU
-          let totalRenderedPoints = 0;
-          let squaresWithPointsCount = 0;
+          const ptsInZone = collectedPositions.length / 3;
+          const posArr = new Float32Array(collectedPositions);
+          const colArr = new Float32Array(collectedColors);
+          const infilledCol = computeWhiteInfilledColors(posArr, colArr, ptsInZone);
 
-          for (let sq = 0; sq < totalSquares; sq++) {
-            if (renderZoneState.cancelRequested) {
-              if (stat) stat.textContent = 'â¹ï¸ Renderizado detenido por el usuario (' + squaresWithPointsCount + ' cuadrados en GPU).';
-              break;
-            }
+          const bubbleGeo = new THREE.BufferGeometry();
+          bubbleGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+          bubbleGeo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+          bubbleGeo.setAttribute('aInfillColor', new THREE.BufferAttribute(infilledCol, 3));
+          bubbleGeo.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(collectedSeeds), 1));
+          bubbleGeo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(new Float32Array(collectedHag), 1));
+          bubbleGeo.computeBoundingBox();
+          bubbleGeo.computeBoundingSphere();
 
-            const bucket = squareBuckets.get(sq);
-            const ptsInSq = (bucket && bucket.positions) ? (bucket.positions.length / 3) : 0;
+          const bubbleMat = createPointCloudShaderMaterial(true, true);
+          bubbleMat.uniforms.uBubbleReady.value = 1.0;
+          bubbleMat.uniforms.uIsFullBubble.value = 1.0;
+          bubbleMat.uniforms.uDensity.value = 1.0;
+          bubbleMat.uniforms.uPointSize.value = currentPointSize;
+          bubbleMat.uniforms.uBrightness.value = currentBrightness;
 
-            if (ptsInSq > 0) {
-              const posArr = new Float32Array(bucket.positions);
-              const colArr = new Float32Array(bucket.colors);
-              const infilledCol = computeWhiteInfilledColors(posArr, colArr, ptsInSq);
+          const newMesh = new THREE.Points(bubbleGeo, bubbleMat);
+          newMesh.frustumCulled = false;
 
-              const geo = new THREE.BufferGeometry();
-              geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-              geo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
-              geo.setAttribute('aInfillColor', new THREE.BufferAttribute(infilledCol, 3));
-              geo.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(bucket.seeds), 1));
-              geo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(new Float32Array(bucket.hag), 1));
-              geo.computeBoundingBox();
-              geo.computeBoundingSphere();
+          bubbleMesh = newMesh;
+          fullDensityBubbleGroup.add(bubbleMesh);
 
-              const mat = createPointCloudShaderMaterial(true, true);
-              const mesh = new THREE.Points(geo, mat);
-              mesh.frustumCulled = false;
-              fullDensityBubbleGroup.add(mesh);
+          hideBasePointCloudsForUnifiedRender();
 
-              totalRenderedPoints += ptsInSq;
-              squaresWithPointsCount++;
-            }
-            // Immediately delete processed bucket to keep V8 heap flat and light
-            squareBuckets.delete(sq);
-
-            const pct = ((sq + 1) / totalSquares) * 100.0;
-            const ix = (sq % numX) + 1;
-            const iz = Math.floor(sq / numX) + 1;
-
-            window.updateTaskProgressModal(
-              'IN_PROGRESS',
-              pct,
-              'Etapa 2/2: Renderizando Cuadrado ' + (sq + 1) + ' de ' + totalSquares + ' (10Ã—10m)',
-              'Cuadrante [' + ix + ',' + iz + '] (' + ptsInSq.toLocaleString() + ' pts) | Total en GPU: ' + totalRenderedPoints.toLocaleString() + ' pts (' + Math.round(pct) + '%)'
-            );
-
-            // Yield to browser and GPU so each 10x10m square renders live on screen at 60 FPS
-            await new Promise((res) => setTimeout(res, 12));
-          }
-
+          bubbleLoadedPoints = totalStreamed;
+          bubbleCoverRadius = r;
+          bubbleCenterWorld.copy(focusW);
           bubbleReadyFlag = 1.0;
-          bubbleLoadedPoints = totalRenderedPoints;
           syncLodUniforms();
           updatePointCloudTelemetry();
 
-          const summaryMsg = 'Â¡Renderizado Completado! ' + squaresWithPointsCount + ' de ' + totalSquares + ' cuadrados de 10x10m (' + totalRenderedPoints.toLocaleString() + ' puntos en GPU)';
-          window.updateTaskProgressModal('COMPLETED', 100.0, 'Â¡Zona Renderizada con Ã‰xito!', summaryMsg);
+          const summaryMsg = '¡Zona Concéntrica Renderizada! ' + totalStreamed.toLocaleString() + ' puntos a 100% Calidad RGB en radio R=' + r.toFixed(1) + 'm.';
+          window.updateTaskProgressModal('COMPLETED', 100.0, '¡Zona Renderizada con Éxito!', summaryMsg);
 
           if (stat) {
-            stat.innerHTML = 'ðŸš€ <b>Zona Renderizada (100% Calidad):</b> ' + totalRenderedPoints.toLocaleString() + ' pts en ' + squaresWithPointsCount + ' cuadrados de 10Ã—10m.';
+            stat.innerHTML = '🎯 <b>Radio Concéntrico Renderizado:</b> ' + totalStreamed.toLocaleString() + ' puntos a 100% Calidad (R=' + r.toFixed(1) + 'm).';
           }
 
-          // Pre-compile shaders for ultra-fast camera movement
-          await warmupGpuPipelines('Optimizando Cuadrados Renderizados en GPU');
-
-          // Auto-hide modal after 2.5 seconds
           setTimeout(() => {
-            if (modalBackdrop.style.display === 'flex' && !renderZoneState.isRendering) {
+            const mb = document.getElementById('progress-modal-backdrop');
+            if (mb && mb.style.display === 'flex') {
               window.hideTaskProgressModal();
             }
           }, 2500);
 
         } catch (err) {
-          console.error('Error renderizando por cuadrados de 10x10m:', err);
-          if (stat) stat.textContent = 'âŒ Error al renderizar: ' + (err.message || err);
-          window.updateTaskProgressModal('ERROR', 100.0, 'Error en el Renderizado', err.message || String(err));
-        } finally {
-          renderZoneState.isRendering = false;
-          if (btnRender) {
-            btnRender.disabled = false;
-            btnRender.textContent = 'ðŸš€ Renderizar Zona (Por Cuadrados de 10Ã—10m)';
-          }
-          if (btnStop) {
-            btnStop.style.display = 'none';
-          }
-        }
-      };
-
-      window.clearActiveZone = function () {
-        clearFullDensityBubble();
-        const stat = document.getElementById('lbl-bubble-status');
-        if (stat) stat.textContent = '⚪ Zona desactivada. Se visualiza la nube global fluida.';
-      };
-
-      // Renders 100% of the raw points inside the user-defined radius ON DEMAND (only 1 zone at a time)
-      window.renderActiveZone = async function () {
-        if (isStreamingBubble) return;
-        const stat = document.getElementById('lbl-bubble-status');
-
-        if (directCloudSources.length === 0) {
-          if (stat) stat.textContent = '⚠ Primero carga una nube directa (.LAS o .RCS) para renderizar la zona en máxima calidad.';
-          return;
-        }
-
-        // 1. Dispose previous zone if any (enforce strictly ONE zone rendered at a time)
-        clearFullDensityBubble();
-
-        if (stat) stat.textContent = '⏳ Extrayendo 100% de puntos en radio R=' + currentFullRadius.toFixed(1) + 'm (sin huecos)...';
-        isStreamingBubble = true;
-
-        try {
-          // Strictly concentric with the observer's standing location (X, Z) and ground elevation (Y)
-          let obsX = 0, obsY = 0, obsZ = 0;
-          if (isWalkMode) {
-            obsX = playerFeetPos.x;
-            obsY = playerFeetPos.y;
-            obsZ = playerFeetPos.z;
-          } else {
-            obsX = camera.position.x;
-            obsZ = camera.position.z;
-            const gY = findSurfaceHeightUnderPlayer(obsX, camera.position.y, obsZ);
-            obsY = (gY !== -9999) ? gY : camera.position.y;
-          }
-          const focusW = new THREE.Vector3(obsX, obsY, obsZ);
-
-          const focusLocal = focusW.clone();
-          focusLocal.y -= directCloudElevationOffset;
-
-          const r = currentFullRadius;
-          const rSq = r * r;
-          const collectedPositions = [];
-          const collectedColors = [];
-          const collectedSeeds = [];
-          const collectedHag = [];
-
-          let totalStreamed = 0;
-
-          for (let sIdx = 0; sIdx < directCloudSources.length; sIdx++) {
-            const src = directCloudSources[sIdx];
-            if (!src || !src.file) continue;
-
-            const focusSrc = focusLocal.clone().applyMatrix4(src.inverse);
-
-            if (src.type === 'las') {
-              const cMin = src.chunkMin;
-              const cMax = src.chunkMax;
-              const nChunks = src.numChunks;
-              const matchingChunks = [];
-
-              for (let c = 0; c < nChunks; c++) {
-                const c3 = c * 3;
-                const minX = cMin[c3], minZ = cMin[c3 + 2];
-                const maxX = cMax[c3], maxZ = cMax[c3 + 2];
-
-                // If chunk bounds were not set during fast initial subsampling, NEVER discard -> MUST read!
-                if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
-                  matchingChunks.push(c);
-                  continue;
-                }
-
-                // Horizontal distance from observer to chunk 2D footprint (no vertical chopping)
-                const dx = Math.max(0, Math.max(minX - focusSrc.x, focusSrc.x - maxX));
-                const dz = Math.max(0, Math.max(minZ - focusSrc.z, focusSrc.z - maxZ));
-                if ((dx * dx + dz * dz) <= rSq * 1.35) {
-                  matchingChunks.push(c);
-                }
-              }
-
-              // Uniform sampling stride across ALL candidate chunks so no sector is left blank
-              const estCandPts = matchingChunks.length * src.chunkRecs;
-              const stride = (estCandPts > bubblePointLimit) ? (estCandPts / bubblePointLimit) : 1.0;
-
-              for (let m = 0; m < matchingChunks.length && totalStreamed < bubblePointLimit; m++) {
-                const c = matchingChunks[m];
-                const startRec = c * src.chunkRecs;
-                const recsInChunk = Math.min(src.chunkRecs, src.totalPts - startRec);
-                if (recsInChunk <= 0) continue;
-
-                const bStart = src.offsetToPointData + startRec * src.pointRecordLength;
-                const bEnd = Math.min(src.file.size, bStart + recsInChunk * src.pointRecordLength);
-                if (bEnd <= bStart) continue;
-
-                const sliceBuf = await src.file.slice(bStart, bEnd).arrayBuffer();
-                const dv = new DataView(sliceBuf);
-                const actual = Math.floor(sliceBuf.byteLength / src.pointRecordLength);
-                const m4 = src.matrix.elements;
-
-                for (let cur = 0; cur < actual && totalStreamed < bubblePointLimit; cur += stride) {
-                  const i = Math.floor(cur);
-                  const pOff = i * src.pointRecordLength;
-                  const xi = dv.getInt32(pOff, true);
-                  const yi = dv.getInt32(pOff + 4, true);
-                  const zi = dv.getInt32(pOff + 8, true);
-
-                  const wx = (xi * src.scaleX + src.offsetX) - src.baseX;
-                  const wy = (zi * src.scaleZ + src.offsetZ) - src.baseZ;
-                  const wz = -((yi * src.scaleY + src.offsetY) - src.baseY);
-
-                  // Concentric horizontal radius around observer standing position
-                  const ddx = wx - focusSrc.x;
-                  const ddz = wz - focusSrc.z;
-                  const distHorizSq = ddx * ddx + ddz * ddz;
-                  if (distHorizSq > rSq) continue;
-
-                  // Generous vertical envelope: covers ground, full trees, walls, columns, ceilings without diagonal cuts
-                  const ddy = wy - focusSrc.y;
-                  if (ddy < -25.0 || ddy > 65.0) continue;
-
-                  const gx = m4[0] * wx + m4[4] * wy + m4[8]  * wz + m4[12];
-                  const gy = m4[1] * wx + m4[5] * wy + m4[9]  * wz + m4[13];
-                  const gz = m4[2] * wx + m4[6] * wy + m4[10] * wz + m4[14];
-
-                  collectedPositions.push(gx, gy, gz);
-
-                  let rCol = 0, gCol = 0, bCol = 0;
-                  if (src.rgbOffset > 0 && pOff + src.rgbOffset + 6 <= sliceBuf.byteLength) {
-                    rCol = dv.getUint16(pOff + src.rgbOffset, true) / src.rgbDiv;
-                    gCol = dv.getUint16(pOff + src.rgbOffset + 2, true) / src.rgbDiv;
-                    bCol = dv.getUint16(pOff + src.rgbOffset + 4, true) / src.rgbDiv;
-                  }
-                  if (rCol === 0 && gCol === 0 && bCol === 0) {
-                    const intensity = dv.getUint16(pOff + 12, true);
-                    if (intensity > 0) {
-                      const normI = Math.max(0.22, Math.min(1.0, intensity > 255 ? (intensity / 4096.0) : (intensity / 255.0)));
-                      rCol = normI * 0.9; gCol = normI * 0.95; bCol = Math.min(1.0, normI * 1.05);
-                    } else {
-                      rCol = 0.35; gCol = 0.78; bCol = 0.95;
-                    }
-                  }
-                  collectedColors.push(rCol, gCol, bCol);
-                  collectedSeeds.push(Math.random());
-
-                  const sx = Math.floor(gx / sectorSizeMeters);
-                  const sz = Math.floor(gz / sectorSizeMeters);
-                  const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
-                  collectedHag.push(groundY !== undefined ? Math.max(0.0, gy - groundY) : 0.0);
-
-                  totalStreamed++;
-                }
-
-                if (m % 10 === 0) {
-                  await new Promise((res) => setTimeout(res, 0));
-                }
-              }
-
-            } else if (src.type === 'rcs') {
-              const nodes = src.nodes;
-              const cMin = src.chunkMin;
-              const cMax = src.chunkMax;
-              const m4 = src.matrix.elements;
-
-              for (let n = 0; n < nodes.length && totalStreamed < bubblePointLimit; n++) {
-                const c3 = n * 3;
-                const minX = cMin[c3], minZ = cMin[c3 + 2];
-                const maxX = cMax[c3], maxZ = cMax[c3 + 2];
-                if (Number.isFinite(minX) && Number.isFinite(maxX)) {
-                  const dx = Math.max(0, Math.max(minX - focusSrc.x, focusSrc.x - maxX));
-                  const dz = Math.max(0, Math.max(minZ - focusSrc.z, focusSrc.z - maxZ));
-                  if ((dx * dx + dz * dz) > rSq * 1.35) continue;
-                }
-
-                const nd = nodes[n];
-                if (nd.ptCount <= 0 || nd.ptOffset < 0 || nd.ptOffset + nd.ptCount * 16 > src.file.size) continue;
-
-                const nodeBuf = await src.file.slice(nd.ptOffset, nd.ptOffset + nd.ptCount * 16).arrayBuffer();
-                const ndv = new DataView(nodeBuf);
-                const actualPts = Math.floor(nodeBuf.byteLength / 16);
-                if (actualPts <= 0) continue;
-
-                let minQx = 999999, maxQx = -1;
-                let minQy = 999999, maxQy = -1;
-                let minQz = 999999, maxQz = -1;
-                for (let p = 0; p < actualPts; p++) {
-                  const bOff = p * 16;
-                  const uLow = ndv.getUint32(bOff, true);
-                  const uHigh = ndv.getUint32(bOff + 4, true);
-                  const qx = uLow & 0x3FFFF;
-                  const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
-                  const qz = (uHigh >>> 4) & 0x3FFFF;
-                  if (qx < minQx) minQx = qx; if (qx > maxQx) maxQx = qx;
-                  if (qy < minQy) minQy = qy; if (qy > maxQy) maxQy = qy;
-                  if (qz < minQz) minQz = qz; if (qz > maxQz) maxQz = qz;
-                }
-                const scaleX = (maxQx > minQx && nd.tMaxX > nd.tMinX) ? (nd.tMaxX - nd.tMinX) / (maxQx - minQx) : 0.001;
-                const scaleY = (maxQy > minQy && nd.tMaxY > nd.tMinY) ? (nd.tMaxY - nd.tMinY) / (maxQy - minQy) : 0.001;
-                const scaleZ = (maxQz > minQz && nd.tMaxZ > nd.tMinZ) ? (nd.tMaxZ - nd.tMinZ) / (maxQz - minQz) : 0.001;
-
-                for (let p = 0; p < actualPts && totalStreamed < bubblePointLimit; p++) {
-                  const bOff = p * 16;
-                  const uLow = ndv.getUint32(bOff, true);
-                  const uHigh = ndv.getUint32(bOff + 4, true);
-                  const qx = uLow & 0x3FFFF;
-                  const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
-                  const qz = (uHigh >>> 4) & 0x3FFFF;
-
-                  const wx = ((maxQx > minQx) ? (nd.tMinX + (qx - minQx) * scaleX) : (nd.cMinX + qx * 0.001)) * src.hdrScaleX;
-                  const wy = ((maxQy > minQy) ? (nd.tMinY + (qy - minQy) * scaleY) : (nd.cMinY + qy * 0.001)) * src.hdrScaleY;
-                  const wz = ((maxQz > minQz) ? (nd.tMinZ + (qz - minQz) * scaleZ) : (nd.cMinZ + qz * 0.001)) * src.hdrScaleZ;
-
-                  // Concentric horizontal radius around observer standing position
-                  const ddx = wx - focusSrc.x;
-                  const ddz = (-wy) - focusSrc.z;
-                  const distHorizSq = ddx * ddx + ddz * ddz;
-                  if (distHorizSq > rSq) continue;
-
-                  const ddy = wz - focusSrc.y;
-                  if (ddy < -25.0 || ddy > 65.0) continue;
-
-                  const gx = m4[0] * wx + m4[4] * wz + m4[8]  * (-wy) + m4[12];
-                  const gy = m4[1] * wx + m4[5] * wz + m4[9]  * (-wy) + m4[13];
-                  const gz = m4[2] * wx + m4[6] * wz + m4[10] * (-wy) + m4[14];
-
-                  collectedPositions.push(gx, gy, gz);
-
-                  const intensity = ndv.getUint8(bOff + 8);
-                  const bByte = ndv.getUint8(bOff + 9);
-                  const gByte = ndv.getUint8(bOff + 10);
-                  const rByte = ndv.getUint8(bOff + 11);
-                  let rCol = rByte / 255.0;
-                  let gCol = gByte / 255.0;
-                  let bCol = bByte / 255.0;
-                  if (rCol === 0 && gCol === 0 && bCol === 0) {
-                    const normI = Math.max(0.25, intensity / 255.0);
-                    rCol = normI; gCol = normI; bCol = normI;
-                  }
-                  collectedColors.push(rCol, gCol, bCol);
-                  collectedSeeds.push(Math.random());
-
-                  const sx = Math.floor(gx / sectorSizeMeters);
-                  const sz = Math.floor(gz / sectorSizeMeters);
-                  const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
-                  collectedHag.push(groundY !== undefined ? Math.max(0.0, gy - groundY) : 0.0);
-
-                  totalStreamed++;
-                }
-
-                if (n % 10 === 0) {
-                  await new Promise((res) => setTimeout(res, 0));
-                }
-              }
-            }
-          }
-
-          if (totalStreamed > 0) {
-            const bPosArr = new Float32Array(collectedPositions);
-            const bColArr = new Float32Array(collectedColors);
-            const bInfilledCol = computeWhiteInfilledColors(bPosArr, bColArr, totalStreamed);
-
-            const bGeo = new THREE.BufferGeometry();
-            bGeo.setAttribute('position', new THREE.BufferAttribute(bPosArr, 3));
-            bGeo.setAttribute('color', new THREE.BufferAttribute(bColArr, 3));
-            bGeo.setAttribute('aInfillColor', new THREE.BufferAttribute(bInfilledCol, 3));
-            bGeo.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(collectedSeeds), 1));
-            bGeo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(new Float32Array(collectedHag), 1));
-            bGeo.computeBoundingBox();
-            bGeo.computeBoundingSphere();
-
-            const bMat = createPointCloudShaderMaterial(true, true);
-            const newMesh = new THREE.Points(bGeo, bMat);
-            newMesh.frustumCulled = false;
-
-            bubbleMesh = newMesh;
-            fullDensityBubbleGroup.add(bubbleMesh);
-
-            bubbleLoadedPoints = totalStreamed;
-            bubbleCoverRadius = r;
-            bubbleCenterWorld.copy(focusW);
-            bubbleCenterGroup.copy(focusLocal);
-            bubbleReadyFlag = 1.0;
-
-            const ringGroundY = findSurfaceHeightUnderPlayer(focusW.x, focusW.y, focusW.z);
-            fullRadiusRingMesh.position.set(focusW.x, ringGroundY + 0.08, focusW.z);
-            fullRadiusRingMesh.scale.set(r, 1, r);
-            fullRadiusRingMesh.visible = showFullRadiusRing;
-
-            syncLodUniforms();
-            updatePointCloudTelemetry();
-
-            if (stat) {
-              stat.innerHTML = '🟢 <b>Zona Renderizada (100% Calidad):</b> ' + totalStreamed.toLocaleString() + ' puntos en R=' + r.toFixed(1) + ' m. Solo esta zona está activa.';
-            }
-          } else {
-            clearFullDensityBubble();
-            if (stat) {
-              stat.textContent = '⚪ No se encontraron puntos en el radio R=' + r.toFixed(1) + ' m desde esta ubicación.';
-            }
-          }
-        } catch (err) {
-          console.warn('Zone render error:', err);
-          if (stat) stat.textContent = '⚠ Error al renderizar zona: ' + (err.message || err);
+          console.error('Error renderizando radio concéntrico:', err);
+          if (stat) stat.textContent = '❌ Error al renderizar radio: ' + (err.message || err);
+          window.updateTaskProgressModal('ERROR', 100.0, 'Error al Renderizar Radio', err.message || String(err));
         } finally {
           isStreamingBubble = false;
+          if (btnRenderZone) {
+            btnRenderZone.disabled = false;
+            btnRenderZone.textContent = '🎯 Renderizar Radio Concéntrico (' + currentFullRadius.toFixed(1) + 'm)';
+          }
         }
       };
 
@@ -2726,14 +2946,24 @@
         for (let i = 0; i < pointCloudMaterials.length; i++) {
           pointCloudMaterials[i].uniforms.uPointSize.value = currentPointSize;
         }
-        document.getElementById('slider-size').value = currentPointSize;
-        document.getElementById('lbl-size').textContent = currentPointSize.toFixed(1) + ' px';
+        const sSize = document.getElementById('slider-size');
+        const lSize = document.getElementById('lbl-size');
+        if (sSize) sSize.value = currentPointSize;
+        if (lSize) lSize.textContent = currentPointSize.toFixed(1) + ' px';
+        const ccSize = document.getElementById('slider-cc-size');
+        const ccLbl = document.getElementById('lbl-cc-size');
+        if (ccSize) ccSize.value = currentPointSize;
+        if (ccLbl) ccLbl.textContent = currentPointSize.toFixed(1) + ' px';
       };
 
       window.setPointCloudColorMode = function (modeIdx) {
         currentColorMode = parseInt(modeIdx, 10) || 0;
-        document.getElementById('sel-color-mode').value = String(currentColorMode);
-        document.getElementById('tree-legend').style.display = (currentColorMode === 2) ? 'flex' : 'none';
+        const selMain = document.getElementById('sel-color-mode');
+        if (selMain && currentColorMode <= 4) selMain.value = String(currentColorMode);
+        const selCc = document.getElementById('sel-cc-ramp');
+        if (selCc) selCc.value = String(currentColorMode);
+        const treeLeg = document.getElementById('tree-legend');
+        if (treeLeg) treeLeg.style.display = (currentColorMode === 2) ? 'flex' : 'none';
         for (let i = 0; i < pointCloudMaterials.length; i++) {
           pointCloudMaterials[i].uniforms.uColorMode.value = currentColorMode;
         }
@@ -3741,22 +3971,22 @@
         const fps = parseInt(document.getElementById('sel-video-fps').value, 10) || 30;
         const segSec = parseFloat(document.getElementById('slider-seg-sec').value) || 4.0;
         const totalDurationSec = (keyframes.length - 1) * segSec;
-        const totalFrames = Math.max(2, Math.round(totalDurationSec * fps));
 
         const btnExport = document.getElementById('btn-export-mp4');
         const origBtnText = btnExport.textContent;
         btnExport.disabled = true;
 
         // STRICTLY HIDE ALL GIZMOS, SECTION BOX, RENDER BOX, CAMERA PATH & GROUND GRID DURING CLEAN VIDEO EXPORT
-        const prevGizmoVis = sectionBoxGizmoGroup ? sectionBoxGizmoGroup.visible : false;
-        const prevRenderBoxVis = renderZoneGizmoGroup ? renderZoneGizmoGroup.visible : false;
+        const prevGizmoVis = (typeof sectionBoxGizmoGroup !== 'undefined' && sectionBoxGizmoGroup) ? sectionBoxGizmoGroup.visible : false;
+        const prevRenderBoxVis = (typeof renderZoneGizmoGroup !== 'undefined' && renderZoneGizmoGroup) ? renderZoneGizmoGroup.visible : false;
         const prevGridVis = gridHelper ? gridHelper.visible : false;
         const prevCameraPathVis = cameraPathVisualGroup ? cameraPathVisualGroup.visible : false;
 
         if (gridHelper) gridHelper.visible = false;
-        if (sectionBoxGizmoGroup) sectionBoxGizmoGroup.visible = false;
-        if (renderZoneGizmoGroup) renderZoneGizmoGroup.visible = false;
+        if (typeof sectionBoxGizmoGroup !== 'undefined' && sectionBoxGizmoGroup) sectionBoxGizmoGroup.visible = false;
+        if (typeof renderZoneGizmoGroup !== 'undefined' && renderZoneGizmoGroup) renderZoneGizmoGroup.visible = false;
         if (cameraPathVisualGroup) cameraPathVisualGroup.visible = false;
+        if (typeof previewBox1x1Group !== 'undefined' && previewBox1x1Group) previewBox1x1Group.visible = false;
 
         const origW = window.innerWidth;
         const origH = window.innerHeight;
@@ -3781,40 +4011,29 @@
         window.updateTaskProgressModal(
           'IN_PROGRESS',
           0.0,
-          'Iniciando ExportaciÃ³n de Video DeterminÃ­stico (' + fps + ' FPS constantes)',
-          'Preparando codificador de video para ' + totalFrames + ' fotogramas (' + totalDurationSec.toFixed(1) + ' s)...'
+          'Preparando Video de Recorrido Continuo (' + fps + ' FPS)',
+          'Configurando codificador de video por hardware para ' + totalDurationSec.toFixed(1) + ' s de recorrido...'
         );
-        await new Promise((r) => setTimeout(r, 25));
+        await new Promise((r) => setTimeout(r, 50));
 
-        // 2. Pick best supported hardware video codec
+        // 2. Hardware Video Codec Selection (MP4 / WebM)
         let mimeType = 'video/mp4;codecs=avc1.42E01E';
         if (!window.MediaRecorder || !MediaRecorder.isTypeSupported(mimeType)) {
           if (window.MediaRecorder && MediaRecorder.isTypeSupported('video/mp4')) {
             mimeType = 'video/mp4';
           } else if (window.MediaRecorder && MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
             mimeType = 'video/webm;codecs=h264';
-          } else {
+          } else if (window.MediaRecorder && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
             mimeType = 'video/webm;codecs=vp9';
+          } else {
+            mimeType = 'video/webm;codecs=vp8';
           }
         }
 
-        // 3. Setup MediaStreamTrackGenerator or captureStream(0) for constant framerate offline rendering
-        let generator = null;
-        let writer = null;
-        let stream = null;
-        let track = null;
-
-        if (typeof MediaStreamTrackGenerator !== 'undefined') {
-          generator = new MediaStreamTrackGenerator({ kind: 'video' });
-          writer = generator.writable.getWriter();
-          stream = new MediaStream([generator]);
-        } else {
-          stream = canvas.captureStream(0);
-          track = stream.getVideoTracks()[0];
-        }
-
+        // 3. Hardware GPU Direct Stream (Locked to exact fps: 30 or 60 FPS constant)
+        const stream = canvas.captureStream(fps);
         const recordedChunks = [];
-        const bitrate = (exportW >= 3840) ? 50000000 : ((exportW >= 2560) ? 32000000 : 20000000);
+        const bitrate = (exportW >= 3840) ? 50000000 : ((exportW >= 2560) ? 35000000 : 22000000);
         const recorder = new MediaRecorder(stream, {
           mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
           videoBitsPerSecond: bitrate
@@ -3828,62 +4047,56 @@
           recorder.onstop = resolve;
         });
 
+        // Start recorder
         recorder.start();
 
-        // 4. Deterministic Frame-by-Frame Render Loop (Exact dt = 1.0 / fps)
-        const frameDurationUs = Math.round(1000000 / fps);
-        const renderStartTime = performance.now();
+        // 4. Smooth Continuous Trajectory Animation Loop (Hardware GPU Rendered)
+        const startTime = performance.now();
 
-        try {
-          for (let f = 0; f < totalFrames; f++) {
-            if (isExportCancelled) break;
+        await new Promise((resolve) => {
+          function renderContinuousFrame(now) {
+            if (isExportCancelled) {
+              resolve();
+              return;
+            }
 
-            const tNorm = f / (totalFrames - 1);
+            const elapsedSec = (now - startTime) / 1000.0;
+            const tNorm = Math.min(1.0, elapsedSec / totalDurationSec);
+
+            // Butter-smooth CatmullRom arc-length position & Quaternion SLERP rotation
             evaluateCameraPathAt(tNorm);
             renderer.render(scene, camera);
 
-            const tsUs = Math.round(f * frameDurationUs);
+            const pct = Math.min(100.0, (elapsedSec / totalDurationSec) * 100.0);
+            const curSec = Math.min(totalDurationSec, elapsedSec).toFixed(1);
+            const totalSec = totalDurationSec.toFixed(1);
+            const remainingSec = Math.max(0, Math.round(totalDurationSec - elapsedSec));
 
-            if (writer) {
-              const vFrame = new VideoFrame(canvas, {
-                timestamp: tsUs,
-                duration: frameDurationUs
-              });
-              await writer.write(vFrame);
-              vFrame.close();
-            } else if (track) {
-              track.requestFrame();
-            }
-
-            // Real-time progress updates
-            const pct = ((f + 1) / totalFrames) * 100.0;
-            const currentVideoSec = (f / fps).toFixed(1);
-            const totalVideoSec = totalDurationSec.toFixed(1);
-
-            const elapsedMs = performance.now() - renderStartTime;
-            const msPerFrame = elapsedMs / (f + 1);
-            const remainingSec = Math.max(0, Math.round(((totalFrames - f - 1) * msPerFrame) / 1000));
-
-            btnExport.textContent = 'ðŸŽ¬ Exportando MP4: ' + Math.round(pct) + '% (' + (f + 1) + '/' + totalFrames + ')';
+            btnExport.textContent = '🎬 Grabando: ' + Math.round(pct) + '% (' + curSec + 's / ' + totalSec + 's)';
 
             window.updateTaskProgressModal(
               'IN_PROGRESS',
               pct,
-              'Exportando Fotograma ' + (f + 1) + ' de ' + totalFrames + ' (' + fps + ' FPS constantes)',
-              'Video: ' + currentVideoSec + 's / ' + totalVideoSec + 's | Res: ' + exportW + 'Ã—' + exportH + ' | Restante aprox: ' + remainingSec + ' seg'
+              'Grabando Recorrido Continuo a ' + fps + ' FPS (' + Math.round(pct) + '%)',
+              'Tiempo: ' + curSec + 's / ' + totalSec + 's | Res: ' + exportW + '×' + exportH + ' | Restante: ' + remainingSec + ' seg'
             );
 
-            // Yield briefly so UI and progress modal remain 100% fluid
-            await new Promise((r) => setTimeout(r, 0));
+            if (elapsedSec >= totalDurationSec) {
+              // Ensure final keyframe is cleanly reached
+              evaluateCameraPathAt(1.0);
+              renderer.render(scene, camera);
+              // Allow hardware encoder to flush final frames
+              setTimeout(resolve, 350);
+            } else {
+              requestAnimationFrame(renderContinuousFrame);
+            }
           }
 
-          recorder.stop();
-          await stopPromise;
-        } finally {
-          if (writer) {
-            try { writer.releaseLock(); } catch (e) {}
-          }
-        }
+          requestAnimationFrame(renderContinuousFrame);
+        });
+
+        recorder.stop();
+        await stopPromise;
 
         // Restore viewport resolution & gizmos
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -3891,8 +4104,8 @@
         camera.aspect = origW / origH;
         camera.updateProjectionMatrix();
         if (gridHelper) gridHelper.visible = areReferenceGizmosVisible && prevGridVis;
-        if (sectionBoxGizmoGroup) sectionBoxGizmoGroup.visible = areReferenceGizmosVisible && prevGizmoVis;
-        if (renderZoneGizmoGroup) renderZoneGizmoGroup.visible = areReferenceGizmosVisible && prevRenderBoxVis;
+        if (typeof sectionBoxGizmoGroup !== 'undefined' && sectionBoxGizmoGroup) sectionBoxGizmoGroup.visible = areReferenceGizmosVisible && prevGizmoVis;
+        if (typeof renderZoneGizmoGroup !== 'undefined' && renderZoneGizmoGroup) renderZoneGizmoGroup.visible = areReferenceGizmosVisible && prevRenderBoxVis;
         if (cameraPathVisualGroup) cameraPathVisualGroup.visible = areReferenceGizmosVisible && prevCameraPathVis;
         btnExport.disabled = false;
         btnExport.textContent = origBtnText;
@@ -3919,12 +4132,11 @@
         window.updateTaskProgressModal(
           'COMPLETED',
           100.0,
-          'Â¡Video Exportado con Ã‰xito!',
-          totalFrames + ' fotogramas renderizados a ' + fps + ' FPS constantes (' + (blob.size / (1024 * 1024)).toFixed(2) + ' MB). Guardando archivo...'
+          '¡Video Exportado con Éxito!',
+          'Recorrido continuo grabado a ' + fps + ' FPS constantes (' + (blob.size / (1024 * 1024)).toFixed(2) + ' MB). Guardando archivo...'
         );
 
         if (window.chrome && window.chrome.webview) {
-          // Send to C# SaveFileDialog
           const reader = new FileReader();
           reader.onloadend = () => {
             const dataUrl = reader.result;
@@ -4068,24 +4280,67 @@
       document.getElementById('btn-spd-fast').addEventListener('click', () => setKeyboardMoveSpeed(40.0, true));
       document.getElementById('btn-spd-turbo').addEventListener('click', () => setKeyboardMoveSpeed(100.0, true));
 
-      // Full-Density Radius Zone Controls (Optional)
+      // ================= FULL-DENSITY CONCENTRIC RADIUS ZONE CONTROLS =================
       const sliderFullRadius = document.getElementById('slider-full-radius');
-      if (sliderFullRadius) {
-        sliderFullRadius.addEventListener('input', (e) => {
-          currentFullRadius = Math.max(1.0, parseFloat(e.target.value) || 10.0);
-          const lbl = document.getElementById('lbl-full-radius');
-          if (lbl) lbl.textContent = currentFullRadius.toFixed(1) + ' m';
-          fullRadiusRingMesh.scale.set(currentFullRadius, 1, currentFullRadius);
-          syncLodUniforms();
-        });
-      }
+      const lblFullRadius = document.getElementById('lbl-full-radius');
+      const btnRenderZone = document.getElementById('btn-render-zone');
       const chkRadiusRing = document.getElementById('chk-show-radius-ring');
+
+      function setFullRadius(val) {
+        currentFullRadius = Math.max(1.0, Math.min(500.0, parseFloat(val) || 10.0));
+        if (sliderFullRadius) sliderFullRadius.value = currentFullRadius;
+        if (lblFullRadius) lblFullRadius.textContent = currentFullRadius.toFixed(1) + ' m';
+        if (btnRenderZone) btnRenderZone.innerHTML = '🎯 Renderizar Radio Concéntrico (' + currentFullRadius.toFixed(1) + 'm)';
+        if (fullRadiusRingMesh) {
+          fullRadiusRingMesh.scale.set(currentFullRadius, 1, currentFullRadius);
+          updateRadiusRingPosition();
+        }
+        syncLodUniforms();
+      }
+
+      function updateRadiusRingPosition() {
+        if (!fullRadiusRingMesh) return;
+        let x = 0, y = 0, z = 0;
+        if (isWalkMode) {
+          x = playerFeetPos.x;
+          y = playerFeetPos.y + 0.05;
+          z = playerFeetPos.z;
+        } else {
+          x = camera.position.x;
+          z = camera.position.z;
+          const gy = findSurfaceHeightUnderPlayer(x, camera.position.y, z);
+          y = (gy !== -9999) ? (gy + 0.05) : (camera.position.y - 1.5);
+        }
+        fullRadiusRingMesh.position.set(x, y, z);
+        fullRadiusRingMesh.visible = (showFullRadiusRing !== false) && areReferenceGizmosVisible;
+      }
+
+      if (sliderFullRadius) {
+        sliderFullRadius.addEventListener('input', (e) => setFullRadius(e.target.value));
+      }
+      const btnRadMinus = document.getElementById('btn-rad-minus');
+      if (btnRadMinus) btnRadMinus.addEventListener('click', () => setFullRadius(currentFullRadius - 5));
+      const btnRadPlus = document.getElementById('btn-rad-plus');
+      if (btnRadPlus) btnRadPlus.addEventListener('click', () => setFullRadius(currentFullRadius + 5));
+
+      const btnRadP5 = document.getElementById('btn-rad-preset-5');
+      if (btnRadP5) btnRadP5.addEventListener('click', () => setFullRadius(5));
+      const btnRadP10 = document.getElementById('btn-rad-preset-10');
+      if (btnRadP10) btnRadP10.addEventListener('click', () => setFullRadius(10));
+      const btnRadP25 = document.getElementById('btn-rad-preset-25');
+      if (btnRadP25) btnRadP25.addEventListener('click', () => setFullRadius(25));
+      const btnRadP50 = document.getElementById('btn-rad-preset-50');
+      if (btnRadP50) btnRadP50.addEventListener('click', () => setFullRadius(50));
+      const btnRadP100 = document.getElementById('btn-rad-preset-100');
+      if (btnRadP100) btnRadP100.addEventListener('click', () => setFullRadius(100));
+
       if (chkRadiusRing) {
         chkRadiusRing.addEventListener('change', (e) => {
           showFullRadiusRing = e.target.checked;
-          fullRadiusRingMesh.visible = showFullRadiusRing;
+          updateRadiusRingPosition();
         });
       }
+
       const selBubbleBudget = document.getElementById('sel-bubble-budget');
       if (selBubbleBudget) {
         selBubbleBudget.addEventListener('change', (e) => {
@@ -4115,6 +4370,9 @@
       const sliderMeshCurv = document.getElementById('slider-mesh-curvature');
       const lblMeshCurv = document.getElementById('lbl-mesh-curvature');
       const badgeMeshQuality = document.getElementById('badge-mesh-quality');
+      const chkPreview1x1 = document.getElementById('chk-preview-1x1');
+      const btnCenterPreview1x1 = document.getElementById('btn-center-preview-1x1');
+      const btnApplySmoothingAll = document.getElementById('btn-apply-smoothing-all');
 
       if (selMeshSmoothing) {
         selMeshSmoothing.addEventListener('change', (e) => {
@@ -4125,7 +4383,7 @@
             else if (currentMeshSmoothingMode === 2) badgeMeshQuality.textContent = 'Fino ~5cm';
             else if (currentMeshSmoothingMode === 3) badgeMeshQuality.textContent = 'Ultra 1-2cm';
           }
-          window.reapplyMeshSmoothingAndInterpolation();
+          window.updatePreview1x1();
         });
       }
 
@@ -4133,11 +4391,27 @@
         sliderMeshCurv.addEventListener('input', (e) => {
           currentMeshCurvatureFactor = (parseFloat(e.target.value) || 50.0) / 100.0;
           if (lblMeshCurv) lblMeshCurv.textContent = Math.round(currentMeshCurvatureFactor * 100) + '%';
+          window.updatePreview1x1();
         });
-        sliderMeshCurv.addEventListener('change', () => {
-          if (currentMeshSmoothingMode >= 2) {
-            window.reapplyMeshSmoothingAndInterpolation();
-          }
+      }
+
+      if (chkPreview1x1) {
+        chkPreview1x1.addEventListener('change', (e) => {
+          isPreview1x1Enabled = e.target.checked;
+          previewBox1x1Group.visible = isPreview1x1Enabled && areReferenceGizmosVisible;
+          if (isPreview1x1Enabled) window.updatePreview1x1();
+        });
+      }
+
+      if (btnCenterPreview1x1) {
+        btnCenterPreview1x1.addEventListener('click', () => {
+          window.centerPreview1x1ToCamera();
+        });
+      }
+
+      if (btnApplySmoothingAll) {
+        btnApplySmoothingAll.addEventListener('click', () => {
+          window.applySmoothingToEntireMesh();
         });
       }
 
@@ -4271,34 +4545,138 @@
         });
       }
 
-      // Progressive 10x10m Render Button
-      const btnProgressiveRender = document.getElementById('btn-render-progressive-grid');
-      if (btnProgressiveRender) {
-        btnProgressiveRender.addEventListener('click', () => {
-          window.startProgressiveSquareRender();
+      // ================= MOTOR DE RENDERIZADO TIPO CLOUDCOMPARE HUD CONTROLS =================
+      const btnToggleCC = document.getElementById('btn-toggle-cloudcompare');
+      const badgeCC = document.getElementById('badge-cc-status');
+      const selCcSplat = document.getElementById('sel-cc-splat');
+      const sliderCcSize = document.getElementById('slider-cc-size');
+      const lblCcSize = document.getElementById('lbl-cc-size');
+      const chkCcEdl = document.getElementById('chk-cc-edl');
+      const sliderCcEdl = document.getElementById('slider-cc-edl');
+      const lblCcEdl = document.getElementById('lbl-cc-edl');
+      const selCcRamp = document.getElementById('sel-cc-ramp');
+      const sliderCcContrast = document.getElementById('slider-cc-contrast');
+      const lblCcContrast = document.getElementById('lbl-cc-contrast');
+
+      function updateCloudCompareUI() {
+        if (badgeCC) {
+          badgeCC.textContent = currentCloudCompareActive ? 'ACTIVO' : 'ESTÁNDAR';
+          badgeCC.style.color = currentCloudCompareActive ? '#38bdf8' : '#94a3b8';
+          badgeCC.style.borderColor = currentCloudCompareActive ? 'rgba(56,189,248,0.4)' : 'rgba(148,163,184,0.3)';
+          badgeCC.style.background = currentCloudCompareActive ? 'rgba(12,74,110,0.65)' : 'rgba(30,41,59,0.5)';
+        }
+        if (btnToggleCC) {
+          btnToggleCC.innerHTML = currentCloudCompareActive 
+            ? '🚀 Modo Tipo CloudCompare (Activo)' 
+            : '⚪ Activar Modo Tipo CloudCompare';
+          btnToggleCC.style.background = currentCloudCompareActive ? '#0284c7' : '#334155';
+          btnToggleCC.style.borderColor = currentCloudCompareActive ? '#38bdf8' : '#64748b';
+        }
+        if (sliderCcSize) sliderCcSize.value = currentPointSize;
+        if (lblCcSize) lblCcSize.textContent = currentPointSize.toFixed(1) + ' px';
+        if (selCcSplat) selCcSplat.value = currentCcSplatType.toString();
+        if (chkCcEdl) chkCcEdl.checked = (currentCcEdlStrength > 0.05);
+        if (sliderCcEdl) sliderCcEdl.value = currentCcEdlStrength;
+        if (lblCcEdl) lblCcEdl.textContent = currentCcEdlStrength.toFixed(2) + 'x';
+        if (selCcRamp) selCcRamp.value = currentColorMode.toString();
+        if (sliderCcContrast) sliderCcContrast.value = currentCcContrast;
+        if (lblCcContrast) lblCcContrast.textContent = currentCcContrast.toFixed(2) + 'x';
+
+        // Keep standard size and color selects in sync
+        const mainSize = document.getElementById('slider-size');
+        const mainLblSize = document.getElementById('lbl-size');
+        if (mainSize) mainSize.value = currentPointSize;
+        if (mainLblSize) mainLblSize.textContent = currentPointSize.toFixed(1) + ' px';
+
+        const mainColorMode = document.getElementById('sel-color-mode');
+        if (mainColorMode && currentColorMode <= 4) mainColorMode.value = currentColorMode.toString();
+
+        syncCloudCompareUniforms();
+      }
+
+      window.setCloudComparePointSize = function(size) {
+        currentPointSize = Math.max(1.0, Math.min(30.0, parseFloat(size) || 6.5));
+        updateCloudCompareUI();
+      };
+
+      if (btnToggleCC) {
+        btnToggleCC.addEventListener('click', () => {
+          currentCloudCompareActive = !currentCloudCompareActive;
+          updateCloudCompareUI();
         });
       }
 
-      // Stop render button in progress modal
-      const btnModalStop = document.getElementById('btn-modal-stop-render');
-      if (btnModalStop) {
-        btnModalStop.addEventListener('click', () => {
-          renderZoneState.cancelRequested = true;
-          const stat = document.getElementById('lbl-bubble-status');
-          if (stat) stat.textContent = '⏹️ Cancelando renderizado...';
+      if (selCcSplat) {
+        selCcSplat.addEventListener('change', (e) => {
+          currentCcSplatType = parseFloat(e.target.value) || 0.0;
+          syncCloudCompareUniforms();
         });
       }
 
-      // Initial build of the 3D Render Box Gizmo
-      rebuildRenderZoneGizmo();
+      if (sliderCcSize) {
+        sliderCcSize.addEventListener('input', (e) => {
+          currentPointSize = parseFloat(e.target.value) || 6.5;
+          if (lblCcSize) lblCcSize.textContent = currentPointSize.toFixed(1) + ' px';
+          const mainSize = document.getElementById('slider-size');
+          const mainLblSize = document.getElementById('lbl-size');
+          if (mainSize) mainSize.value = currentPointSize;
+          if (mainLblSize) mainLblSize.textContent = currentPointSize.toFixed(1) + ' px';
+          syncCloudCompareUniforms();
+        });
+      }
 
-      document.getElementById('btn-render-zone').addEventListener('click', () => {
-        window.renderActiveZone();
+      // Presets 2px, 4px, 6px, 8px, 12px, 16px
+      [2, 4, 6, 8, 12, 16].forEach(px => {
+        const btn = document.getElementById('btn-cc-size-' + px);
+        if (btn) {
+          btn.addEventListener('click', () => window.setCloudComparePointSize(px));
+        }
       });
 
-      document.getElementById('btn-clear-zone').addEventListener('click', () => {
-        window.clearActiveZone();
-      });
+      if (chkCcEdl) {
+        chkCcEdl.addEventListener('change', (e) => {
+          currentCcEdlStrength = e.target.checked ? 1.35 : 0.0;
+          if (sliderCcEdl) sliderCcEdl.value = currentCcEdlStrength;
+          if (lblCcEdl) lblCcEdl.textContent = currentCcEdlStrength.toFixed(2) + 'x';
+          syncCloudCompareUniforms();
+        });
+      }
+
+      if (sliderCcEdl) {
+        sliderCcEdl.addEventListener('input', (e) => {
+          currentCcEdlStrength = parseFloat(e.target.value) || 1.35;
+          if (lblCcEdl) lblCcEdl.textContent = currentCcEdlStrength.toFixed(2) + 'x';
+          if (chkCcEdl) chkCcEdl.checked = (currentCcEdlStrength > 0.05);
+          syncCloudCompareUniforms();
+        });
+      }
+
+      if (selCcRamp) {
+        selCcRamp.addEventListener('change', (e) => {
+          currentColorMode = parseInt(e.target.value, 10) || 0;
+          const treeLegend = document.getElementById('tree-legend');
+          if (treeLegend) treeLegend.style.display = (currentColorMode === 2) ? 'flex' : 'none';
+          const mainColorMode = document.getElementById('sel-color-mode');
+          if (mainColorMode && currentColorMode <= 4) mainColorMode.value = currentColorMode.toString();
+          syncCloudCompareUniforms();
+        });
+      }
+
+      if (sliderCcContrast) {
+        sliderCcContrast.addEventListener('input', (e) => {
+          currentCcContrast = parseFloat(e.target.value) || 1.20;
+          if (lblCcContrast) lblCcContrast.textContent = currentCcContrast.toFixed(2) + 'x';
+          syncCloudCompareUniforms();
+        });
+      }
+
+      // Initialize UI
+      updateCloudCompareUI();
+
+      // Safe stubs for any previous calls
+      window.startProgressiveSquareRender = function() { console.log('Modo CloudCompare activo'); };
+      window.renderActiveZone = function() { console.log('Modo CloudCompare activo'); };
+      window.clearActiveZone = function() { console.log('Modo CloudCompare activo'); };
 
       // Cursor 3D Coordinates Toggle (ON / OFF) & Fine Elevation Offset (ΔZ)
       document.getElementById('chk-cursor-coords').addEventListener('change', (e) => {
@@ -4313,6 +4691,7 @@
         directCloudElevationOffset = parseFloat(e.target.value) || 0.0;
         directCloudGroup.position.y = directCloudElevationOffset;
         mesh3smGroup.position.y = directCloudElevationOffset;
+        fullDensityBubbleGroup.position.y = directCloudElevationOffset;
         const sign = directCloudElevationOffset >= 0 ? '+' : '';
         document.getElementById('lbl-cota-offset').textContent = sign + directCloudElevationOffset.toFixed(2) + ' m';
         updateSceneBoundsAndEnvironment();
@@ -4322,6 +4701,7 @@
         directCloudElevationOffset = 0.0;
         directCloudGroup.position.y = 0.0;
         mesh3smGroup.position.y = 0.0;
+        fullDensityBubbleGroup.position.y = 0.0;
         document.getElementById('slider-cota-offset').value = 0;
         document.getElementById('lbl-cota-offset').textContent = '+0.00 m';
         updateSceneBoundsAndEnvironment();
@@ -5090,9 +5470,163 @@
         await finalizeRealityMeshAndAddToScene(file.name, glbMesh.tiles, 0.0, 0.0, 0.0);
       }
 
-      // ================= REALITY MESH SMOOTHING & SUBDIVISION ENGINE (1-5 CM) =================
+      // ================= REALITY MESH SMOOTHING & 1x1m PREVIEW ENGINE =================
       let currentMeshSmoothingMode = 1; // 0: Original, 1: Smooth PBR, 2: Fine 5cm, 3: Ultra 1-2cm
       let currentMeshCurvatureFactor = 0.5;
+
+      const previewBox1x1Group = new THREE.Group();
+      previewBox1x1Group.name = 'previewBox1x1Group';
+      scene.add(previewBox1x1Group);
+
+      // Neon violet 1x1x1 wireframe
+      const pBoxGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+      const pEdgesGeo = new THREE.EdgesGeometry(pBoxGeo);
+      const pWireMat = new THREE.LineBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.95 });
+      const pWireMesh = new THREE.LineSegments(pEdgesGeo, pWireMat);
+      previewBox1x1Group.add(pWireMesh);
+
+      // Subtle translucent box face
+      const pFaceMat = new THREE.MeshBasicMaterial({ color: 0x7e22ce, transparent: true, opacity: 0.08, depthWrite: false, side: THREE.DoubleSide });
+      previewBox1x1Group.add(new THREE.Mesh(pBoxGeo, pFaceMat));
+
+      // Preview mesh inside the 1x1m box
+      const previewMeshGeo = new THREE.BufferGeometry();
+      const previewMeshMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        roughness: 0.75,
+        metalness: 0.1,
+        side: THREE.DoubleSide,
+        wireframe: false
+      });
+      const previewMeshObject = new THREE.Mesh(previewMeshGeo, previewMeshMat);
+      previewBox1x1Group.add(previewMeshObject);
+
+      // Coordinate position of the 1x1m preview box
+      const previewBoxPos = new THREE.Vector3(0, 0, 0);
+      let isPreview1x1Enabled = true;
+
+      window.updatePreview1x1 = function() {
+        if (!isPreview1x1Enabled || !window._current3smTiles || window._current3smTiles.length === 0) {
+          previewBox1x1Group.visible = false;
+          return;
+        }
+
+        previewBox1x1Group.visible = areReferenceGizmosVisible;
+        previewBox1x1Group.position.copy(previewBoxPos);
+
+        const cx = previewBoxPos.x;
+        const cy = previewBoxPos.y;
+        const cz = previewBoxPos.z;
+        const half = 0.5;
+
+        // Extract triangles intersecting the 1x1x1m box
+        const sampleVerts = [];
+        const sampleUvs = [];
+        const tiles = window._current3smTiles;
+
+        for (let t = 0; t < tiles.length; t++) {
+          const tile = tiles[t];
+          const verts = tile.transformedVertices || tile.vertices;
+          if (!verts) continue;
+
+          for (let i = 0; i < verts.length; i += 9) {
+            const v0x = verts[i],   v0y = verts[i+1], v0z = verts[i+2];
+            const v1x = verts[i+3], v1y = verts[i+4], v1z = verts[i+5];
+            const v2x = verts[i+6], v2y = verts[i+7], v2z = verts[i+8];
+
+            const triMinX = Math.min(v0x, v1x, v2x), triMaxX = Math.max(v0x, v1x, v2x);
+            const triMinY = Math.min(v0y, v1y, v2y), triMaxY = Math.max(v0y, v1y, v2y);
+            const triMinZ = Math.min(v0z, v1z, v2z), triMaxZ = Math.max(v0z, v1z, v2z);
+
+            if (triMaxX >= cx - half && triMinX <= cx + half &&
+                triMaxY >= cy - half && triMinY <= cy + half &&
+                triMaxZ >= cz - half && triMinZ <= cz + half) {
+              // Convert to box-local coordinates
+              sampleVerts.push(v0x - cx, v0y - cy, v0z - cz);
+              sampleVerts.push(v1x - cx, v1y - cy, v1z - cz);
+              sampleVerts.push(v2x - cx, v2y - cy, v2z - cz);
+
+              if (tile.uvs) {
+                const uBase = (i / 9) * 6;
+                sampleUvs.push(tile.uvs[uBase], tile.uvs[uBase+1], tile.uvs[uBase+2], tile.uvs[uBase+3], tile.uvs[uBase+4], tile.uvs[uBase+5]);
+              }
+            }
+          }
+        }
+
+        const rawTriCount = sampleVerts.length / 9;
+        const lblStats = document.getElementById('lbl-preview-stats');
+
+        if (rawTriCount === 0) {
+          if (lblStats) lblStats.textContent = 'Sin triángulos en esta posición 1×1m. Pulsa "Centrar Caja 1×1m Aquí".';
+          previewMeshGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(0), 3));
+          return;
+        }
+
+        let fPositions = new Float32Array(sampleVerts);
+        let fUvs = sampleUvs.length > 0 ? new Float32Array(sampleUvs) : null;
+        let fNormals = null;
+
+        if (currentMeshSmoothingMode === 0) {
+          fNormals = null;
+        } else {
+          const baseNorms = computeSmoothWeldedNormals(fPositions, fPositions.length / 3);
+          if (currentMeshSmoothingMode === 1) {
+            fNormals = baseNorms;
+          } else if (currentMeshSmoothingMode === 2) {
+            const sub = subdivideMeshWithCurvature(fPositions, fUvs, baseNorms, 1, currentMeshCurvatureFactor);
+            fPositions = sub.positions;
+            fUvs = sub.uvs;
+            fNormals = sub.normals;
+          } else if (currentMeshSmoothingMode === 3) {
+            const sub = subdivideMeshWithCurvature(fPositions, fUvs, baseNorms, 2, currentMeshCurvatureFactor);
+            fPositions = sub.positions;
+            fUvs = sub.uvs;
+            fNormals = sub.normals;
+          }
+        }
+
+        previewMeshGeo.dispose();
+        previewMeshObject.geometry = new THREE.BufferGeometry();
+        previewMeshObject.geometry.setAttribute('position', new THREE.BufferAttribute(fPositions, 3));
+        if (fNormals) {
+          previewMeshObject.geometry.setAttribute('normal', new THREE.BufferAttribute(fNormals, 3));
+        } else {
+          previewMeshObject.geometry.computeVertexNormals();
+        }
+
+        const finalTris = fPositions.length / 9;
+        const approxCm = currentMeshSmoothingMode === 3 ? '1-2 cm' : (currentMeshSmoothingMode === 2 ? '~5 cm' : 'original');
+        if (lblStats) {
+          lblStats.innerHTML = '<b>Muestra 1×1m:</b> ' + rawTriCount + ' tris base ➔ ' + finalTris + ' tris (' + approxCm + ').';
+        }
+      };
+
+      window.centerPreview1x1ToCamera = function() {
+        let posX = 0, posY = 0, posZ = 0;
+        if (isWalkMode) {
+          posX = playerFeetPos.x;
+          posZ = playerFeetPos.z;
+          posY = findSurfaceHeightUnderPlayer(posX, playerFeetPos.y, posZ);
+          if (posY === -9999) posY = playerFeetPos.y;
+        } else {
+          // Raycast into scene to find ground under camera crosshair
+          const rc = new THREE.Raycaster();
+          rc.setFromCamera(new THREE.Vector2(0, 0), camera);
+          const hits = rc.intersectObjects(mesh3smGroup.children, true);
+          if (hits.length > 0) {
+            posX = hits[0].point.x;
+            posY = hits[0].point.y;
+            posZ = hits[0].point.z;
+          } else {
+            posX = camera.position.x;
+            posZ = camera.position.z;
+            posY = camera.position.y - 1.5;
+          }
+        }
+        previewBoxPos.set(posX, posY, posZ);
+        window.updatePreview1x1();
+      };
 
       function computeSmoothWeldedNormals(positions, vertexCount) {
         const normals = new Float32Array(vertexCount * 3);
@@ -5245,8 +5779,11 @@
         return { positions: curPos, uvs: curUvs, normals: curNorm };
       }
 
-      window.reapplyMeshSmoothingAndInterpolation = async function () {
-        if (!window._current3smTiles || window._current3smTiles.length === 0) return;
+      window.applySmoothingToEntireMesh = async function () {
+        if (!window._current3smTiles || window._current3smTiles.length === 0) {
+          alert('Primero carga una Malla Reality (.3SM / iTwin) para aplicar suavizado.');
+          return;
+        }
         const tiles = window._current3smTiles;
         const fileName = window._current3smFileName || 'Malla';
         const baseEast = window._current3smBaseEast || 0;
@@ -5256,13 +5793,13 @@
         window.showTaskProgressModal();
         window.updateTaskProgressModal(
           'IN_PROGRESS',
-          25.0,
-          'Calculando Suavizado e InterpolaciÃ³n Fina (1-5 cm)',
-          'Interpolando normales y micro-triangulaciÃ³n de ' + tiles.length + ' teselas...'
+          5.0,
+          'Aplicando Suavizado a Toda la Malla (' + fileName + ')',
+          'Procesando ' + tiles.length + ' teselas con interpolación PN-Triangles...'
         );
-        await new Promise((r) => setTimeout(r, 20));
+        await new Promise((r) => setTimeout(r, 25));
 
-        // Dispose previous meshes in group
+        // Clear existing mesh group
         while (mesh3smGroup.children.length > 0) {
           const m = mesh3smGroup.children.pop();
           if (m.geometry) m.geometry.dispose();
@@ -5273,6 +5810,11 @@
         }
 
         await finalizeRealityMeshAndAddToScene(fileName, tiles, baseEast, baseNorth, baseElev);
+      };
+
+      window.reapplyMeshSmoothingAndInterpolation = function () {
+        // Light live update of 1x1m preview box instead of freezing whole scene
+        window.updatePreview1x1();
       };
       async function finalizeRealityMeshAndAddToScene(fileName, tiles, baseEast, baseNorth, baseElev) {
         if (!tiles || tiles.length === 0) {
@@ -5381,6 +5923,7 @@
             transformedVerts[i + 1] = ty;
             transformedVerts[i + 2] = tz;
           }
+          tile.transformedVertices = transformedVerts;
 
           window._current3smTiles = tiles;
           window._current3smFileName = fileName;
@@ -5463,6 +6006,8 @@
           window.fitRenderZoneToEntireCloud();
         }
         fitCameraToGroup(mesh3smGroup);
+        previewBoxPos.set(cx, groundMinY + 0.5, cz);
+        window.updatePreview1x1();
 
         if (isWalkMode) {
           const groundY = findSurfaceHeightUnderPlayer(playerFeetPos.x, playerFeetPos.y, playerFeetPos.z);
@@ -6052,7 +6597,7 @@
           throw new Error('La suma de puntos en los nodos del .RCS es 0.');
         }
 
-        const maxLoad = 3500000;
+        const maxLoad = 25000000;
         const targetCount = Math.min(totalRcsPoints, maxLoad);
         const stride = Math.max(1.0, totalRcsPoints / targetCount);
 
@@ -6259,7 +6804,7 @@
         // Old reader took 80 contiguous runs of records -> in a 2mm scan each run covers only a few m² (patches).
         // Now: read the file in 8 MB blocks spread across 100% of the file and take every N-th record uniformly,
         // while building a spatial chunk index (65,536 records per chunk) for the 100% Full-Density radius loader.
-        const maxLoad = 3500000;
+        const maxLoad = 25000000;
         const targetCount = Math.min(totalPts, maxLoad);
         const recsPerBlock = Math.max(1, Math.floor((8 * 1024 * 1024) / pointRecordLength));
         const totalBlocks = Math.max(1, Math.ceil(totalPts / recsPerBlock));
@@ -6418,6 +6963,7 @@
 
       function animate(now) {
         requestAnimationFrame(animate);
+        if (typeof updateRadiusRingPosition === "function") updateRadiusRingPosition();
         const dt = Math.min(0.1, (now - lastTime) / 1000.0);
         lastTime = now;
 
