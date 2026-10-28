@@ -516,6 +516,11 @@ namespace RevitEnscapeCloud
                         SendSceneToWebView(_pendingPayload);
                         _pendingPayload = null;
                     }
+                    else
+                    {
+                        _handler.RequestFullSync(GetSelectedMaxPoints());
+                        _externalEvent.Raise();
+                    }
                 }
                 else if (msg.StartsWith("DENSITY:"))
                 {
@@ -673,7 +678,21 @@ namespace RevitEnscapeCloud
                 payload.PointClouds.Clear();
 
                 string meshJson = payload.ToJson();
+                try
+                {
+                    string jsonPath = Path.Combine(webViewerFolder, "scene_current.json");
+                    File.WriteAllText(jsonPath, meshJson);
+                }
+                catch { }
+
                 _webView.CoreWebView2.PostWebMessageAsJson(meshJson);
+
+                // Bulletproof fallback: ensure scene loads even if PostWebMessage was dropped
+                string verifyScript = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "setTimeout(function() {{ if (!window.__sceneLoaded && window.loadRevitScenePayload) {{ fetch('https://enscapecloud.local/scene_current.json?t={0}').then(function(r){{ return r.json(); }}).then(function(d){{ window.loadRevitScenePayload(d); }}).catch(console.error); }} }}, 350);",
+                    DateTime.UtcNow.Ticks);
+                _webView.CoreWebView2.ExecuteScriptAsync(verifyScript);
 
                 int totalPts = 0;
                 for (int i = 0; i < clouds.Count; i++)

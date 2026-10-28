@@ -797,12 +797,12 @@
 
     <label class="checkbox-row">
       <span>Activar Recorte de Caja 3D</span>
-      <input type="checkbox" id="chk-box-active" checked />
+      <input type="checkbox" id="chk-box-active" />
     </label>
 
     <label class="checkbox-row">
       <span>Mostrar Borde de Caja (Gizmo 3D)</span>
-      <input type="checkbox" id="chk-box-visible" checked />
+      <input type="checkbox" id="chk-box-visible" />
     </label>
 
     <div class="dual-slider-row">
@@ -933,16 +933,16 @@
       let fullBoundsMax = new THREE.Vector3(50, 30, 50);
       let activeBoxMin = new THREE.Vector3(-50, -5, -50);
       let activeBoxMax = new THREE.Vector3(50, 30, 50);
-      let isSectionBoxActive = true;
-      let isSectionBoxVisible = true;
+      let isSectionBoxActive = false;
+      let isSectionBoxVisible = false;
 
       const meshClippingPlanes = [
-        new THREE.Plane(new THREE.Vector3(1, 0, 0), 50),
-        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 50),
-        new THREE.Plane(new THREE.Vector3(0, 1, 0), 5),
-        new THREE.Plane(new THREE.Vector3(0, -1, 0), 30),
-        new THREE.Plane(new THREE.Vector3(0, 0, 1), 50),
-        new THREE.Plane(new THREE.Vector3(0, 0, -1), 50)
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), 1e9),
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1e9),
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e9),
+        new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e9),
+        new THREE.Plane(new THREE.Vector3(0, 0, 1), 1e9),
+        new THREE.Plane(new THREE.Vector3(0, 0, -1), 1e9)
       ];
 
       const sectionBoxGizmoGroup = new THREE.Group();
@@ -961,6 +961,7 @@
       const boxFaceMesh = new THREE.Mesh(unitBoxGeo, boxFaceMat);
       sectionBoxGizmoGroup.add(boxWireMesh);
       sectionBoxGizmoGroup.add(boxFaceMesh);
+      sectionBoxGizmoGroup.visible = false;
       scene.add(sectionBoxGizmoGroup);
 
       function updateSectionBoxPlanesAndGizmo() {
@@ -2020,19 +2021,21 @@
 
       // ================= BASE64 BINARY DECODING FOR REVIT SCENE PAYLOAD =================
       function decodeBase64ToFloat32(b64) {
+        if (!b64) return new Float32Array(0);
         const bin = atob(b64);
         const len = bin.length;
         const bytes = new Uint8Array(len);
         for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
-        return new Float32Array(bytes.buffer);
+        return new Float32Array(bytes.buffer, 0, Math.floor(len / 4));
       }
 
       function decodeBase64ToUint32(b64) {
+        if (!b64) return new Uint32Array(0);
         const bin = atob(b64);
         const len = bin.length;
         const bytes = new Uint8Array(len);
         for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
-        return new Uint32Array(bytes.buffer);
+        return new Uint32Array(bytes.buffer, 0, Math.floor(len / 4));
       }
 
       // ================= REVIT SHARED COORDINATES (SURVEY / PROJECT BASE POINT) =================
@@ -2074,6 +2077,16 @@
 
       function loadRevitScenePayload(payload) {
         if (!payload) return;
+        if (typeof payload === 'string') {
+          try {
+            payload = JSON.parse(payload);
+          } catch (e) {
+            console.error('Error parseando JSON de Revit:', e);
+            return;
+          }
+        }
+
+        window.__sceneLoaded = true;
 
         if (payload.sharedOrigin && payload.sharedOrigin.length >= 3) {
           if (payload.sharedOrigin[0] !== 0 || payload.sharedOrigin[1] !== 0) {
@@ -2131,8 +2144,19 @@
 
         updateSceneBoundsAndEnvironment();
 
-        if (!isAppend && payload.camera && payload.camera.eye && payload.camera.target) {
-          window.updateCameraFromRevit(payload.camera.eye, payload.camera.target);
+        if (!isAppend) {
+          const hasCam = (
+            payload.camera &&
+            Array.isArray(payload.camera.eye) &&
+            Array.isArray(payload.camera.target) &&
+            (payload.camera.eye[0] !== 0 || payload.camera.eye[1] !== 0 || payload.camera.eye[2] !== 0 ||
+             payload.camera.target[0] !== 0 || payload.camera.target[1] !== 0 || payload.camera.target[2] !== 0)
+          );
+          if (hasCam) {
+            window.updateCameraFromRevit(payload.camera.eye, payload.camera.target);
+          } else if (payload.meshes && payload.meshes.length > 0) {
+            fitCameraToGroup(meshGroup);
+          }
         }
 
         if (!isAppend && payload.timeOfDayHours) {
@@ -2148,6 +2172,8 @@
         } catch (e) {}
         updatePointCloudTelemetry();
       }
+
+      window.loadRevitScenePayload = loadRevitScenePayload;
 
       // ================= BINARY POINT CLOUD STREAMING LOADER (REVIT & DIRECT .LAS / .RCS) =================
       window.loadBinaryCloudFromHost = async function (binUrl, expectedCount, shouldFitCamera, sourceTag) {
@@ -3974,10 +4000,6 @@
         }
 
         await finalizeRealityMeshAndAddToScene(file.name, glbMesh.tiles, 0.0, 0.0, 0.0);
-      }
-        } catch (e) {
-          return null;
-        }
       }
 
       async function finalizeRealityMeshAndAddToScene(fileName, tiles, baseEast, baseNorth, baseElev) {
