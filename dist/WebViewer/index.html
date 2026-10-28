@@ -3674,14 +3674,17 @@
         const fps = parseInt(document.getElementById('sel-video-fps').value, 10) || 30;
         const segSec = parseFloat(document.getElementById('slider-seg-sec').value) || 4.0;
         const totalDurationSec = (keyframes.length - 1) * segSec;
+        const totalFrames = Math.max(2, Math.round(totalDurationSec * fps));
 
         const btnExport = document.getElementById('btn-export-mp4');
         const origBtnText = btnExport.textContent;
         btnExport.disabled = true;
 
-        // Hide section box wireframe & camera path markers during clean video render
+        // Hide section box, render zone box & camera path visual gizmos during clean video render
         const prevGizmoVis = sectionBoxGizmoGroup.visible;
+        const prevRenderBoxVis = renderZoneGizmoGroup ? renderZoneGizmoGroup.visible : false;
         sectionBoxGizmoGroup.visible = false;
+        if (renderZoneGizmoGroup) renderZoneGizmoGroup.visible = false;
         cameraPathVisualGroup.visible = false;
 
         const origW = window.innerWidth;
@@ -3691,7 +3694,28 @@
         camera.aspect = exportW / exportH;
         camera.updateProjectionMatrix();
 
-        // Pick best supported hardware MP4 (H.264/AAC) or high-bitrate WebM container in Chromium WebView2
+        // 1. Open Progress Modal Window
+        window.showTaskProgressModal();
+        let isExportCancelled = false;
+
+        const btnModalStop = document.getElementById('btn-modal-stop-render');
+        if (btnModalStop) {
+          btnModalStop.style.display = 'block';
+          btnModalStop.textContent = 'â¹ï¸ Cancelar ExportaciÃ³n de Video';
+          btnModalStop.onclick = () => {
+            isExportCancelled = true;
+          };
+        }
+
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          0.0,
+          'Iniciando ExportaciÃ³n de Video DeterminÃ­stico (' + fps + ' FPS constantes)',
+          'Preparando codificador de video para ' + totalFrames + ' fotogramas (' + totalDurationSec.toFixed(1) + ' s)...'
+        );
+        await new Promise((r) => setTimeout(r, 25));
+
+        // 2. Pick best supported hardware video codec
         let mimeType = 'video/mp4;codecs=avc1.42E01E';
         if (!window.MediaRecorder || !MediaRecorder.isTypeSupported(mimeType)) {
           if (window.MediaRecorder && MediaRecorder.isTypeSupported('video/mp4')) {
@@ -3703,11 +3727,26 @@
           }
         }
 
-        const stream = canvas.captureStream(fps);
+        // 3. Setup MediaStreamTrackGenerator or captureStream(0) for constant framerate offline rendering
+        let generator = null;
+        let writer = null;
+        let stream = null;
+        let track = null;
+
+        if (typeof MediaStreamTrackGenerator !== 'undefined') {
+          generator = new MediaStreamTrackGenerator({ kind: 'video' });
+          writer = generator.writable.getWriter();
+          stream = new MediaStream([generator]);
+        } else {
+          stream = canvas.captureStream(0);
+          track = stream.getVideoTracks()[0];
+        }
+
         const recordedChunks = [];
+        const bitrate = (exportW >= 3840) ? 50000000 : ((exportW >= 2560) ? 32000000 : 20000000);
         const recorder = new MediaRecorder(stream, {
           mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
-          videoBitsPerSecond: exportW >= 3840 ? 45000000 : (exportW >= 2560 ? 28000000 : 18000000)
+          videoBitsPerSecond: bitrate
         });
 
         recorder.ondataavailable = (ev) => {
@@ -3718,26 +3757,62 @@
           recorder.onstop = resolve;
         });
 
-        recorder.start(100);
+        recorder.start();
 
-        const startRenderTime = performance.now();
-        while (true) {
-          const elapsedSec = (performance.now() - startRenderTime) / 1000.0;
-          if (elapsedSec >= totalDurationSec) break;
+        // 4. Deterministic Frame-by-Frame Render Loop (Exact dt = 1.0 / fps)
+        const frameDurationUs = Math.round(1000000 / fps);
+        const renderStartTime = performance.now();
 
-          const tNorm = elapsedSec / totalDurationSec;
-          evaluateCameraPathAt(tNorm);
-          renderer.render(scene, camera);
+        try {
+          for (let f = 0; f < totalFrames; f++) {
+            if (isExportCancelled) break;
 
-          const pct = Math.min(99, Math.round(tNorm * 100));
-          btnExport.textContent = '⏳ Renderizando MP4: ' + pct + '%...';
-          await new Promise((r) => setTimeout(r, 1000 / fps));
+            const tNorm = f / (totalFrames - 1);
+            evaluateCameraPathAt(tNorm);
+            renderer.render(scene, camera);
+
+            const tsUs = Math.round(f * frameDurationUs);
+
+            if (writer) {
+              const vFrame = new VideoFrame(canvas, {
+                timestamp: tsUs,
+                duration: frameDurationUs
+              });
+              await writer.write(vFrame);
+              vFrame.close();
+            } else if (track) {
+              track.requestFrame();
+            }
+
+            // Real-time progress updates
+            const pct = ((f + 1) / totalFrames) * 100.0;
+            const currentVideoSec = (f / fps).toFixed(1);
+            const totalVideoSec = totalDurationSec.toFixed(1);
+
+            const elapsedMs = performance.now() - renderStartTime;
+            const msPerFrame = elapsedMs / (f + 1);
+            const remainingSec = Math.max(0, Math.round(((totalFrames - f - 1) * msPerFrame) / 1000));
+
+            btnExport.textContent = 'ðŸŽ¬ Exportando MP4: ' + Math.round(pct) + '% (' + (f + 1) + '/' + totalFrames + ')';
+
+            window.updateTaskProgressModal(
+              'IN_PROGRESS',
+              pct,
+              'Exportando Fotograma ' + (f + 1) + ' de ' + totalFrames + ' (' + fps + ' FPS constantes)',
+              'Video: ' + currentVideoSec + 's / ' + totalVideoSec + 's | Res: ' + exportW + 'Ã—' + exportH + ' | Restante aprox: ' + remainingSec + ' seg'
+            );
+
+            // Yield briefly so UI and progress modal remain 100% fluid
+            await new Promise((r) => setTimeout(r, 0));
+          }
+
+          recorder.stop();
+          await stopPromise;
+        } finally {
+          if (writer) {
+            try { writer.releaseLock(); } catch (e) {}
+          }
         }
-
-        evaluateCameraPathAt(1.0);
-        renderer.render(scene, camera);
-        recorder.stop();
-        await stopPromise;
 
         // Restore viewport resolution & gizmos
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -3745,27 +3820,59 @@
         camera.aspect = origW / origH;
         camera.updateProjectionMatrix();
         sectionBoxGizmoGroup.visible = prevGizmoVis;
+        if (renderZoneGizmoGroup) renderZoneGizmoGroup.visible = prevRenderBoxVis;
         cameraPathVisualGroup.visible = true;
         btnExport.disabled = false;
         btnExport.textContent = origBtnText;
 
-        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+        if (btnModalStop) {
+          btnModalStop.style.display = 'none';
+          btnModalStop.textContent = 'â¹ï¸ Detener Renderizado';
+        }
+
+        if (isExportCancelled) {
+          window.updateTaskProgressModal(
+            'ERROR',
+            100.0,
+            'ExportaciÃ³n Cancelada',
+            'La exportaciÃ³n del video fue cancelada por el usuario.'
+          );
+          return;
+        }
+
+        const isMp4 = mimeType.indexOf('mp4') !== -1;
+        const ext = isMp4 ? 'mp4' : 'webm';
+        const blob = new Blob(recordedChunks, { type: mimeType });
+
+        window.updateTaskProgressModal(
+          'COMPLETED',
+          100.0,
+          'Â¡Video Exportado con Ã‰xito!',
+          totalFrames + ' fotogramas renderizados a ' + fps + ' FPS constantes (' + (blob.size / (1024 * 1024)).toFixed(2) + ' MB). Guardando archivo...'
+        );
+
         if (window.chrome && window.chrome.webview) {
-          // Convert blob to Base64 and send to C# SaveFileDialog so the user chooses exact .mp4 destination
+          // Send to C# SaveFileDialog
           const reader = new FileReader();
           reader.onloadend = () => {
             const dataUrl = reader.result;
             const base64 = dataUrl.substring(dataUrl.indexOf(',') + 1);
-            window.chrome.webview.postMessage('SAVE_VIDEO_B64:mp4|' + base64);
+            window.chrome.webview.postMessage('SAVE_VIDEO_B64:' + ext + '|' + base64);
           };
           reader.readAsDataURL(blob);
         } else {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'Recorrido_EnscapeCloud_' + Date.now() + '.mp4';
+          a.download = 'Recorrido_EnscapeCloud_' + Date.now() + '.' + ext;
           a.click();
         }
+
+        setTimeout(() => {
+          if (modalBackdrop.style.display === 'flex') {
+            window.hideTaskProgressModal();
+          }
+        }, 3000);
       });
 
       // ================= UI SLIDER & CHECKBOX LISTENERS =================
