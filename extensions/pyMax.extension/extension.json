@@ -1,0 +1,7 @@
+{
+  "name": "pyMax",
+  "version": "2.0.0",
+  "description": "Suite pyMax con EnscapeCloud RT - Renderizador en Tiempo Real y Nubes de Puntos Tipo CloudCompare",
+  "author": "DinamicLux",
+  "builtin": false
+}
