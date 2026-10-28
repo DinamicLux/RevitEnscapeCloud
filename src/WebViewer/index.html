@@ -2143,6 +2143,9 @@
           document.getElementById('stat-meshes').textContent =
             (payload.meshes ? payload.meshes.length : 0) + ' lotes BIM (' + (payload.viewName || 'Vista 3D') + ')';
         }
+        try {
+          renderer.compile(scene, camera);
+        } catch (e) {}
         updatePointCloudTelemetry();
       }
 
@@ -3609,6 +3612,9 @@
         const spanZ = (maxZ - minZ).toFixed(1);
         const spanY = (maxY - minY).toFixed(1);
 
+        // Pre-compile point cloud shaders and GPU state before user starts moving
+        await warmupGpuPipelines('Optimizando Nube de Puntos en GPU (Compilando Shaders)');
+
         window.updateTaskProgressModal(
           'COMPLETED',
           100.0,
@@ -3641,11 +3647,32 @@
         return 'Detalle del error: ' + raw;
       }
 
+      // ================= GPU PIPELINES & SHADER PRE-COMPILATION WARMUP =================
+      async function warmupGpuPipelines(label) {
+        if (window.updateTaskProgressModal) {
+          window.updateTaskProgressModal(
+            'IN_PROGRESS',
+            98.0,
+            label || 'Optimizando Recursos en GPU (Pre-compilación de Shaders)',
+            'Subiendo geometrías, texturas y buffers a VRAM para garantizar navegación fluida a 60 FPS...'
+          );
+        }
+        await new Promise((r) => setTimeout(r, 25));
+        try {
+          // Pre-compiles all material variants (PBR, point cloud shaders, section box clipping)
+          renderer.compile(scene, camera);
+          // Performs a silent render pass to prime texture bindings and pipeline states in GPU driver
+          renderer.render(scene, camera);
+        } catch (e) {
+          // non-fatal warmup fallback
+        }
+      }
+
       // ================= BENTLEY ITWIN / CONTEXTCAPTURE .3SM & REALITY MESH DECODERS =================
       function decodeOpenCtm(buffer, byteOffset) {
         try {
+          if (!buffer || byteOffset < 0 || (byteOffset + 36) > buffer.byteLength) return null;
           const dv = new DataView(buffer, byteOffset);
-          if (dv.byteLength < 36) return null;
           const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
           if (magic !== 'OCTM') return null;
           const version = dv.getUint32(4, true);
@@ -3658,6 +3685,7 @@
           const commentLen = dv.getUint32(32, true);
 
           if (vertexCount <= 0 || triangleCount <= 0 || vertexCount > 5000000 || triangleCount > 10000000) return null;
+          if (36 + commentLen > dv.byteLength) return null;
 
           let ptr = 36 + commentLen;
           let indices = null;
@@ -3691,10 +3719,13 @@
                   ptr += 4;
                 }
               } else if (chunkMagic === 'TEXC') {
-                if (ptr + 8 > dv.byteLength) break;
-                const nameLen = dv.getUint32(ptr, true); ptr += 4 + nameLen;
-                const fileLen = dv.getUint32(ptr, true); ptr += 4 + fileLen;
-                if (ptr + vertexCount * 8 > dv.byteLength) break;
+                if (ptr + 4 > dv.byteLength) break;
+                const nameLen = dv.getUint32(ptr, true); ptr += 4;
+                if (ptr + nameLen + 4 > dv.byteLength) break;
+                ptr += nameLen;
+                const fileLen = dv.getUint32(ptr, true); ptr += 4;
+                if (ptr + fileLen + vertexCount * 8 > dv.byteLength) break;
+                ptr += fileLen;
                 uvs = new Float32Array(vertexCount * 2);
                 for (let i = 0; i < vertexCount * 2; i++) {
                   uvs[i] = dv.getFloat32(ptr, true);
@@ -3717,8 +3748,8 @@
 
       function decodeGlbMesh(arrayBuffer) {
         try {
+          if (!arrayBuffer || arrayBuffer.byteLength < 20) return null;
           const dv = new DataView(arrayBuffer);
-          if (dv.byteLength < 20) return null;
           const magic = dv.getUint32(0, true);
           if (magic !== 0x46546C67) return null; // 'glTF'
           const version = dv.getUint32(4, true);
@@ -3731,6 +3762,7 @@
           while (chunkOffset + 8 <= dv.byteLength) {
             const chunkLength = dv.getUint32(chunkOffset, true);
             const chunkType = dv.getUint32(chunkOffset + 4, true);
+            if (chunkLength <= 0 || (chunkOffset + 8 + chunkLength) > dv.byteLength) break;
             const chunkDataOffset = chunkOffset + 8;
             if (chunkType === 0x4E4F534A) { // 'JSON'
               const jsonBytes = new Uint8Array(arrayBuffer, chunkDataOffset, chunkLength);
@@ -3749,23 +3781,55 @@
           const accessors = jsonChunk.accessors || [];
 
           function getBufferData(accessorIdx) {
+            if (accessorIdx === undefined || accessorIdx === null) return null;
             const acc = accessors[accessorIdx];
-            if (!acc) return null;
+            if (!acc || acc.bufferView === undefined) return null;
             const bv = bufferViews[acc.bufferView];
             if (!bv) return null;
             const byteOffset = (bv.byteOffset || 0) + (acc.byteOffset || 0);
             const compType = acc.componentType;
             const count = acc.count;
             const numComponents = acc.type === 'VEC3' ? 3 : (acc.type === 'VEC2' ? 2 : (acc.type === 'SCALAR' ? 1 : 4));
+            const totalElements = count * numComponents;
 
-            if (!binChunk || (byteOffset + count * numComponents) > binChunk.byteLength) return null;
+            if (!binChunk) return null;
 
-            if (compType === 5126) {
-              return new Float32Array(binChunk.buffer, binChunk.byteOffset + byteOffset, count * numComponents);
-            } else if (compType === 5123) {
-              return new Uint16Array(binChunk.buffer, binChunk.byteOffset + byteOffset, count * numComponents);
-            } else if (compType === 5125) {
-              return new Uint32Array(binChunk.buffer, binChunk.byteOffset + byteOffset, count * numComponents);
+            if (compType === 5126) { // FLOAT
+              const reqBytes = totalElements * 4;
+              if (byteOffset + reqBytes > binChunk.byteLength) return null;
+              const targetOffset = binChunk.byteOffset + byteOffset;
+              if (targetOffset % 4 === 0) {
+                return new Float32Array(binChunk.buffer, targetOffset, totalElements);
+              } else {
+                const copy = new Float32Array(totalElements);
+                const srcView = new DataView(binChunk.buffer, targetOffset, reqBytes);
+                for (let i = 0; i < totalElements; i++) copy[i] = srcView.getFloat32(i * 4, true);
+                return copy;
+              }
+            } else if (compType === 5123) { // UNSIGNED_SHORT
+              const reqBytes = totalElements * 2;
+              if (byteOffset + reqBytes > binChunk.byteLength) return null;
+              const targetOffset = binChunk.byteOffset + byteOffset;
+              if (targetOffset % 2 === 0) {
+                return new Uint16Array(binChunk.buffer, targetOffset, totalElements);
+              } else {
+                const copy = new Uint16Array(totalElements);
+                const srcView = new DataView(binChunk.buffer, targetOffset, reqBytes);
+                for (let i = 0; i < totalElements; i++) copy[i] = srcView.getUint16(i * 2, true);
+                return copy;
+              }
+            } else if (compType === 5125) { // UNSIGNED_INT
+              const reqBytes = totalElements * 4;
+              if (byteOffset + reqBytes > binChunk.byteLength) return null;
+              const targetOffset = binChunk.byteOffset + byteOffset;
+              if (targetOffset % 4 === 0) {
+                return new Uint32Array(binChunk.buffer, targetOffset, totalElements);
+              } else {
+                const copy = new Uint32Array(totalElements);
+                const srcView = new DataView(binChunk.buffer, targetOffset, reqBytes);
+                for (let i = 0; i < totalElements; i++) copy[i] = srcView.getUint32(i * 4, true);
+                return copy;
+              }
             }
             return null;
           }
@@ -3942,6 +4006,17 @@
           } else {
             geo.computeVertexNormals();
           }
+          geo.computeBoundingBox();
+          geo.computeBoundingSphere();
+
+          if (tile.texture) {
+            tile.texture.generateMipmaps = true;
+            try {
+              if (renderer && renderer.capabilities) {
+                tile.texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+              }
+            } catch (e) {}
+          }
 
           const mat = new THREE.MeshStandardMaterial({
             map: tile.texture || null,
@@ -3981,6 +4056,9 @@
         const spanX = (maxX - minX).toFixed(1);
         const spanY = (maxY - minY).toFixed(1);
         const spanZ = (maxZ - minZ).toFixed(1);
+
+        // Pre-compile shaders and prime GPU pipeline states before presenting the scene to the user
+        await warmupGpuPipelines('Optimizando Malla Reality en GPU (Compilando Shaders)');
 
         window.updateTaskProgressModal(
           'COMPLETED',
