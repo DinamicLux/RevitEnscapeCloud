@@ -522,6 +522,38 @@
       <input type="checkbox" id="chk-vis-3sm" checked />
     </label>
 
+    <!-- Control de Suavizado e InterpolaciÃ³n Fina de Malla Reality (1-5 cm) -->
+    <div id="panel-mesh-smoothing" style="background: rgba(99, 102, 241, 0.12); border: 1.5px solid rgba(129, 140, 248, 0.45); border-radius: 10px; padding: 8px 10px; margin-top: 4px; margin-bottom: 8px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 5px;">
+        <span style="color:#a5b4fc; font-weight:700; font-size:11.5px; display:flex; align-items:center; gap:5px;">
+          <span>ðŸ”ï¸</span> Suavizado e InterpolaciÃ³n Malla .3SM
+        </span>
+        <span id="badge-mesh-quality" style="font-size:9.5px; color:#c7d2fe; background:rgba(49,46,129,0.7); border:1px solid rgba(129,140,248,0.4); padding:1px 6px; border-radius:4px; font-weight:600;">PBR Suave</span>
+      </div>
+      <div class="control-group" style="margin-bottom: 5px;">
+        <div class="control-label"><span style="font-size:11px;">TriangulaciÃ³n y Suavizado:</span></div>
+        <select class="hud-select" id="sel-mesh-smoothing" style="font-size:11px; padding:3px 6px;">
+          <option value="1" selected>1. Suavizado PBR Continuo (Sin aristas / Realista)</option>
+          <option value="2">2. TriangulaciÃ³n Fina Interpolada (~5 cm)</option>
+          <option value="3">3. Ultra Fino Alta DefiniciÃ³n (1-2 cm / MÃ¡ximo Detalle)</option>
+          <option value="0">4. Original (Facetado Plano sin interpolar)</option>
+        </select>
+      </div>
+      <div class="control-group" style="margin-bottom: 2px;">
+        <div class="control-label">
+          <span style="font-size:11px;">Curvatura / InterpolaciÃ³n Superficie:</span>
+          <span class="control-value" id="lbl-mesh-curvature" style="color:#a5b4fc; font-weight:700;">50%</span>
+        </div>
+        <input type="range" id="slider-mesh-curvature" min="0" max="100" step="5" value="50" />
+      </div>
+    </div>
+
+    <!-- Master Toggle para Cajas y LÃ­neas de Referencia / Gizmos 3D -->
+    <label class="checkbox-row" style="background: rgba(14, 165, 233, 0.14); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35); margin-bottom: 6px;">
+      <span style="color:#7dd3fc; font-weight:600;">ðŸ‘ï¸ Cajas y LÃ­neas de Referencia 3D [Tecla G]</span>
+      <input type="checkbox" id="chk-vis-reference-gizmos" checked />
+    </label>
+
     <label class="checkbox-row">
       <span>👁 Mostrar Modelo 3D BIM de Revit</span>
       <input type="checkbox" id="chk-vis-bim-meshes" checked />
@@ -1029,6 +1061,25 @@
       sectionBoxGizmoGroup.add(boxFaceMesh);
       sectionBoxGizmoGroup.visible = false;
       scene.add(sectionBoxGizmoGroup);
+
+      let areReferenceGizmosVisible = true;
+
+      function setReferenceGizmosVisibility(visible) {
+        areReferenceGizmosVisible = visible;
+        const cb = document.getElementById('chk-vis-reference-gizmos');
+        if (cb) cb.checked = visible;
+
+        if (gridHelper) gridHelper.visible = visible;
+        if (sectionBoxGizmoGroup) {
+          sectionBoxGizmoGroup.visible = visible && isSectionBoxVisible;
+        }
+        if (renderZoneGizmoGroup) {
+          renderZoneGizmoGroup.visible = visible && renderZoneState.visible;
+        }
+        if (cameraPathVisualGroup) {
+          cameraPathVisualGroup.visible = visible;
+        }
+      }
 
       function updateSectionBoxPlanesAndGizmo() {
         const rxMin = parseFloat(document.getElementById('box-xmin').value) / 100.0;
@@ -1756,9 +1807,10 @@
           }
         }
 
-        const W = Math.max(2.0, renderZoneState.width);
-        const H = Math.max(1.0, renderZoneState.height);
-        const D = Math.max(2.0, renderZoneState.depth);
+        // Clamp box dimensions safely to prevent Out of Memory
+        const W = Math.min(500.0, Math.max(2.0, renderZoneState.width));
+        const H = Math.min(250.0, Math.max(1.0, renderZoneState.height));
+        const D = Math.min(500.0, Math.max(2.0, renderZoneState.depth));
 
         // 1. Outer Box Wireframe (Vibrant emerald #10b981)
         const boxGeo = new THREE.BoxGeometry(W, H, D);
@@ -1782,18 +1834,22 @@
         const faceMesh = new THREE.Mesh(boxGeo, faceMat);
         renderZoneGizmoGroup.add(faceMesh);
 
-        // 3. 10m x 10m Squares Grid on Floor (y = -H / 2)
+        // 3. Squares Grid on Floor (y = -H / 2) with adaptive step to prevent V8 memory explosion
         const halfW = W * 0.5;
         const halfD = D * 0.5;
         const floorY = -H * 0.5;
         const gridVerts = [];
 
-        // Longitudinal lines (along Z, stepping along X by 10m)
-        for (let x = -halfW; x <= halfW + 0.001; x += 10.0) {
+        // Ensure max 35 lines per axis so line buffer never exhausts browser memory
+        const stepX = Math.max(10.0, Math.ceil(W / 35.0 / 10.0) * 10.0);
+        const stepZ = Math.max(10.0, Math.ceil(D / 35.0 / 10.0) * 10.0);
+
+        // Longitudinal lines (along Z, stepping along X)
+        for (let x = -halfW; x <= halfW + 0.001; x += stepX) {
           gridVerts.push(x, floorY, -halfD, x, floorY, halfD);
         }
-        // Lateral lines (along X, stepping along Z by 10m)
-        for (let z = -halfD; z <= halfD + 0.001; z += 10.0) {
+        // Lateral lines (along X, stepping along Z)
+        for (let z = -halfD; z <= halfD + 0.001; z += stepZ) {
           gridVerts.push(-halfW, floorY, z, halfW, floorY, z);
         }
         if (gridVerts.length > 0) {
@@ -1847,13 +1903,18 @@
         } else {
           const center = box.getCenter(new THREE.Vector3());
           const size = box.getSize(new THREE.Vector3());
-          renderZoneState.centerX = center.x;
-          renderZoneState.centerY = center.y;
-          renderZoneState.centerZ = center.z;
-          // Round width and depth up to next multiple of 10m
-          renderZoneState.width = Math.max(10.0, Math.ceil(size.x / 10.0) * 10.0);
-          renderZoneState.depth = Math.max(10.0, Math.ceil(size.z / 10.0) * 10.0);
-          renderZoneState.height = Math.max(6.0, Math.ceil((size.y + 4.0) / 2.0) * 2.0);
+          renderZoneState.centerX = Number.isFinite(center.x) ? center.x : 0;
+          renderZoneState.centerY = Number.isFinite(center.y) ? center.y : 0;
+          renderZoneState.centerZ = Number.isFinite(center.z) ? center.z : 0;
+
+          const rawW = Number.isFinite(size.x) ? size.x : 60.0;
+          const rawD = Number.isFinite(size.z) ? size.z : 60.0;
+          const rawH = Number.isFinite(size.y) ? size.y : 30.0;
+
+          // Cap box dimensions safely (max 300m for 10x10m square render, height max 150m) to prevent out of memory
+          renderZoneState.width = Math.min(300.0, Math.max(10.0, Math.ceil(rawW / 10.0) * 10.0));
+          renderZoneState.depth = Math.min(300.0, Math.max(10.0, Math.ceil(rawD / 10.0) * 10.0));
+          renderZoneState.height = Math.min(150.0, Math.max(6.0, Math.ceil((rawH + 4.0) / 2.0) * 2.0));
           renderZoneState.rotationDeg = 0.0;
         }
 
@@ -1925,14 +1986,19 @@
         await new Promise((r) => setTimeout(r, 20));
 
         try {
-          const W = renderZoneState.width;
-          const D = renderZoneState.depth;
-          const H = renderZoneState.height;
+          const W = Math.min(400.0, Math.max(2.0, renderZoneState.width));
+          const D = Math.min(400.0, Math.max(2.0, renderZoneState.depth));
+          const H = Math.min(200.0, Math.max(1.0, renderZoneState.height));
           const halfW = W * 0.5;
           const halfD = D * 0.5;
           const halfH = H * 0.5;
 
-          const sqSize = renderZoneState.squareSize || 10.0;
+          // Dynamically adapt sqSize if zone is large so totalSquares <= 900
+          let sqSize = renderZoneState.squareSize || 10.0;
+          if (Math.ceil(W / sqSize) * Math.ceil(D / sqSize) > 900) {
+            sqSize = Math.max(10.0, Math.ceil(Math.max(W, D) / 30.0));
+          }
+
           const numX = Math.max(1, Math.ceil(W / sqSize));
           const numZ = Math.max(1, Math.ceil(D / sqSize));
           const totalSquares = numX * numZ;
@@ -1945,15 +2011,15 @@
           const cy = renderZoneState.centerY;
           const cz = renderZoneState.centerZ;
 
-          // Allocate square buckets
-          const squareBuckets = new Array(totalSquares);
-          for (let k = 0; k < totalSquares; k++) {
-            squareBuckets[k] = {
-              positions: [],
-              colors: [],
-              seeds: [],
-              hag: []
-            };
+          // Allocate on-demand Map to eliminate huge upfront memory consumption
+          const squareBuckets = new Map();
+          function getBucket(idx) {
+            let b = squareBuckets.get(idx);
+            if (!b) {
+              b = { positions: [], colors: [], seeds: [], hag: [] };
+              squareBuckets.set(idx, b);
+            }
+            return b;
           }
 
           let candidatePointsFound = 0;
@@ -2056,7 +2122,7 @@
                     const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
                     const hag = (groundY !== undefined) ? Math.max(0.0, gy - groundY) : 0.0;
 
-                    const b = squareBuckets[bIdx];
+                    const b = getBucket(bIdx);
                     b.positions.push(gx, gy, gz);
                     b.colors.push(rCol, gCol, bCol);
                     b.seeds.push(Math.random());
@@ -2147,7 +2213,7 @@
                     const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
                     const hag = (groundY !== undefined) ? Math.max(0.0, gy - groundY) : 0.0;
 
-                    const b = squareBuckets[bIdx];
+                    const b = getBucket(bIdx);
                     b.positions.push(gx, gy, gz);
                     b.colors.push(rCol, gCol, bCol);
                     b.seeds.push(Math.random());
@@ -2207,7 +2273,7 @@
                   const bCol = colArr ? colArr[i * 3 + 2] : 0.7;
                   const hag = hagArr ? hagArr[i] : 0.0;
 
-                  const b = squareBuckets[bIdx];
+                  const b = getBucket(bIdx);
                   b.positions.push(gx, gy, gz);
                   b.colors.push(rCol, gCol, bCol);
                   b.seeds.push(Math.random());
@@ -2239,8 +2305,8 @@
               break;
             }
 
-            const bucket = squareBuckets[sq];
-            const ptsInSq = bucket.positions.length / 3;
+            const bucket = squareBuckets.get(sq);
+            const ptsInSq = (bucket && bucket.positions) ? (bucket.positions.length / 3) : 0;
 
             if (ptsInSq > 0) {
               const posArr = new Float32Array(bucket.positions);
@@ -2264,6 +2330,8 @@
               totalRenderedPoints += ptsInSq;
               squaresWithPointsCount++;
             }
+            // Immediately delete processed bucket to keep V8 heap flat and light
+            squareBuckets.delete(sq);
 
             const pct = ((sq + 1) / totalSquares) * 100.0;
             const ix = (sq % numX) + 1;
@@ -3679,12 +3747,16 @@
         const origBtnText = btnExport.textContent;
         btnExport.disabled = true;
 
-        // Hide section box, render zone box & camera path visual gizmos during clean video render
-        const prevGizmoVis = sectionBoxGizmoGroup.visible;
+        // STRICTLY HIDE ALL GIZMOS, SECTION BOX, RENDER BOX, CAMERA PATH & GROUND GRID DURING CLEAN VIDEO EXPORT
+        const prevGizmoVis = sectionBoxGizmoGroup ? sectionBoxGizmoGroup.visible : false;
         const prevRenderBoxVis = renderZoneGizmoGroup ? renderZoneGizmoGroup.visible : false;
-        sectionBoxGizmoGroup.visible = false;
+        const prevGridVis = gridHelper ? gridHelper.visible : false;
+        const prevCameraPathVis = cameraPathVisualGroup ? cameraPathVisualGroup.visible : false;
+
+        if (gridHelper) gridHelper.visible = false;
+        if (sectionBoxGizmoGroup) sectionBoxGizmoGroup.visible = false;
         if (renderZoneGizmoGroup) renderZoneGizmoGroup.visible = false;
-        cameraPathVisualGroup.visible = false;
+        if (cameraPathVisualGroup) cameraPathVisualGroup.visible = false;
 
         const origW = window.innerWidth;
         const origH = window.innerHeight;
@@ -3818,9 +3890,10 @@
         renderer.setSize(origW, origH);
         camera.aspect = origW / origH;
         camera.updateProjectionMatrix();
-        sectionBoxGizmoGroup.visible = prevGizmoVis;
-        if (renderZoneGizmoGroup) renderZoneGizmoGroup.visible = prevRenderBoxVis;
-        cameraPathVisualGroup.visible = true;
+        if (gridHelper) gridHelper.visible = areReferenceGizmosVisible && prevGridVis;
+        if (sectionBoxGizmoGroup) sectionBoxGizmoGroup.visible = areReferenceGizmosVisible && prevGizmoVis;
+        if (renderZoneGizmoGroup) renderZoneGizmoGroup.visible = areReferenceGizmosVisible && prevRenderBoxVis;
+        if (cameraPathVisualGroup) cameraPathVisualGroup.visible = areReferenceGizmosVisible && prevCameraPathVis;
         btnExport.disabled = false;
         btnExport.textContent = origBtnText;
 
@@ -4021,6 +4094,53 @@
       }
 
       // ================= 3D RENDER ZONE BOX CONTROLS & LISTENERS =================
+      // Master toggle for 3D boxes and reference lines
+      const chkVisRefGizmos = document.getElementById('chk-vis-reference-gizmos');
+      if (chkVisRefGizmos) {
+        chkVisRefGizmos.addEventListener('change', (e) => {
+          setReferenceGizmosVisibility(e.target.checked);
+        });
+      }
+
+      // Keyboard shortcut [G] for toggling reference lines and boxes
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'g' || e.key === 'G') {
+          if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) return;
+          setReferenceGizmosVisibility(!areReferenceGizmosVisible);
+        }
+      });
+
+      // Reality mesh smoothing and fine interpolation controls
+      const selMeshSmoothing = document.getElementById('sel-mesh-smoothing');
+      const sliderMeshCurv = document.getElementById('slider-mesh-curvature');
+      const lblMeshCurv = document.getElementById('lbl-mesh-curvature');
+      const badgeMeshQuality = document.getElementById('badge-mesh-quality');
+
+      if (selMeshSmoothing) {
+        selMeshSmoothing.addEventListener('change', (e) => {
+          currentMeshSmoothingMode = parseInt(e.target.value, 10) || 0;
+          if (badgeMeshQuality) {
+            if (currentMeshSmoothingMode === 0) badgeMeshQuality.textContent = 'Facetado';
+            else if (currentMeshSmoothingMode === 1) badgeMeshQuality.textContent = 'PBR Suave';
+            else if (currentMeshSmoothingMode === 2) badgeMeshQuality.textContent = 'Fino ~5cm';
+            else if (currentMeshSmoothingMode === 3) badgeMeshQuality.textContent = 'Ultra 1-2cm';
+          }
+          window.reapplyMeshSmoothingAndInterpolation();
+        });
+      }
+
+      if (sliderMeshCurv) {
+        sliderMeshCurv.addEventListener('input', (e) => {
+          currentMeshCurvatureFactor = (parseFloat(e.target.value) || 50.0) / 100.0;
+          if (lblMeshCurv) lblMeshCurv.textContent = Math.round(currentMeshCurvatureFactor * 100) + '%';
+        });
+        sliderMeshCurv.addEventListener('change', () => {
+          if (currentMeshSmoothingMode >= 2) {
+            window.reapplyMeshSmoothingAndInterpolation();
+          }
+        });
+      }
+
       const chkShowRenderBox = document.getElementById('chk-show-render-box');
       if (chkShowRenderBox) {
         chkShowRenderBox.addEventListener('change', (e) => {
@@ -4970,6 +5090,190 @@
         await finalizeRealityMeshAndAddToScene(file.name, glbMesh.tiles, 0.0, 0.0, 0.0);
       }
 
+      // ================= REALITY MESH SMOOTHING & SUBDIVISION ENGINE (1-5 CM) =================
+      let currentMeshSmoothingMode = 1; // 0: Original, 1: Smooth PBR, 2: Fine 5cm, 3: Ultra 1-2cm
+      let currentMeshCurvatureFactor = 0.5;
+
+      function computeSmoothWeldedNormals(positions, vertexCount) {
+        const normals = new Float32Array(vertexCount * 3);
+        const normalMap = new Map();
+        const scale = 1000.0; // 1 mm precision weld
+
+        for (let i = 0; i < vertexCount; i += 3) {
+          const i0 = i * 3, i1 = (i + 1) * 3, i2 = (i + 2) * 3;
+          const ax = positions[i0], ay = positions[i0 + 1], az = positions[i0 + 2];
+          const bx = positions[i1], by = positions[i1 + 1], bz = positions[i1 + 2];
+          const cx = positions[i2], cy = positions[i2 + 1], cz = positions[i2 + 2];
+
+          const abx = bx - ax, aby = by - ay, abz = bz - az;
+          const acx = cx - ax, acy = cy - ay, acz = cz - az;
+          let nx = aby * acz - abz * acy;
+          let ny = abz * acx - abx * acz;
+          let nz = abx * acy - aby * acx;
+          const len = Math.hypot(nx, ny, nz);
+          if (len > 1e-7) {
+            nx /= len; ny /= len; nz /= len;
+          }
+
+          for (let k = 0; k < 3; k++) {
+            const idx = (i + k) * 3;
+            const px = positions[idx], py = positions[idx + 1], pz = positions[idx + 2];
+            const key = `${Math.round(px * scale)},${Math.round(py * scale)},${Math.round(pz * scale)}`;
+            let acc = normalMap.get(key);
+            if (!acc) {
+              acc = [0, 0, 0];
+              normalMap.set(key, acc);
+            }
+            acc[0] += nx; acc[1] += ny; acc[2] += nz;
+          }
+        }
+
+        for (let i = 0; i < vertexCount; i++) {
+          const idx = i * 3;
+          const px = positions[idx], py = positions[idx + 1], pz = positions[idx + 2];
+          const key = `${Math.round(px * scale)},${Math.round(py * scale)},${Math.round(pz * scale)}`;
+          const acc = normalMap.get(key);
+          if (acc) {
+            let nx = acc[0], ny = acc[1], nz = acc[2];
+            const l = Math.hypot(nx, ny, nz);
+            if (l > 1e-7) { nx /= l; ny /= l; nz /= l; }
+            normals[idx] = nx;
+            normals[idx + 1] = ny;
+            normals[idx + 2] = nz;
+          } else {
+            normals[idx + 1] = 1.0;
+          }
+        }
+        return normals;
+      }
+
+      function subdivideMeshWithCurvature(positions, uvs, normals, levels, curvature) {
+        let curPos = positions;
+        let curUvs = uvs;
+        let curNorm = normals;
+        const curvFactor = (curvature !== undefined ? curvature : 0.5) * 0.12;
+
+        for (let lvl = 0; lvl < levels; lvl++) {
+          const triCount = Math.floor(curPos.length / 9);
+          if (triCount > 80000) break; // Keep safely inside GPU memory budget
+
+          const outPos = new Float32Array(triCount * 36);
+          const outUvs = curUvs ? new Float32Array(triCount * 24) : null;
+          const outNorm = new Float32Array(triCount * 36);
+
+          let pIdx = 0, uIdx = 0, nIdx = 0;
+
+          for (let t = 0; t < triCount; t++) {
+            const b9 = t * 9;
+            const b6 = t * 6;
+
+            const ax = curPos[b9], ay = curPos[b9 + 1], az = curPos[b9 + 2];
+            const bx = curPos[b9 + 3], by = curPos[b9 + 4], bz = curPos[b9 + 5];
+            const cx = curPos[b9 + 6], cy = curPos[b9 + 7], cz = curPos[b9 + 8];
+
+            const nax = curNorm[b9], nay = curNorm[b9 + 1], naz = curNorm[b9 + 2];
+            const nbx = curNorm[b9 + 3], nby = curNorm[b9 + 4], nbz = curNorm[b9 + 5];
+            const ncx = curNorm[b9 + 6], ncy = curNorm[b9 + 7], ncz = curNorm[b9 + 8];
+
+            let u0 = 0, v0 = 0, u1 = 0, v1 = 0, u2 = 0, v2 = 0;
+            if (curUvs && b6 + 5 < curUvs.length) {
+              u0 = curUvs[b6]; v0 = curUvs[b6 + 1];
+              u1 = curUvs[b6 + 2]; v1 = curUvs[b6 + 3];
+              u2 = curUvs[b6 + 4]; v2 = curUvs[b6 + 5];
+            }
+
+            const dAB = Math.hypot(bx - ax, by - ay, bz - az);
+            const dBC = Math.hypot(cx - bx, cy - by, cz - bz);
+            const dCA = Math.hypot(ax - cx, ay - cy, az - cz);
+
+            const mab_nx = (nax + nbx) * 0.5, mab_ny = (nay + nby) * 0.5, mab_nz = (naz + nbz) * 0.5;
+            const mbc_nx = (nbx + ncx) * 0.5, mbc_ny = (nby + ncy) * 0.5, mbc_nz = (nbz + ncz) * 0.5;
+            const mca_nx = (ncx + nax) * 0.5, mca_ny = (ncy + nay) * 0.5, mca_nz = (ncz + naz) * 0.5;
+
+            const offAB = dAB * curvFactor;
+            const offBC = dBC * curvFactor;
+            const offCA = dCA * curvFactor;
+
+            const mab_x = (ax + bx) * 0.5 + mab_nx * offAB;
+            const mab_y = (ay + by) * 0.5 + mab_ny * offAB;
+            const mab_z = (az + bz) * 0.5 + mab_nz * offAB;
+
+            const mbc_x = (bx + cx) * 0.5 + mbc_nx * offBC;
+            const mbc_y = (by + cy) * 0.5 + mbc_ny * offBC;
+            const mbc_z = (bz + cz) * 0.5 + mbc_nz * offBC;
+
+            const mca_x = (cx + ax) * 0.5 + mca_nx * offCA;
+            const mca_y = (cy + ay) * 0.5 + mca_ny * offCA;
+            const mca_z = (cz + az) * 0.5 + mca_nz * offCA;
+
+            const mab_u = (u0 + u1) * 0.5, mab_v = (v0 + v1) * 0.5;
+            const mbc_u = (u1 + u2) * 0.5, mbc_v = (v1 + v2) * 0.5;
+            const mca_u = (u2 + u0) * 0.5, mca_v = (v2 + v0) * 0.5;
+
+            function pushV(px, py, pz, nx, ny, nz, u, v) {
+              outPos[pIdx++] = px; outPos[pIdx++] = py; outPos[pIdx++] = pz;
+              outNorm[nIdx++] = nx; outNorm[nIdx++] = ny; outNorm[nIdx++] = nz;
+              if (outUvs) { outUvs[uIdx++] = u; outUvs[uIdx++] = v; }
+            }
+
+            // T1: (A, Mab, Mca)
+            pushV(ax, ay, az, nax, nay, naz, u0, v0);
+            pushV(mab_x, mab_y, mab_z, mab_nx, mab_ny, mab_nz, mab_u, mab_v);
+            pushV(mca_x, mca_y, mca_z, mca_nx, mca_ny, mca_nz, mca_u, mca_v);
+
+            // T2: (Mab, B, Mbc)
+            pushV(mab_x, mab_y, mab_z, mab_nx, mab_ny, mab_nz, mab_u, mab_v);
+            pushV(bx, by, bz, nbx, nby, nbz, u1, v1);
+            pushV(mbc_x, mbc_y, mbc_z, mbc_nx, mbc_ny, mbc_nz, mbc_u, mbc_v);
+
+            // T3: (Mca, Mbc, C)
+            pushV(mca_x, mca_y, mca_z, mca_nx, mca_ny, mca_nz, mca_u, mca_v);
+            pushV(mbc_x, mbc_y, mbc_z, mbc_nx, mbc_ny, mbc_nz, mbc_u, mbc_v);
+            pushV(cx, cy, cz, ncx, ncy, ncz, u2, v2);
+
+            // T4: (Mab, Mbc, Mca)
+            pushV(mab_x, mab_y, mab_z, mab_nx, mab_ny, mab_nz, mab_u, mab_v);
+            pushV(mbc_x, mbc_y, mbc_z, mbc_nx, mbc_ny, mbc_nz, mbc_u, mbc_v);
+            pushV(mca_x, mca_y, mca_z, mca_nx, mca_ny, mca_nz, mca_u, mca_v);
+          }
+
+          curPos = outPos;
+          curUvs = outUvs;
+          curNorm = outNorm;
+        }
+
+        return { positions: curPos, uvs: curUvs, normals: curNorm };
+      }
+
+      window.reapplyMeshSmoothingAndInterpolation = async function () {
+        if (!window._current3smTiles || window._current3smTiles.length === 0) return;
+        const tiles = window._current3smTiles;
+        const fileName = window._current3smFileName || 'Malla';
+        const baseEast = window._current3smBaseEast || 0;
+        const baseNorth = window._current3smBaseNorth || 0;
+        const baseElev = window._current3smBaseElev || 0;
+
+        window.showTaskProgressModal();
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          25.0,
+          'Calculando Suavizado e InterpolaciÃ³n Fina (1-5 cm)',
+          'Interpolando normales y micro-triangulaciÃ³n de ' + tiles.length + ' teselas...'
+        );
+        await new Promise((r) => setTimeout(r, 20));
+
+        // Dispose previous meshes in group
+        while (mesh3smGroup.children.length > 0) {
+          const m = mesh3smGroup.children.pop();
+          if (m.geometry) m.geometry.dispose();
+          if (m.material) {
+            if (m.material.map) m.material.map.dispose();
+            m.material.dispose();
+          }
+        }
+
+        await finalizeRealityMeshAndAddToScene(fileName, tiles, baseEast, baseNorth, baseElev);
+      };
       async function finalizeRealityMeshAndAddToScene(fileName, tiles, baseEast, baseNorth, baseElev) {
         if (!tiles || tiles.length === 0) {
           throw new Error('No se encontraron teselas de geometría 3D en el archivo ' + fileName);
@@ -5078,16 +5382,46 @@
             transformedVerts[i + 2] = tz;
           }
 
+          window._current3smTiles = tiles;
+          window._current3smFileName = fileName;
+          window._current3smBaseEast = baseEast;
+          window._current3smBaseNorth = baseNorth;
+          window._current3smBaseElev = baseElev;
+
+          let finalPositions = transformedVerts;
+          let finalUvs = tile.uvs;
+          let finalNormals = null;
+
+          if (currentMeshSmoothingMode === 0) {
+            // Flat original
+            finalNormals = null;
+          } else {
+            // Compute seamless welded smooth normals across adjacent faces
+            const baseNormals = computeSmoothWeldedNormals(transformedVerts, transformedVerts.length / 3);
+            if (currentMeshSmoothingMode === 1) {
+              finalNormals = baseNormals;
+            } else if (currentMeshSmoothingMode === 2) {
+              // 1 level PN-triangle subdivision (~5 cm fine triangulation)
+              const sub = subdivideMeshWithCurvature(transformedVerts, tile.uvs, baseNormals, 1, currentMeshCurvatureFactor);
+              finalPositions = sub.positions;
+              finalUvs = sub.uvs;
+              finalNormals = sub.normals;
+            } else if (currentMeshSmoothingMode === 3) {
+              // 2 levels PN-triangle subdivision (~1-2 cm ultra fine triangulation)
+              const sub = subdivideMeshWithCurvature(transformedVerts, tile.uvs, baseNormals, 2, currentMeshCurvatureFactor);
+              finalPositions = sub.positions;
+              finalUvs = sub.uvs;
+              finalNormals = sub.normals;
+            }
+          }
+
           const geo = new THREE.BufferGeometry();
-          geo.setAttribute('position', new THREE.BufferAttribute(transformedVerts, 3));
-          if (tile.indices) {
-            geo.setIndex(new THREE.BufferAttribute(tile.indices, 1));
+          geo.setAttribute('position', new THREE.BufferAttribute(finalPositions, 3));
+          if (finalUvs) {
+            geo.setAttribute('uv', new THREE.BufferAttribute(finalUvs, 2));
           }
-          if (tile.uvs) {
-            geo.setAttribute('uv', new THREE.BufferAttribute(tile.uvs, 2));
-          }
-          if (tile.normals) {
-            geo.setAttribute('normal', new THREE.BufferAttribute(tile.normals, 3));
+          if (finalNormals) {
+            geo.setAttribute('normal', new THREE.BufferAttribute(finalNormals, 3));
           } else {
             geo.computeVertexNormals();
           }

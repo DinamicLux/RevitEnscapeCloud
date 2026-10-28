@@ -484,7 +484,11 @@ namespace RevitEnscapeCloud
 
                 Directory.CreateDirectory(userDataFolder);
 
-                CoreWebView2Environment env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+                CoreWebView2EnvironmentOptions envOptions = new CoreWebView2EnvironmentOptions(
+                    "--max-old-space-size=8192 --js-flags=\"--max-old-space-size=8192\" --disable-features=OutOfBlinkCors --ignore-gpu-blocklist --enable-gpu-rasterization --enable-zero-copy",
+                    null, null, false, null);
+
+                CoreWebView2Environment env = await CoreWebView2Environment.CreateAsync(null, userDataFolder, envOptions);
                 await _webView.EnsureCoreWebView2Async(env);
 
                 _webView.CoreWebView2.Settings.IsWebMessageEnabled = true;

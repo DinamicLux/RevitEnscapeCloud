@@ -110,27 +110,43 @@ namespace RevitEnscapeCloud
                     sqlite3_finalize(stmtHeader);
                 }
 
-                // 2. Determine target resolution level (Prefer Resolution 1 quadrants for high-definition, fallback to min available)
-                int targetResolution = 1;
-                IntPtr stmtMin;
-                if (sqlite3_prepare16_v2(db, "SELECT MIN(Resolution) FROM SMNodeHeader;", -1, out stmtMin, IntPtr.Zero) == 0)
+                // 2. Determine target resolution level (Prefer finest available pyramid level for 1-5 cm realistic detail)
+                int targetResolution = 0;
+                int maxAvailableRes = 0;
+                IntPtr stmtMax;
+                if (sqlite3_prepare16_v2(db, "SELECT MAX(Resolution) FROM SMNodeHeader;", -1, out stmtMax, IntPtr.Zero) == 0)
                 {
-                    if (sqlite3_step(stmtMin) == 100)
+                    if (sqlite3_step(stmtMax) == 100)
                     {
-                        int minRes = (int)sqlite3_column_int64(stmtMin, 0);
-                        targetResolution = minRes;
-                        IntPtr stmtCheck;
-                        if (sqlite3_prepare16_v2(db, "SELECT COUNT(*) FROM SMNodeHeader WHERE Resolution = " + (minRes + 1) + ";", -1, out stmtCheck, IntPtr.Zero) == 0)
+                        maxAvailableRes = (int)sqlite3_column_int64(stmtMax, 0);
+                    }
+                    sqlite3_finalize(stmtMax);
+                }
+
+                // Query resolution levels descending: choose highest resolution with a manageable tile count (up to 128 tiles)
+                IntPtr stmtResList;
+                string checkResSql = "SELECT Resolution, COUNT(*) FROM SMNodeHeader GROUP BY Resolution ORDER BY Resolution DESC;";
+                if (sqlite3_prepare16_v2(db, checkResSql, -1, out stmtResList, IntPtr.Zero) == 0)
+                {
+                    while (sqlite3_step(stmtResList) == 100)
+                    {
+                        int r = (int)sqlite3_column_int64(stmtResList, 0);
+                        long cnt = sqlite3_column_int64(stmtResList, 1);
+                        if (cnt >= 1 && cnt <= 128)
                         {
-                            if (sqlite3_step(stmtCheck) == 100)
-                            {
-                                long c1 = sqlite3_column_int64(stmtCheck, 0);
-                                if (c1 > 0 && c1 <= 64) targetResolution = minRes + 1;
-                            }
-                            sqlite3_finalize(stmtCheck);
+                            targetResolution = r;
+                            break;
+                        }
+                        else if (targetResolution == 0 && cnt > 0)
+                        {
+                            targetResolution = r;
                         }
                     }
-                    sqlite3_finalize(stmtMin);
+                    sqlite3_finalize(stmtResList);
+                }
+                if (targetResolution == 0 && maxAvailableRes > 0)
+                {
+                    targetResolution = Math.Max(0, maxAvailableRes - 1);
                 }
 
                 // 3. Query Nodes at target resolution
