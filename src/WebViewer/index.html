@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -493,6 +493,7 @@
       <div class="btn-row" style="margin-top: 14px;">
         <button class="hud-btn emerald" id="btn-modal-select-las">📂 Elegir Archivo (.LAS / .RCS / .3SM)</button>
         <button class="hud-btn primary" id="btn-modal-fit-cloud" style="display: none;">🔍 Encuadrar Modelo Cargado</button>
+        <button class="hud-btn" id="btn-modal-stop-render" style="display: none; background: #dc2626; border-color: #ef4444; color: #fff; font-weight: 700;">⏹️ Detener Renderizado</button>
         <button class="hud-btn" id="btn-modal-close" style="flex: 0.45;">Ocultar</button>
       </div>
     </div>
@@ -619,49 +620,115 @@
       <input type="range" id="slider-density" min="0" max="100" step="0.5" value="100" />
     </div>
 
-    <!-- ================= RENDERIZADO DE ZONA EN MÁXIMA CALIDAD (100% DENSIDAD) ================= -->
-    <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(52, 211, 153, 0.45); border-radius: 8px; padding: 9px 10px; margin-bottom: 9px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px;">
-        <span style="color:#6ee7b7; font-weight:700; font-size:12px;">🎯 Renderizado de Zona (100% Calidad)</span>
-        <span style="font-size:10px; color:#a7f3d0; background:rgba(6,95,70,0.5); padding:2px 6px; border-radius:4px;">1 zona a la vez</span>
+    <!-- ================= RENDERIZADO POR CUADRADOS DE 10x10m (TODA LA NUBE O ZONA PERSONALIZADA) ================= -->
+    <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(52, 211, 153, 0.55); border-radius: 10px; padding: 10px 11px; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(5, 150, 105, 0.2);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
+        <span style="color:#6ee7b7; font-weight:700; font-size:12px; display:flex; align-items:center; gap:5px;">
+          <span>ðŸ“</span> Renderizado por Cuadrados 10Ã—10m
+        </span>
+        <span id="badge-sq-count" style="font-size:10px; color:#a7f3d0; background:rgba(6,95,70,0.65); border:1px solid rgba(52,211,153,0.3); padding:2px 7px; border-radius:4px; font-weight:600;">36 cuadrantes</span>
       </div>
 
-      <div class="control-group" style="margin-bottom: 6px;">
-        <div class="control-label">
-          <span>Radio de la Zona en Máxima Calidad</span>
-          <span class="control-value" id="lbl-full-radius" style="color:#34d399; font-weight:700;">10.0 m</span>
-        </div>
-        <input type="range" id="slider-full-radius" min="2.0" max="60.0" step="1.0" value="10.0" />
-      </div>
-
-      <div class="control-group" style="margin-bottom: 6px;">
-        <div class="control-label">
-          <span>⚙ Límite de Puntos de la Zona</span>
-        </div>
-        <select class="hud-select" id="sel-bubble-budget">
-          <option value="6000000">6 M puntos (GPU Básica)</option>
-          <option value="12000000" selected>12 M puntos (Recomendado - Sin Huecos)</option>
-          <option value="20000000">20 M puntos (Alta Gama RTX)</option>
-          <option value="30000000">30 M puntos (Extrema Densidad 2mm)</option>
-        </select>
-      </div>
-
-      <label class="checkbox-row" style="margin: 2px 0 6px 0;">
-        <span style="font-size:11px; color:#cbd5e1;">⭕ Mostrar Anillo Guía en el Suelo</span>
-        <input type="checkbox" id="chk-show-radius-ring" checked />
+      <!-- Ver el cuadrado de renderizado completo antes de renderizar -->
+      <label class="checkbox-row" style="margin: 2px 0 8px 0; background: rgba(0,0,0,0.22); padding: 5px 8px; border-radius: 6px;">
+        <span style="font-size:11.5px; color:#f1f5f9; font-weight:600;">ðŸ‘ï¸ Ver Caja / Cuadrado 3D de Renderizado</span>
+        <input type="checkbox" id="chk-show-render-box" checked />
       </label>
 
-      <button class="hud-btn hud-btn-primary" id="btn-render-zone" style="background:#059669; border-color:#10b981; color:#fff; font-weight:700; font-size:12px; padding:8px 12px; width:100%; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; margin-top:3px; box-shadow: 0 2px 8px rgba(5,150,105,0.35);">
-        🎯 Renderizar Zona (100% Calidad)
-      </button>
-
-      <button class="hud-btn" id="btn-clear-zone" style="font-size:11px; width:100%; margin-top:5px; background:rgba(255,255,255,0.06); color:#cbd5e1; border-color:rgba(255,255,255,0.15);">
-        ✕ Desactivar Zona (Volver a Vista Global)
-      </button>
-
-      <div id="lbl-bubble-status" style="font-size:10.5px; color:#a7f3d0; margin-top:7px; line-height:1.4; border-top:1px solid rgba(52,211,153,0.25); padding-top:6px;">
-        ⚪ Ninguna zona renderizada aún. Ubica la cámara o camina y pulsa "Renderizar Zona".
+      <!-- Botones de auto-ajuste y centrado -->
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 6px; margin-bottom: 8px;">
+        <button class="hud-btn" id="btn-fit-box-to-cloud" style="font-size: 11px; padding: 6px 8px; background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; color: #7dd3fc; font-weight: 600;">
+          ðŸ”„ Ajustar a Toda la Nube
+        </button>
+        <button class="hud-btn" id="btn-center-box-to-camera" style="font-size: 11px; padding: 6px 8px; background: rgba(255,255,255,0.06); color: #cbd5e1;">
+          ðŸŽ¯ Centrar AquÃ­
+        </button>
       </div>
+
+      <!-- Agrandar / Reducir: Ancho (X) -->
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label">
+          <span>Ancho X (Agrandar / Reducir):</span>
+          <span class="control-value" id="lbl-box-width" style="color:#34d399; font-weight:700;">60 m</span>
+        </div>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button class="hud-btn" id="btn-box-w-minus" style="padding: 2px 7px; font-size:11px;">-10m</button>
+          <input type="range" id="slider-box-width" min="10" max="1500" step="10" value="60" style="flex: 1;" />
+          <button class="hud-btn" id="btn-box-w-plus" style="padding: 2px 7px; font-size:11px;">+10m</button>
+        </div>
+      </div>
+
+      <!-- Agrandar / Reducir: Largo (Z) -->
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label">
+          <span>Largo Z (Agrandar / Reducir):</span>
+          <span class="control-value" id="lbl-box-depth" style="color:#34d399; font-weight:700;">60 m</span>
+        </div>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button class="hud-btn" id="btn-box-d-minus" style="padding: 2px 7px; font-size:11px;">-10m</button>
+          <input type="range" id="slider-box-depth" min="10" max="1500" step="10" value="60" style="flex: 1;" />
+          <button class="hud-btn" id="btn-box-d-plus" style="padding: 2px 7px; font-size:11px;">+10m</button>
+        </div>
+      </div>
+
+      <!-- Rotar el cuadrado / zona -->
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label">
+          <span>ðŸ”„ RotaciÃ³n de la Zona (Yaw):</span>
+          <span class="control-value" id="lbl-box-rot" style="color:#38bdf8; font-weight:700;">0.0Â°</span>
+        </div>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button class="hud-btn" id="btn-box-rot-minus" style="padding: 2px 6px; font-size:10.5px;">-15Â°</button>
+          <input type="range" id="slider-box-rot" min="-180" max="180" step="1" value="0" style="flex: 1;" />
+          <button class="hud-btn" id="btn-box-rot-plus" style="padding: 2px 6px; font-size:10.5px;">+15Â°</button>
+          <button class="hud-btn" id="btn-box-rot-reset" style="padding: 2px 5px; font-size:10px; background:rgba(255,255,255,0.08);">0Â°</button>
+        </div>
+      </div>
+
+      <!-- Ampliar Altura / Espesor Vertical -->
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label">
+          <span>â†•ï¸ Ampliar Altura / Espesor:</span>
+          <span class="control-value" id="lbl-box-height" style="color:#fbbf24; font-weight:700;">30 m</span>
+        </div>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button class="hud-btn" id="btn-box-h-minus" style="padding: 2px 7px; font-size:11px;">-5m</button>
+          <input type="range" id="slider-box-height" min="2" max="300" step="2" value="30" style="flex: 1;" />
+          <button class="hud-btn" id="btn-box-h-plus" style="padding: 2px 7px; font-size:11px;">+5m</button>
+        </div>
+      </div>
+
+      <div class="control-group" style="margin-bottom: 6px;">
+        <div class="control-label">
+          <span>Cota Central Y (ElevaciÃ³n):</span>
+          <span class="control-value" id="lbl-box-centery">0.0 m</span>
+        </div>
+        <input type="range" id="slider-box-centery" min="-150" max="150" step="0.5" value="0" />
+      </div>
+
+      <!-- TelemetrÃ­a en vivo del Ã¡rea y conteo de cuadrados -->
+      <div id="lbl-box-summary" style="font-size: 10.5px; color: #a7f3d0; background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 5px; margin-bottom: 8px; line-height: 1.45; border-left: 3px solid #10b981;">
+        Dim: 60m Ã— 60m (3,600 mÂ²) | Altura: 30m | RotaciÃ³n: 0.0Â°<br/>
+        <b>CuadrÃ­cula: 6 Ã— 6 = 36 cuadrados de 10Ã—10m</b>
+      </div>
+
+      <!-- BotÃ³n principal para renderizar toda la nube / zona por cuadrados de 10x10m -->
+      <button class="hud-btn hud-btn-primary" id="btn-render-progressive-grid" style="background:#059669; border-color:#10b981; color:#fff; font-weight:700; font-size:12px; padding:9px 12px; width:100%; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow: 0 3px 10px rgba(5,150,105,0.4); margin-bottom: 5px;">
+        ðŸš€ Renderizar Zona (Por Cuadrados de 10Ã—10m)
+      </button>
+
+      <button class="hud-btn" id="btn-render-zone" style="font-size:11px; width:100%; margin-bottom:5px; background:rgba(255,255,255,0.06); color:#cbd5e1; border-color:rgba(255,255,255,0.15);">
+        ðŸŽ¯ Renderizar Radio ConcÃ©ntrico RÃ¡pido (10m)
+      </button>
+
+      <button class="hud-btn" id="btn-clear-zone" style="font-size:11px; width:100%; background:rgba(255,255,255,0.06); color:#cbd5e1; border-color:rgba(255,255,255,0.15);">
+        ðŸ§¹ Desactivar / Limpiar Zona Renderizada
+      </button>
+
+      <div id="lbl-bubble-status" style="font-size:10px; color:#a7f3d0; margin-top:6px; line-height:1.4; border-top:1px solid rgba(52,211,153,0.25); padding-top:5px;">
+        Ajusta el volumen o pulsa "Ajustar a Toda la Nube" y luego "Renderizar Zona".
+      </div>
+    </div>
     </div>
 
     <div class="control-group">
@@ -1319,9 +1386,28 @@
         opacity: 0.72,
         depthWrite: false
       });
-      const fullRadiusRingMesh = new THREE.Mesh(ringGeo, ringMat);
+            const fullRadiusRingMesh = new THREE.Mesh(ringGeo, ringMat);
       fullRadiusRingMesh.scale.set(currentFullRadius, 1, currentFullRadius);
+      fullRadiusRingMesh.visible = false;
       scene.add(fullRadiusRingMesh);
+
+      // ================= 3D RENDER ZONE BOX GIZMO & PROGRESSIVE 10x10m RENDERING ENGINE =================
+      const renderZoneState = {
+        visible: true,
+        centerX: 0.0,
+        centerY: 0.0,
+        centerZ: 0.0,
+        width: 60.0,      // Local X dimension in meters
+        depth: 60.0,      // Local Z dimension in meters
+        height: 30.0,     // Local Y thickness in meters
+        rotationDeg: 0.0, // Yaw in degrees (-180 to 180)
+        squareSize: 10.0, // 10x10m tiles
+        isRendering: false,
+        cancelRequested: false
+      };
+
+      const renderZoneGizmoGroup = new THREE.Group();
+      scene.add(renderZoneGizmoGroup);
 
       // Spatial 2D Sector Grid (2.0m x 2.0m sectors) using fast integer keys (zero GC string overhead!)
       const sectorMinYMap = new Map();
@@ -1605,11 +1691,11 @@
       }
 
       function clearFullDensityBubble() {
-        if (bubbleMesh) {
-          fullDensityBubbleGroup.remove(bubbleMesh);
-          disposePointCloudObject(bubbleMesh);
-          bubbleMesh = null;
+        while (fullDensityBubbleGroup.children.length > 0) {
+          const m = fullDensityBubbleGroup.children.pop();
+          disposePointCloudObject(m);
         }
+        bubbleMesh = null;
         bubbleLoadedPoints = 0;
         bubbleReadyFlag = 0.0;
         bubbleCoverRadius = 0.0;
@@ -1618,6 +1704,620 @@
         syncLodUniforms();
         updatePointCloudTelemetry();
       }
+
+      function updateRenderZoneUI() {
+        const sw = document.getElementById('slider-box-width');
+        const sd = document.getElementById('slider-box-depth');
+        const sr = document.getElementById('slider-box-rot');
+        const sh = document.getElementById('slider-box-height');
+        const sc = document.getElementById('slider-box-centery');
+        const cb = document.getElementById('chk-show-render-box');
+
+        if (sw) sw.value = renderZoneState.width;
+        if (sd) sd.value = renderZoneState.depth;
+        if (sr) sr.value = renderZoneState.rotationDeg;
+        if (sh) sh.value = renderZoneState.height;
+        if (sc) sc.value = renderZoneState.centerY;
+        if (cb) cb.checked = renderZoneState.visible;
+
+        const lw = document.getElementById('lbl-box-width');
+        const ld = document.getElementById('lbl-box-depth');
+        const lr = document.getElementById('lbl-box-rot');
+        const lh = document.getElementById('lbl-box-height');
+        const lc = document.getElementById('lbl-box-centery');
+        const sum = document.getElementById('lbl-box-summary');
+        const badge = document.getElementById('badge-sq-count');
+
+        if (lw) lw.textContent = renderZoneState.width.toFixed(0) + ' m';
+        if (ld) ld.textContent = renderZoneState.depth.toFixed(0) + ' m';
+        if (lr) lr.textContent = renderZoneState.rotationDeg.toFixed(1) + 'Â°';
+        if (lh) lh.textContent = renderZoneState.height.toFixed(0) + ' m';
+        if (lc) lc.textContent = (renderZoneState.centerY >= 0 ? '+' : '') + renderZoneState.centerY.toFixed(1) + ' m';
+
+        const numX = Math.max(1, Math.ceil(renderZoneState.width / renderZoneState.squareSize));
+        const numZ = Math.max(1, Math.ceil(renderZoneState.depth / renderZoneState.squareSize));
+        const totalSq = numX * numZ;
+        const area = (renderZoneState.width * renderZoneState.depth).toLocaleString();
+
+        if (badge) badge.textContent = totalSq + ' cuadrantes (10Ã—10m)';
+        if (sum) {
+          sum.innerHTML =
+            'Dim: ' + renderZoneState.width.toFixed(0) + 'm Ã— ' + renderZoneState.depth.toFixed(0) + 'm (' + area + ' mÂ²) | Alt: ' + renderZoneState.height.toFixed(0) + 'm | Rot: ' + renderZoneState.rotationDeg.toFixed(1) + 'Â°<br/>' +
+            '<b>CuadrÃ­cula: ' + numX + ' Ã— ' + numZ + ' = ' + totalSq + ' cuadrados de 10Ã—10m</b>';
+        }
+      }
+
+      function rebuildRenderZoneGizmo() {
+        while (renderZoneGizmoGroup.children.length > 0) {
+          const obj = renderZoneGizmoGroup.children.pop();
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
+            else obj.material.dispose();
+          }
+        }
+
+        const W = Math.max(2.0, renderZoneState.width);
+        const H = Math.max(1.0, renderZoneState.height);
+        const D = Math.max(2.0, renderZoneState.depth);
+
+        // 1. Outer Box Wireframe (Vibrant emerald #10b981)
+        const boxGeo = new THREE.BoxGeometry(W, H, D);
+        const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+        const wireMat = new THREE.LineBasicMaterial({
+          color: 0x10b981,
+          transparent: true,
+          opacity: 0.95
+        });
+        const wireMesh = new THREE.LineSegments(edgesGeo, wireMat);
+        renderZoneGizmoGroup.add(wireMesh);
+
+        // 2. Translucent Box Faces (subtle emerald tint)
+        const faceMat = new THREE.MeshBasicMaterial({
+          color: 0x059669,
+          transparent: true,
+          opacity: 0.05,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const faceMesh = new THREE.Mesh(boxGeo, faceMat);
+        renderZoneGizmoGroup.add(faceMesh);
+
+        // 3. 10m x 10m Squares Grid on Floor (y = -H / 2)
+        const halfW = W * 0.5;
+        const halfD = D * 0.5;
+        const floorY = -H * 0.5;
+        const gridVerts = [];
+
+        // Longitudinal lines (along Z, stepping along X by 10m)
+        for (let x = -halfW; x <= halfW + 0.001; x += 10.0) {
+          gridVerts.push(x, floorY, -halfD, x, floorY, halfD);
+        }
+        // Lateral lines (along X, stepping along Z by 10m)
+        for (let z = -halfD; z <= halfD + 0.001; z += 10.0) {
+          gridVerts.push(-halfW, floorY, z, halfW, floorY, z);
+        }
+        if (gridVerts.length > 0) {
+          const gridGeo = new THREE.BufferGeometry();
+          gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gridVerts, 3));
+          const gridMat = new THREE.LineBasicMaterial({
+            color: 0x34d399,
+            transparent: true,
+            opacity: 0.75
+          });
+          const gridMesh = new THREE.LineSegments(gridGeo, gridMat);
+          renderZoneGizmoGroup.add(gridMesh);
+        }
+
+        // 4. Orientation heading arrow on top face (y = +H / 2)
+        const topY = H * 0.5;
+        const arrowVerts = [
+          0, topY, -halfD * 0.4,   0, topY, halfD * 0.4,
+          0, topY, halfD * 0.4,  -halfW * 0.12, topY, halfD * 0.22,
+          0, topY, halfD * 0.4,   halfW * 0.12, topY, halfD * 0.22
+        ];
+        const arrowGeo = new THREE.BufferGeometry();
+        arrowGeo.setAttribute('position', new THREE.Float32BufferAttribute(arrowVerts, 3));
+        const arrowMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.95 });
+        const arrowMesh = new THREE.LineSegments(arrowGeo, arrowMat);
+        renderZoneGizmoGroup.add(arrowMesh);
+
+        // Position & Rotate around Y axis (Yaw)
+        renderZoneGizmoGroup.position.set(renderZoneState.centerX, renderZoneState.centerY, renderZoneState.centerZ);
+        renderZoneGizmoGroup.rotation.y = (renderZoneState.rotationDeg * Math.PI) / 180.0;
+        renderZoneGizmoGroup.visible = renderZoneState.visible;
+
+        updateRenderZoneUI();
+      }
+
+      window.fitRenderZoneToEntireCloud = function () {
+        const box = new THREE.Box3();
+        if (directCloudGroup.visible && directCloudGroup.children.length > 0) box.expandByObject(directCloudGroup);
+        if (revitCloudGroup.visible && revitCloudGroup.children.length > 0) box.expandByObject(revitCloudGroup);
+        if (mesh3smGroup.visible && mesh3smGroup.children.length > 0) box.expandByObject(mesh3smGroup);
+        if (box.isEmpty() && meshGroup.visible && meshGroup.children.length > 0) box.expandByObject(meshGroup);
+
+        if (box.isEmpty()) {
+          renderZoneState.centerX = camera.position.x;
+          renderZoneState.centerY = camera.position.y - 1.5;
+          renderZoneState.centerZ = camera.position.z;
+          renderZoneState.width = 60.0;
+          renderZoneState.depth = 60.0;
+          renderZoneState.height = 30.0;
+          renderZoneState.rotationDeg = 0.0;
+        } else {
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          renderZoneState.centerX = center.x;
+          renderZoneState.centerY = center.y;
+          renderZoneState.centerZ = center.z;
+          // Round width and depth up to next multiple of 10m
+          renderZoneState.width = Math.max(10.0, Math.ceil(size.x / 10.0) * 10.0);
+          renderZoneState.depth = Math.max(10.0, Math.ceil(size.z / 10.0) * 10.0);
+          renderZoneState.height = Math.max(6.0, Math.ceil((size.y + 4.0) / 2.0) * 2.0);
+          renderZoneState.rotationDeg = 0.0;
+        }
+
+        renderZoneState.visible = true;
+        rebuildRenderZoneGizmo();
+
+        const stat = document.getElementById('lbl-bubble-status');
+        if (stat) {
+          const numX = Math.ceil(renderZoneState.width / 10.0);
+          const numZ = Math.ceil(renderZoneState.depth / 10.0);
+          stat.innerHTML = 'ðŸ“ <b>Volumen ajustado a toda la nube:</b> ' + renderZoneState.width.toFixed(0) + 'm Ã— ' + renderZoneState.depth.toFixed(0) + 'm (' + (numX * numZ) + ' cuadrados de 10Ã—10m).';
+        }
+      };
+
+      window.centerRenderZoneToCamera = function () {
+        let posX = 0, posY = 0, posZ = 0;
+        if (isWalkMode) {
+          posX = playerFeetPos.x;
+          posY = playerFeetPos.y + renderZoneState.height * 0.45;
+          posZ = playerFeetPos.z;
+        } else {
+          posX = camera.position.x;
+          posY = camera.position.y - 1.0;
+          posZ = camera.position.z;
+        }
+        renderZoneState.centerX = posX;
+        renderZoneState.centerY = posY;
+        renderZoneState.centerZ = posZ;
+        renderZoneState.visible = true;
+        rebuildRenderZoneGizmo();
+      };
+
+      window.startProgressiveSquareRender = async function () {
+        if (renderZoneState.isRendering) return;
+
+        const stat = document.getElementById('lbl-bubble-status');
+        const hasDirect = directCloudSources.length > 0;
+        const hasPointsInGpu = directLoadedPoints > 0 || revitLoadedPoints > 0;
+
+        if (!hasDirect && !hasPointsInGpu) {
+          if (stat) stat.textContent = 'âš ï¸ Primero carga una nube de puntos (.LAS o .RCS) para renderizar.';
+          return;
+        }
+
+        renderZoneState.isRendering = true;
+        renderZoneState.cancelRequested = false;
+
+        const btnRender = document.getElementById('btn-render-progressive-grid');
+        const btnStop = document.getElementById('btn-modal-stop-render');
+        if (btnRender) {
+          btnRender.disabled = true;
+          btnRender.textContent = 'â³ Renderizando por cuadrados 10x10m...';
+        }
+        if (btnStop) {
+          btnStop.style.display = 'block';
+        }
+
+        // 1. Dispose previous zone if any (strictly ONE full-quality zone active)
+        clearFullDensityBubble();
+
+        // 2. Open progress modal tab
+        window.showTaskProgressModal();
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          0.0,
+          'Etapa 1/2: Analizando CuadrÃ­cula 10x10m y Octree',
+          'Calculando particiÃ³n espacial para el volumen seleccionado...'
+        );
+        await new Promise((r) => setTimeout(r, 20));
+
+        try {
+          const W = renderZoneState.width;
+          const D = renderZoneState.depth;
+          const H = renderZoneState.height;
+          const halfW = W * 0.5;
+          const halfD = D * 0.5;
+          const halfH = H * 0.5;
+
+          const sqSize = renderZoneState.squareSize || 10.0;
+          const numX = Math.max(1, Math.ceil(W / sqSize));
+          const numZ = Math.max(1, Math.ceil(D / sqSize));
+          const totalSquares = numX * numZ;
+
+          const rotRad = (renderZoneState.rotationDeg * Math.PI) / 180.0;
+          const cosA = Math.cos(rotRad);
+          const sinA = Math.sin(rotRad);
+
+          const cx = renderZoneState.centerX;
+          const cy = renderZoneState.centerY;
+          const cz = renderZoneState.centerZ;
+
+          // Allocate square buckets
+          const squareBuckets = new Array(totalSquares);
+          for (let k = 0; k < totalSquares; k++) {
+            squareBuckets[k] = {
+              positions: [],
+              colors: [],
+              seeds: [],
+              hag: []
+            };
+          }
+
+          let candidatePointsFound = 0;
+
+          // EXTRACT FROM DIRECT FILES (LAS or RCS at 100% density)
+          if (hasDirect) {
+            for (let sIdx = 0; sIdx < directCloudSources.length; sIdx++) {
+              if (renderZoneState.cancelRequested) break;
+              const src = directCloudSources[sIdx];
+              if (!src || !src.file) continue;
+
+              const m4 = src.matrix.elements;
+
+              if (src.type === 'las') {
+                const nChunks = src.numChunks;
+                const cMin = src.chunkMin;
+                const cMax = src.chunkMax;
+                const candChunks = [];
+
+                for (let c = 0; c < nChunks; c++) {
+                  const c3 = c * 3;
+                  const cX0 = cMin[c3], cZ0 = cMin[c3 + 2];
+                  const cX1 = cMax[c3], cZ1 = cMax[c3 + 2];
+                  if (!Number.isFinite(cX0) || !Number.isFinite(cX1)) {
+                    candChunks.push(c);
+                    continue;
+                  }
+                  const chunkMidX = (cX0 + cX1) * 0.5;
+                  const chunkMidZ = (cZ0 + cZ1) * 0.5;
+                  const ddx = chunkMidX - cx;
+                  const ddz = chunkMidZ - cz;
+                  const maxRadiusBox = Math.hypot(halfW, halfD) * 1.25;
+                  if (Math.hypot(ddx, ddz) <= maxRadiusBox + (cX1 - cX0)) {
+                    candChunks.push(c);
+                  }
+                }
+
+                for (let m = 0; m < candChunks.length; m++) {
+                  if (renderZoneState.cancelRequested) break;
+                  const c = candChunks[m];
+                  const startRec = c * src.chunkRecs;
+                  const recsInChunk = Math.min(src.chunkRecs, src.totalPts - startRec);
+                  if (recsInChunk <= 0) continue;
+
+                  const bStart = src.offsetToPointData + startRec * src.pointRecordLength;
+                  const bEnd = Math.min(src.file.size, bStart + recsInChunk * src.pointRecordLength);
+                  if (bEnd <= bStart) continue;
+
+                  const sliceBuf = await src.file.slice(bStart, bEnd).arrayBuffer();
+                  const dv = new DataView(sliceBuf);
+                  const actual = Math.floor(sliceBuf.byteLength / src.pointRecordLength);
+
+                  for (let i = 0; i < actual; i++) {
+                    const pOff = i * src.pointRecordLength;
+                    const xi = dv.getInt32(pOff, true);
+                    const yi = dv.getInt32(pOff + 4, true);
+                    const zi = dv.getInt32(pOff + 8, true);
+
+                    const wx = (xi * src.scaleX + src.offsetX) - src.baseX;
+                    const wy = (zi * src.scaleZ + src.offsetZ) - src.baseZ;
+                    const wz = -((yi * src.scaleY + src.offsetY) - src.baseY);
+
+                    const gx = m4[0] * wx + m4[4] * wy + m4[8]  * wz + m4[12];
+                    const gy = m4[1] * wx + m4[5] * wy + m4[9]  * wz + m4[13] + directCloudElevationOffset;
+                    const gz = m4[2] * wx + m4[6] * wy + m4[10] * wz + m4[14];
+
+                    const dx = gx - cx;
+                    const dy = gy - cy;
+                    const dz = gz - cz;
+                    const lx =  dx * cosA + dz * sinA;
+                    const lz = -dx * sinA + dz * cosA;
+                    const ly = dy;
+
+                    if (lx < -halfW || lx > halfW || lz < -halfD || lz > halfD || ly < -halfH || ly > halfH) {
+                      continue;
+                    }
+
+                    const ix = Math.min(numX - 1, Math.max(0, Math.floor((lx + halfW) / sqSize)));
+                    const iz = Math.min(numZ - 1, Math.max(0, Math.floor((lz + halfD) / sqSize)));
+                    const bIdx = iz * numX + ix;
+
+                    let rCol = 0, gCol = 0, bCol = 0;
+                    if (src.rgbOffset > 0 && pOff + src.rgbOffset + 6 <= sliceBuf.byteLength) {
+                      rCol = dv.getUint16(pOff + src.rgbOffset, true) / src.rgbDiv;
+                      gCol = dv.getUint16(pOff + src.rgbOffset + 2, true) / src.rgbDiv;
+                      bCol = dv.getUint16(pOff + src.rgbOffset + 4, true) / src.rgbDiv;
+                    }
+                    if (rCol === 0 && gCol === 0 && bCol === 0) {
+                      const intensity = dv.getUint16(pOff + 12, true);
+                      if (intensity > 0) {
+                        const normI = Math.max(0.22, Math.min(1.0, intensity > 255 ? (intensity / 4096.0) : (intensity / 255.0)));
+                        rCol = normI * 0.9; gCol = normI * 0.95; bCol = Math.min(1.0, normI * 1.05);
+                      } else {
+                        rCol = 0.45; gCol = 0.82; bCol = 0.95;
+                      }
+                    }
+
+                    const sx = Math.floor(gx / sectorSizeMeters);
+                    const sz = Math.floor(gz / sectorSizeMeters);
+                    const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
+                    const hag = (groundY !== undefined) ? Math.max(0.0, gy - groundY) : 0.0;
+
+                    const b = squareBuckets[bIdx];
+                    b.positions.push(gx, gy, gz);
+                    b.colors.push(rCol, gCol, bCol);
+                    b.seeds.push(Math.random());
+                    b.hag.push(hag);
+                    candidatePointsFound++;
+                  }
+
+                  if (m % 10 === 0) {
+                    await new Promise((res) => setTimeout(res, 0));
+                  }
+                }
+
+              } else if (src.type === 'rcs') {
+                const nodes = src.nodes;
+                for (let n = 0; n < nodes.length; n++) {
+                  if (renderZoneState.cancelRequested) break;
+                  const nd = nodes[n];
+                  if (nd.ptCount <= 0 || nd.ptOffset < 0 || nd.ptOffset + nd.ptCount * 16 > src.file.size) continue;
+
+                  const nodeBuf = await src.file.slice(nd.ptOffset, nd.ptOffset + nd.ptCount * 16).arrayBuffer();
+                  const ndv = new DataView(nodeBuf);
+                  const actualPts = Math.floor(nodeBuf.byteLength / 16);
+                  if (actualPts <= 0) continue;
+
+                  let minQx = 999999, maxQx = -1;
+                  let minQy = 999999, maxQy = -1;
+                  let minQz = 999999, maxQz = -1;
+                  for (let p = 0; p < actualPts; p++) {
+                    const bOff = p * 16;
+                    const uLow = ndv.getUint32(bOff, true);
+                    const uHigh = ndv.getUint32(bOff + 4, true);
+                    const qx = uLow & 0x3FFFF;
+                    const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
+                    const qz = (uHigh >>> 4) & 0x3FFFF;
+                    if (qx < minQx) minQx = qx; if (qx > maxQx) maxQx = qx;
+                    if (qy < minQy) minQy = qy; if (qy > maxQy) maxQy = qy;
+                    if (qz < minQz) minQz = qz; if (qz > maxQz) maxQz = qz;
+                  }
+                  const scaleX = (maxQx > minQx && nd.tMaxX > nd.tMinX) ? (nd.tMaxX - nd.tMinX) / (maxQx - minQx) : 0.001;
+                  const scaleY = (maxQy > minQy && nd.tMaxY > nd.tMinY) ? (nd.tMaxY - nd.tMinY) / (maxQy - minQy) : 0.001;
+                  const scaleZ = (maxQz > minQz && nd.tMaxZ > nd.tMinZ) ? (nd.tMaxZ - nd.tMinZ) / (maxQz - minQz) : 0.001;
+
+                  for (let p = 0; p < actualPts; p++) {
+                    const bOff = p * 16;
+                    const uLow = ndv.getUint32(bOff, true);
+                    const uHigh = ndv.getUint32(bOff + 4, true);
+                    const qx = uLow & 0x3FFFF;
+                    const qy = (uLow >>> 18) | ((uHigh & 0x0F) << 14);
+                    const qz = (uHigh >>> 4) & 0x3FFFF;
+
+                    const wx = ((maxQx > minQx) ? (nd.tMinX + (qx - minQx) * scaleX) : (nd.cMinX + qx * 0.001)) * src.hdrScaleX;
+                    const wy = ((maxQy > minQy) ? (nd.tMinY + (qy - minQy) * scaleY) : (nd.cMinY + qy * 0.001)) * src.hdrScaleY;
+                    const wz = ((maxQz > minQz) ? (nd.tMinZ + (qz - minQz) * scaleZ) : (nd.cMinZ + qz * 0.001)) * src.hdrScaleZ;
+
+                    const gx = m4[0] * wx + m4[4] * wz + m4[8]  * (-wy) + m4[12];
+                    const gy = m4[1] * wx + m4[5] * wz + m4[9]  * (-wy) + m4[13] + directCloudElevationOffset;
+                    const gz = m4[2] * wx + m4[6] * wz + m4[10] * (-wy) + m4[14];
+
+                    const dx = gx - cx;
+                    const dy = gy - cy;
+                    const dz = gz - cz;
+                    const lx =  dx * cosA + dz * sinA;
+                    const lz = -dx * sinA + dz * cosA;
+                    const ly = dy;
+
+                    if (lx < -halfW || lx > halfW || lz < -halfD || lz > halfD || ly < -halfH || ly > halfH) {
+                      continue;
+                    }
+
+                    const ix = Math.min(numX - 1, Math.max(0, Math.floor((lx + halfW) / sqSize)));
+                    const iz = Math.min(numZ - 1, Math.max(0, Math.floor((lz + halfD) / sqSize)));
+                    const bIdx = iz * numX + ix;
+
+                    const intensity = ndv.getUint8(bOff + 8);
+                    const bByte = ndv.getUint8(bOff + 9);
+                    const gByte = ndv.getUint8(bOff + 10);
+                    const rByte = ndv.getUint8(bOff + 11);
+                    let rCol = rByte / 255.0;
+                    let gCol = gByte / 255.0;
+                    let bCol = bByte / 255.0;
+                    if (rCol === 0 && gCol === 0 && bCol === 0) {
+                      const normI = Math.max(0.25, intensity / 255.0);
+                      rCol = normI; gCol = normI; bCol = normI;
+                    }
+
+                    const sx = Math.floor(gx / sectorSizeMeters);
+                    const sz = Math.floor(gz / sectorSizeMeters);
+                    const groundY = smoothedSectorMinYMap.get(packGridKey(sx, sz));
+                    const hag = (groundY !== undefined) ? Math.max(0.0, gy - groundY) : 0.0;
+
+                    const b = squareBuckets[bIdx];
+                    b.positions.push(gx, gy, gz);
+                    b.colors.push(rCol, gCol, bCol);
+                    b.seeds.push(Math.random());
+                    b.hag.push(hag);
+                    candidatePointsFound++;
+                  }
+
+                  if (n % 10 === 0) {
+                    await new Promise((res) => setTimeout(res, 0));
+                  }
+                }
+              }
+            }
+          }
+
+          // If no direct raw file sources, extract from in-memory direct and revit cloud geometries
+          if (candidatePointsFound === 0) {
+            const groups = [directCloudGroup, revitCloudGroup];
+            for (let g = 0; g < groups.length; g++) {
+              const grp = groups[g];
+              for (let c = 0; c < grp.children.length; c++) {
+                const child = grp.children[c];
+                if (child === fullDensityBubbleGroup || !child.isPoints || !child.geometry) continue;
+
+                const posAttr = child.geometry.attributes.position;
+                const colAttr = child.geometry.attributes.color;
+                const hagAttr = child.geometry.attributes.aHeightAboveGround;
+                if (!posAttr) continue;
+
+                const count = posAttr.count;
+                const posArr = posAttr.array;
+                const colArr = colAttr ? colAttr.array : null;
+                const hagArr = hagAttr ? hagAttr.array : null;
+
+                for (let i = 0; i < count; i++) {
+                  const gx = posArr[i * 3 + 0];
+                  const gy = posArr[i * 3 + 1] + (child.parent === directCloudGroup ? directCloudElevationOffset : 0.0);
+                  const gz = posArr[i * 3 + 2];
+
+                  const dx = gx - cx;
+                  const dy = gy - cy;
+                  const dz = gz - cz;
+                  const lx =  dx * cosA + dz * sinA;
+                  const lz = -dx * sinA + dz * cosA;
+                  const ly = dy;
+
+                  if (lx < -halfW || lx > halfW || lz < -halfD || lz > halfD || ly < -halfH || ly > halfH) {
+                    continue;
+                  }
+
+                  const ix = Math.min(numX - 1, Math.max(0, Math.floor((lx + halfW) / sqSize)));
+                  const iz = Math.min(numZ - 1, Math.max(0, Math.floor((lz + halfD) / sqSize)));
+                  const bIdx = iz * numX + ix;
+
+                  const rCol = colArr ? colArr[i * 3 + 0] : 0.7;
+                  const gCol = colArr ? colArr[i * 3 + 1] : 0.7;
+                  const bCol = colArr ? colArr[i * 3 + 2] : 0.7;
+                  const hag = hagArr ? hagArr[i] : 0.0;
+
+                  const b = squareBuckets[bIdx];
+                  b.positions.push(gx, gy, gz);
+                  b.colors.push(rCol, gCol, bCol);
+                  b.seeds.push(Math.random());
+                  b.hag.push(hag);
+                  candidatePointsFound++;
+                }
+              }
+            }
+          }
+
+          if (candidatePointsFound === 0) {
+            window.updateTaskProgressModal(
+              'COMPLETED',
+              100.0,
+              'Sin puntos en este volumen',
+              'No se detectaron puntos dentro del cuadrado/caja de renderizado. Ajusta la posiciÃ³n o usa "Ajustar a Toda la Nube".'
+            );
+            if (stat) stat.textContent = 'âš ï¸ No se encontraron puntos dentro del volumen de renderizado.';
+            return;
+          }
+
+          // STAGE 2: PROGRESSIVE SQUARE-BY-SQUARE (10x10m) RENDERING INTO GPU
+          let totalRenderedPoints = 0;
+          let squaresWithPointsCount = 0;
+
+          for (let sq = 0; sq < totalSquares; sq++) {
+            if (renderZoneState.cancelRequested) {
+              if (stat) stat.textContent = 'â¹ï¸ Renderizado detenido por el usuario (' + squaresWithPointsCount + ' cuadrados en GPU).';
+              break;
+            }
+
+            const bucket = squareBuckets[sq];
+            const ptsInSq = bucket.positions.length / 3;
+
+            if (ptsInSq > 0) {
+              const posArr = new Float32Array(bucket.positions);
+              const colArr = new Float32Array(bucket.colors);
+              const infilledCol = computeWhiteInfilledColors(posArr, colArr, ptsInSq);
+
+              const geo = new THREE.BufferGeometry();
+              geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+              geo.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+              geo.setAttribute('aInfillColor', new THREE.BufferAttribute(infilledCol, 3));
+              geo.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(bucket.seeds), 1));
+              geo.setAttribute('aHeightAboveGround', new THREE.BufferAttribute(new Float32Array(bucket.hag), 1));
+              geo.computeBoundingBox();
+              geo.computeBoundingSphere();
+
+              const mat = createPointCloudShaderMaterial(true, true);
+              const mesh = new THREE.Points(geo, mat);
+              mesh.frustumCulled = false;
+              fullDensityBubbleGroup.add(mesh);
+
+              totalRenderedPoints += ptsInSq;
+              squaresWithPointsCount++;
+            }
+
+            const pct = ((sq + 1) / totalSquares) * 100.0;
+            const ix = (sq % numX) + 1;
+            const iz = Math.floor(sq / numX) + 1;
+
+            window.updateTaskProgressModal(
+              'IN_PROGRESS',
+              pct,
+              'Etapa 2/2: Renderizando Cuadrado ' + (sq + 1) + ' de ' + totalSquares + ' (10Ã—10m)',
+              'Cuadrante [' + ix + ',' + iz + '] (' + ptsInSq.toLocaleString() + ' pts) | Total en GPU: ' + totalRenderedPoints.toLocaleString() + ' pts (' + Math.round(pct) + '%)'
+            );
+
+            // Yield to browser and GPU so each 10x10m square renders live on screen at 60 FPS
+            await new Promise((res) => setTimeout(res, 12));
+          }
+
+          bubbleReadyFlag = 1.0;
+          bubbleLoadedPoints = totalRenderedPoints;
+          syncLodUniforms();
+          updatePointCloudTelemetry();
+
+          const summaryMsg = 'Â¡Renderizado Completado! ' + squaresWithPointsCount + ' de ' + totalSquares + ' cuadrados de 10x10m (' + totalRenderedPoints.toLocaleString() + ' puntos en GPU)';
+          window.updateTaskProgressModal('COMPLETED', 100.0, 'Â¡Zona Renderizada con Ã‰xito!', summaryMsg);
+
+          if (stat) {
+            stat.innerHTML = 'ðŸš€ <b>Zona Renderizada (100% Calidad):</b> ' + totalRenderedPoints.toLocaleString() + ' pts en ' + squaresWithPointsCount + ' cuadrados de 10Ã—10m.';
+          }
+
+          // Pre-compile shaders for ultra-fast camera movement
+          await warmupGpuPipelines('Optimizando Cuadrados Renderizados en GPU');
+
+          // Auto-hide modal after 2.5 seconds
+          setTimeout(() => {
+            if (modalBackdrop.style.display === 'flex' && !renderZoneState.isRendering) {
+              window.hideTaskProgressModal();
+            }
+          }, 2500);
+
+        } catch (err) {
+          console.error('Error renderizando por cuadrados de 10x10m:', err);
+          if (stat) stat.textContent = 'âŒ Error al renderizar: ' + (err.message || err);
+          window.updateTaskProgressModal('ERROR', 100.0, 'Error en el Renderizado', err.message || String(err));
+        } finally {
+          renderZoneState.isRendering = false;
+          if (btnRender) {
+            btnRender.disabled = false;
+            btnRender.textContent = 'ðŸš€ Renderizar Zona (Por Cuadrados de 10Ã—10m)';
+          }
+          if (btnStop) {
+            btnStop.style.display = 'none';
+          }
+        }
+      };
 
       window.clearActiveZone = function () {
         clearFullDensityBubble();
@@ -2277,6 +2977,7 @@
           }
 
           updateSceneBoundsAndEnvironment();
+          if (window.fitRenderZoneToEntireCloud) window.fitRenderZoneToEntireCloud();
           if (shouldFitCamera || isDirect) {
             fitCameraToGroup(isDirect ? directCloudGroup : null);
           }
@@ -3188,22 +3889,182 @@
       document.getElementById('btn-spd-fast').addEventListener('click', () => setKeyboardMoveSpeed(40.0, true));
       document.getElementById('btn-spd-turbo').addEventListener('click', () => setKeyboardMoveSpeed(100.0, true));
 
-      // Full-Density Radius Zone Controls
-      document.getElementById('slider-full-radius').addEventListener('input', (e) => {
-        currentFullRadius = Math.max(1.0, parseFloat(e.target.value) || 10.0);
-        document.getElementById('lbl-full-radius').textContent = currentFullRadius.toFixed(1) + ' m';
-        fullRadiusRingMesh.scale.set(currentFullRadius, 1, currentFullRadius);
-        syncLodUniforms();
-      });
+      // Full-Density Radius Zone Controls (Optional)
+      const sliderFullRadius = document.getElementById('slider-full-radius');
+      if (sliderFullRadius) {
+        sliderFullRadius.addEventListener('input', (e) => {
+          currentFullRadius = Math.max(1.0, parseFloat(e.target.value) || 10.0);
+          const lbl = document.getElementById('lbl-full-radius');
+          if (lbl) lbl.textContent = currentFullRadius.toFixed(1) + ' m';
+          fullRadiusRingMesh.scale.set(currentFullRadius, 1, currentFullRadius);
+          syncLodUniforms();
+        });
+      }
+      const chkRadiusRing = document.getElementById('chk-show-radius-ring');
+      if (chkRadiusRing) {
+        chkRadiusRing.addEventListener('change', (e) => {
+          showFullRadiusRing = e.target.checked;
+          fullRadiusRingMesh.visible = showFullRadiusRing;
+        });
+      }
+      const selBubbleBudget = document.getElementById('sel-bubble-budget');
+      if (selBubbleBudget) {
+        selBubbleBudget.addEventListener('change', (e) => {
+          bubblePointLimit = parseInt(e.target.value, 10) || 6000000;
+        });
+      }
 
-      document.getElementById('chk-show-radius-ring').addEventListener('change', (e) => {
-        showFullRadiusRing = e.target.checked;
-        fullRadiusRingMesh.visible = showFullRadiusRing;
-      });
+      // ================= 3D RENDER ZONE BOX CONTROLS & LISTENERS =================
+      const chkShowRenderBox = document.getElementById('chk-show-render-box');
+      if (chkShowRenderBox) {
+        chkShowRenderBox.addEventListener('change', (e) => {
+          renderZoneState.visible = e.target.checked;
+          renderZoneGizmoGroup.visible = renderZoneState.visible;
+        });
+      }
 
-      document.getElementById('sel-bubble-budget').addEventListener('change', (e) => {
-        bubblePointLimit = parseInt(e.target.value, 10) || 6000000;
-      });
+      const btnFitCloud = document.getElementById('btn-fit-box-to-cloud');
+      if (btnFitCloud) {
+        btnFitCloud.addEventListener('click', () => {
+          window.fitRenderZoneToEntireCloud();
+        });
+      }
+
+      const btnCenterCam = document.getElementById('btn-center-box-to-camera');
+      if (btnCenterCam) {
+        btnCenterCam.addEventListener('click', () => {
+          window.centerRenderZoneToCamera();
+        });
+      }
+
+      // Width X controls
+      const sliderBoxW = document.getElementById('slider-box-width');
+      if (sliderBoxW) {
+        sliderBoxW.addEventListener('input', (e) => {
+          renderZoneState.width = Math.max(10, parseFloat(e.target.value) || 10);
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnBoxWMinus = document.getElementById('btn-box-w-minus');
+      if (btnBoxWMinus) {
+        btnBoxWMinus.addEventListener('click', () => {
+          renderZoneState.width = Math.max(10, renderZoneState.width - 10);
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnBoxWPlus = document.getElementById('btn-box-w-plus');
+      if (btnBoxWPlus) {
+        btnBoxWPlus.addEventListener('click', () => {
+          renderZoneState.width = Math.min(1500, renderZoneState.width + 10);
+          rebuildRenderZoneGizmo();
+        });
+      }
+
+      // Depth Z controls
+      const sliderBoxD = document.getElementById('slider-box-depth');
+      if (sliderBoxD) {
+        sliderBoxD.addEventListener('input', (e) => {
+          renderZoneState.depth = Math.max(10, parseFloat(e.target.value) || 10);
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnBoxDMinus = document.getElementById('btn-box-d-minus');
+      if (btnBoxDMinus) {
+        btnBoxDMinus.addEventListener('click', () => {
+          renderZoneState.depth = Math.max(10, renderZoneState.depth - 10);
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnBoxDPlus = document.getElementById('btn-box-d-plus');
+      if (btnBoxDPlus) {
+        btnBoxDPlus.addEventListener('click', () => {
+          renderZoneState.depth = Math.min(1500, renderZoneState.depth + 10);
+          rebuildRenderZoneGizmo();
+        });
+      }
+
+      // Rotation Yaw controls
+      const sliderBoxRot = document.getElementById('slider-box-rot');
+      if (sliderBoxRot) {
+        sliderBoxRot.addEventListener('input', (e) => {
+          renderZoneState.rotationDeg = parseFloat(e.target.value) || 0;
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnRotMinus = document.getElementById('btn-box-rot-minus');
+      if (btnRotMinus) {
+        btnRotMinus.addEventListener('click', () => {
+          renderZoneState.rotationDeg = Math.max(-180, renderZoneState.rotationDeg - 15);
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnRotPlus = document.getElementById('btn-box-rot-plus');
+      if (btnRotPlus) {
+        btnRotPlus.addEventListener('click', () => {
+          renderZoneState.rotationDeg = Math.min(180, renderZoneState.rotationDeg + 15);
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnRotReset = document.getElementById('btn-box-rot-reset');
+      if (btnRotReset) {
+        btnRotReset.addEventListener('click', () => {
+          renderZoneState.rotationDeg = 0.0;
+          rebuildRenderZoneGizmo();
+        });
+      }
+
+      // Height Y controls
+      const sliderBoxH = document.getElementById('slider-box-height');
+      if (sliderBoxH) {
+        sliderBoxH.addEventListener('input', (e) => {
+          renderZoneState.height = Math.max(2, parseFloat(e.target.value) || 2);
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnBoxHMinus = document.getElementById('btn-box-h-minus');
+      if (btnBoxHMinus) {
+        btnBoxHMinus.addEventListener('click', () => {
+          renderZoneState.height = Math.max(2, renderZoneState.height - 5);
+          rebuildRenderZoneGizmo();
+        });
+      }
+      const btnBoxHPlus = document.getElementById('btn-box-h-plus');
+      if (btnBoxHPlus) {
+        btnBoxHPlus.addEventListener('click', () => {
+          renderZoneState.height = Math.min(300, renderZoneState.height + 5);
+          rebuildRenderZoneGizmo();
+        });
+      }
+
+      // Center Y control
+      const sliderBoxCenterY = document.getElementById('slider-box-centery');
+      if (sliderBoxCenterY) {
+        sliderBoxCenterY.addEventListener('input', (e) => {
+          renderZoneState.centerY = parseFloat(e.target.value) || 0;
+          rebuildRenderZoneGizmo();
+        });
+      }
+
+      // Progressive 10x10m Render Button
+      const btnProgressiveRender = document.getElementById('btn-render-progressive-grid');
+      if (btnProgressiveRender) {
+        btnProgressiveRender.addEventListener('click', () => {
+          window.startProgressiveSquareRender();
+        });
+      }
+
+      // Stop render button in progress modal
+      const btnModalStop = document.getElementById('btn-modal-stop-render');
+      if (btnModalStop) {
+        btnModalStop.addEventListener('click', () => {
+          renderZoneState.cancelRequested = true;
+          const stat = document.getElementById('lbl-bubble-status');
+          if (stat) stat.textContent = 'â¹ï¸ Cancelando renderizado...';
+        });
+      }
+
+      // Initial build of the 3D Render Box Gizmo
+      rebuildRenderZoneGizmo();
 
       document.getElementById('btn-render-zone').addEventListener('click', () => {
         window.renderActiveZone();
@@ -3633,6 +4494,7 @@
         }
 
         updateSceneBoundsAndEnvironment();
+        if (window.fitRenderZoneToEntireCloud) window.fitRenderZoneToEntireCloud();
         fitCameraToGroup(directCloudGroup);
         if (isWalkMode) {
           const groundY = findSurfaceHeightUnderPlayer(playerFeetPos.x, playerFeetPos.y, playerFeetPos.z);
