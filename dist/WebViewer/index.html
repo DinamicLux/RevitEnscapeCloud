@@ -624,24 +624,24 @@
     <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(52, 211, 153, 0.55); border-radius: 10px; padding: 10px 11px; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(5, 150, 105, 0.2);">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
         <span style="color:#6ee7b7; font-weight:700; font-size:12px; display:flex; align-items:center; gap:5px;">
-          <span>ðŸ“</span> Renderizado por Cuadrados 10Ã—10m
+          <span>📐</span> Renderizado por Cuadrados 10×10m
         </span>
         <span id="badge-sq-count" style="font-size:10px; color:#a7f3d0; background:rgba(6,95,70,0.65); border:1px solid rgba(52,211,153,0.3); padding:2px 7px; border-radius:4px; font-weight:600;">36 cuadrantes</span>
       </div>
 
       <!-- Ver el cuadrado de renderizado completo antes de renderizar -->
       <label class="checkbox-row" style="margin: 2px 0 8px 0; background: rgba(0,0,0,0.22); padding: 5px 8px; border-radius: 6px;">
-        <span style="font-size:11.5px; color:#f1f5f9; font-weight:600;">ðŸ‘ï¸ Ver Caja / Cuadrado 3D de Renderizado</span>
+        <span style="font-size:11.5px; color:#f1f5f9; font-weight:600;">👁️ Ver Caja / Cuadrado 3D de Renderizado</span>
         <input type="checkbox" id="chk-show-render-box" checked />
       </label>
 
       <!-- Botones de auto-ajuste y centrado -->
       <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 6px; margin-bottom: 8px;">
         <button class="hud-btn" id="btn-fit-box-to-cloud" style="font-size: 11px; padding: 6px 8px; background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; color: #7dd3fc; font-weight: 600;">
-          ðŸ”„ Ajustar a Toda la Nube
+          🔄 Ajustar a Toda la Nube
         </button>
         <button class="hud-btn" id="btn-center-box-to-camera" style="font-size: 11px; padding: 6px 8px; background: rgba(255,255,255,0.06); color: #cbd5e1;">
-          ðŸŽ¯ Centrar AquÃ­
+          🎯 Centrar Aquí
         </button>
       </div>
 
@@ -674,21 +674,21 @@
       <!-- Rotar el cuadrado / zona -->
       <div class="control-group" style="margin-bottom: 6px;">
         <div class="control-label">
-          <span>ðŸ”„ RotaciÃ³n de la Zona (Yaw):</span>
-          <span class="control-value" id="lbl-box-rot" style="color:#38bdf8; font-weight:700;">0.0Â°</span>
+          <span>🔄 Rotación de la Zona (Giro):</span>
+          <span class="control-value" id="lbl-box-rot" style="color:#38bdf8; font-weight:700;">0.0°</span>
         </div>
         <div style="display: flex; gap: 4px; align-items: center;">
-          <button class="hud-btn" id="btn-box-rot-minus" style="padding: 2px 6px; font-size:10.5px;">-15Â°</button>
+          <button class="hud-btn" id="btn-box-rot-minus" style="padding: 2px 6px; font-size:10.5px;">-15°</button>
           <input type="range" id="slider-box-rot" min="-180" max="180" step="1" value="0" style="flex: 1;" />
-          <button class="hud-btn" id="btn-box-rot-plus" style="padding: 2px 6px; font-size:10.5px;">+15Â°</button>
-          <button class="hud-btn" id="btn-box-rot-reset" style="padding: 2px 5px; font-size:10px; background:rgba(255,255,255,0.08);">0Â°</button>
+          <button class="hud-btn" id="btn-box-rot-plus" style="padding: 2px 6px; font-size:10.5px;">+15°</button>
+          <button class="hud-btn" id="btn-box-rot-reset" style="padding: 2px 5px; font-size:10px; background:rgba(255,255,255,0.08);">0°</button>
         </div>
       </div>
 
       <!-- Ampliar Altura / Espesor Vertical -->
       <div class="control-group" style="margin-bottom: 6px;">
         <div class="control-label">
-          <span>â†•ï¸ Ampliar Altura / Espesor:</span>
+          <span>↕️ Ampliar Altura / Espesor:</span>
           <span class="control-value" id="lbl-box-height" style="color:#fbbf24; font-weight:700;">30 m</span>
         </div>
         <div style="display: flex; gap: 4px; align-items: center;">
@@ -700,35 +700,34 @@
 
       <div class="control-group" style="margin-bottom: 6px;">
         <div class="control-label">
-          <span>Cota Central Y (ElevaciÃ³n):</span>
+          <span>Cota Central Y (Elevación):</span>
           <span class="control-value" id="lbl-box-centery">0.0 m</span>
         </div>
         <input type="range" id="slider-box-centery" min="-150" max="150" step="0.5" value="0" />
       </div>
 
-      <!-- TelemetrÃ­a en vivo del Ã¡rea y conteo de cuadrados -->
+      <!-- Telemetría en vivo del área y conteo de cuadrados -->
       <div id="lbl-box-summary" style="font-size: 10.5px; color: #a7f3d0; background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 5px; margin-bottom: 8px; line-height: 1.45; border-left: 3px solid #10b981;">
-        Dim: 60m Ã— 60m (3,600 mÂ²) | Altura: 30m | RotaciÃ³n: 0.0Â°<br/>
-        <b>CuadrÃ­cula: 6 Ã— 6 = 36 cuadrados de 10Ã—10m</b>
+        Dim: 60m × 60m (3,600 m²) | Altura: 30m | Rotación: 0.0°<br/>
+        <b>Cuadrícula: 6 × 6 = 36 cuadrados de 10×10m</b>
       </div>
 
-      <!-- BotÃ³n principal para renderizar toda la nube / zona por cuadrados de 10x10m -->
+      <!-- Botón principal para renderizar toda la nube / zona por cuadrados de 10x10m -->
       <button class="hud-btn hud-btn-primary" id="btn-render-progressive-grid" style="background:#059669; border-color:#10b981; color:#fff; font-weight:700; font-size:12px; padding:9px 12px; width:100%; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow: 0 3px 10px rgba(5,150,105,0.4); margin-bottom: 5px;">
-        ðŸš€ Renderizar Zona (Por Cuadrados de 10Ã—10m)
+        🚀 Renderizar Zona (Por Cuadrados de 10×10m)
       </button>
 
       <button class="hud-btn" id="btn-render-zone" style="font-size:11px; width:100%; margin-bottom:5px; background:rgba(255,255,255,0.06); color:#cbd5e1; border-color:rgba(255,255,255,0.15);">
-        ðŸŽ¯ Renderizar Radio ConcÃ©ntrico RÃ¡pido (10m)
+        🎯 Renderizar Radio Concéntrico Rápido (10m)
       </button>
 
       <button class="hud-btn" id="btn-clear-zone" style="font-size:11px; width:100%; background:rgba(255,255,255,0.06); color:#cbd5e1; border-color:rgba(255,255,255,0.15);">
-        ðŸ§¹ Desactivar / Limpiar Zona Renderizada
+        🧹 Desactivar / Limpiar Zona Renderizada
       </button>
 
       <div id="lbl-bubble-status" style="font-size:10px; color:#a7f3d0; margin-top:6px; line-height:1.4; border-top:1px solid rgba(52,211,153,0.25); padding-top:5px;">
         Ajusta el volumen o pulsa "Ajustar a Toda la Nube" y luego "Renderizar Zona".
       </div>
-    </div>
     </div>
 
     <div class="control-group">
@@ -3701,7 +3700,7 @@
         const btnModalStop = document.getElementById('btn-modal-stop-render');
         if (btnModalStop) {
           btnModalStop.style.display = 'block';
-          btnModalStop.textContent = 'â¹ï¸ Cancelar ExportaciÃ³n de Video';
+          btnModalStop.textContent = '⏹️ Cancelar Exportación de Video';
           btnModalStop.onclick = () => {
             isExportCancelled = true;
           };
@@ -3827,15 +3826,15 @@
 
         if (btnModalStop) {
           btnModalStop.style.display = 'none';
-          btnModalStop.textContent = 'â¹ï¸ Detener Renderizado';
+          btnModalStop.textContent = '⏹️ Detener Renderizado';
         }
 
         if (isExportCancelled) {
           window.updateTaskProgressModal(
             'ERROR',
             100.0,
-            'ExportaciÃ³n Cancelada',
-            'La exportaciÃ³n del video fue cancelada por el usuario.'
+            'Exportación Cancelada',
+            'La exportación del video fue cancelada por el usuario.'
           );
           return;
         }
@@ -4166,7 +4165,7 @@
         btnModalStop.addEventListener('click', () => {
           renderZoneState.cancelRequested = true;
           const stat = document.getElementById('lbl-bubble-status');
-          if (stat) stat.textContent = 'â¹ï¸ Cancelando renderizado...';
+          if (stat) stat.textContent = '⏹️ Cancelando renderizado...';
         });
       }
 
