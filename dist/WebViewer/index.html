@@ -457,9 +457,9 @@
 
   <!-- Fullscreen Drop-In Visual Overlay when dragging files from Windows Explorer -->
   <div id="fullscreen-drop-overlay">
-    <div>📥 SUELTA AQUÍ TU NUBE DE PUNTOS (.LAS o ReCap .RCS)</div>
+    <div>📥 SUELTA AQUÍ TU NUBE DE PUNTOS (.LAS / .RCS) O MALLA REALITY (.3SM / iTwin)</div>
     <div style="font-size: 14px; font-weight: 600; color: #a7f3d0; margin-top: 8px;">
-      Se cargará y posicionará automáticamente por Coordenadas Compartidas
+      Se cargará y posicionará automáticamente por Coordenadas Compartidas y Cota MSNM
     </div>
   </div>
 
@@ -475,24 +475,24 @@
   <div id="progress-modal-backdrop">
     <div id="progress-modal">
       <div class="modal-top-row">
-        <span class="modal-title" id="modal-task-title">Monitor de Carga de Nube de Puntos</span>
+        <span class="modal-title" id="modal-task-title">Monitor de Carga de Nube / Malla Reality</span>
         <span class="task-badge idle" id="modal-state-badge">⚪ TAREA NO INICIADA</span>
       </div>
 
       <div class="modal-pct-big" id="modal-pct-value">0.0%</div>
-      <div class="modal-stage-text" id="modal-stage-label">La tarea aún no ha iniciado (En espera de archivo .LAS / .RCS)</div>
+      <div class="modal-stage-text" id="modal-stage-label">La tarea aún no ha iniciado (En espera de archivo .LAS / .RCS / .3SM)</div>
 
       <div class="progress-track" style="height: 14px; margin: 10px 0;">
         <div class="progress-fill" id="modal-progress-bar"></div>
       </div>
 
       <div class="modal-detail-text" id="modal-detail-label">
-        Selecciona o arrastra (Drop-In) un archivo .LAS o Autodesk ReCap .RCS para iniciar.
+        Selecciona o arrastra (Drop-In) un archivo .LAS, .RCS o Malla Reality .3SM (Bentley / iTwin).
       </div>
 
       <div class="btn-row" style="margin-top: 14px;">
-        <button class="hud-btn emerald" id="btn-modal-select-las">📂 Elegir Archivo (.LAS / .RCS)</button>
-        <button class="hud-btn primary" id="btn-modal-fit-cloud" style="display: none;">🔍 Encuadrar Nube Cargada</button>
+        <button class="hud-btn emerald" id="btn-modal-select-las">📂 Elegir Archivo (.LAS / .RCS / .3SM)</button>
+        <button class="hud-btn primary" id="btn-modal-fit-cloud" style="display: none;">🔍 Encuadrar Modelo Cargado</button>
         <button class="hud-btn" id="btn-modal-close" style="flex: 0.45;">Ocultar</button>
       </div>
     </div>
@@ -517,6 +517,11 @@
     </label>
 
     <label class="checkbox-row">
+      <span>👁 Mostrar Malla Reality .3SM (iTwin)</span>
+      <input type="checkbox" id="chk-vis-3sm" checked />
+    </label>
+
+    <label class="checkbox-row">
       <span>👁 Mostrar Modelo 3D BIM de Revit</span>
       <input type="checkbox" id="chk-vis-bim-meshes" checked />
     </label>
@@ -524,7 +529,7 @@
     <!-- Posicionamiento por Coordenadas Compartidas (Igual que en Revit) -->
     <div class="control-group" style="margin-top: 4px; margin-bottom: 6px;">
       <div class="control-label">
-        <span>📍 Posicionamiento al Cargar Nube:</span>
+        <span>📍 Posicionamiento al Cargar Nube / Malla:</span>
       </div>
       <select class="hud-select" id="sel-coord-mode" style="margin-bottom: 4px;">
         <option value="shared" selected>1. Por Coordenadas Compartidas (Igual a Revit — Casa Cota Z)</option>
@@ -533,23 +538,23 @@
       </select>
     </div>
 
-    <!-- Unified Button for .LAS and .RCS + Clear Button -->
+    <!-- Unified Button for .LAS, .RCS and .3SM + Clear Button -->
     <div class="btn-row" style="margin-bottom: 6px;">
       <button class="hud-btn emerald" id="btn-load-cloud-unified" style="font-size: 11.5px; padding: 7px 10px;">
-        📂 Cargar Nube (.LAS / ReCap .RCS)
+        📂 Cargar Nube (.LAS / .RCS) o Malla .3SM
       </button>
-      <button class="hud-btn" id="btn-clear-clouds" style="flex: 0.34;" title="Limpiar nubes directas">Limpiar</button>
+      <button class="hud-btn" id="btn-clear-clouds" style="flex: 0.34;" title="Limpiar nubes directas y mallas .3SM">Limpiar</button>
     </div>
 
     <!-- Interactive Drop-In Zone -->
-    <div id="drop-in-zone" title="Arrastra aquí archivos .LAS o .RCS desde el Explorador de Windows">
-      📥 <strong>Drop-In:</strong> Arrastra y suelta aquí tu archivo <strong>.LAS</strong> o <strong>.RCS</strong>
+    <div id="drop-in-zone" title="Arrastra aquí archivos .LAS, .RCS o Malla .3SM desde el Explorador de Windows">
+      📥 <strong>Drop-In:</strong> Arrastra y suelta aquí <strong>.LAS</strong>, <strong>.RCS</strong> o Malla <strong>.3SM (iTwin)</strong>
     </div>
 
-    <!-- Fine Elevation (Cota Z) Offset Adjustment for Direct Cloud -->
+    <!-- Fine Elevation (Cota Z) Offset Adjustment for Direct Cloud & Mesh -->
     <div class="control-group" style="margin-bottom: 6px;">
       <div class="control-label">
-        <span>Ajuste Fino de Cota Nube Directa (ΔZ)</span>
+        <span>Ajuste Fino de Cota Nube/Malla (ΔZ)</span>
         <span class="control-value" id="lbl-cota-offset">+0.00 m</span>
       </div>
       <div style="display:flex; gap:6px; align-items:center;">
@@ -574,7 +579,7 @@
     </div>
 
     <!-- Unfiltered file input so Windows File Explorer opens instantaneously without stalling on ACCDocs cloud shell filters -->
-    <input type="file" id="file-cloud-input" multiple style="display: none;" />
+    <input type="file" id="file-cloud-input" accept=".las,.laz,.rcs,.3sm,.3mx,.3mxb,.obj,.glb" multiple style="display: none;" />
 
     <!-- ================= CURSOR 3D COORDINATES INSPECTOR TOGGLE ================= -->
     <label class="checkbox-row" style="background: rgba(14, 165, 233, 0.14); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35);">
@@ -883,14 +888,17 @@
       const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 100000);
       camera.position.set(14, 7.5, 16);
 
-      // Separate Scene Groups so Revit Cloud, Direct Cloud (.LAS/.RCS), and BIM Meshes can be toggled independently!
+      // Separate Scene Groups so Revit Cloud, Direct Cloud (.LAS/.RCS), BIM Meshes, and Reality Meshes (.3SM) can be toggled independently!
       const meshGroup = new THREE.Group();
       const revitCloudGroup = new THREE.Group();
       const directCloudGroup = new THREE.Group();
+      const mesh3smGroup = new THREE.Group();
+      mesh3smGroup.name = 'mesh3smGroup';
       const cameraPathVisualGroup = new THREE.Group();
       scene.add(meshGroup);
       scene.add(revitCloudGroup);
       scene.add(directCloudGroup);
+      scene.add(mesh3smGroup);
       scene.add(cameraPathVisualGroup);
 
       // ================= SKY DOME & DYNAMIC SUN LIGHTING =================
@@ -2398,6 +2406,24 @@
           hitSourceLabel = '📍 Nube Vinculada Revit';
         }
 
+        // 4. Check Reality Mesh .3SM (iTwin / Bentley)
+        if (mesh3smGroup.visible && mesh3smGroup.children.length > 0) {
+          const hits3sm = cursorRaycaster.intersectObjects(mesh3smGroup.children, true);
+          for (let i = 0; i < hits3sm.length; i++) {
+            const p = hits3sm[i].point;
+            if (isSectionBoxActive && (
+                p.x < activeBoxMin.x || p.x > activeBoxMax.x ||
+                p.y < activeBoxMin.y || p.y > activeBoxMax.y ||
+                p.z < activeBoxMin.z || p.z > activeBoxMax.z)) continue;
+            if (hits3sm[i].distance < bestDist) {
+              bestPoint = p;
+              bestDist = hits3sm[i].distance;
+              hitSourceLabel = '📍 Malla Reality .3SM (iTwin)';
+            }
+            break;
+          }
+        }
+
         if (!bestPoint) {
           cursorTooltip.style.display = 'none';
           cursorTargetMarker.visible = false;
@@ -2562,6 +2588,20 @@
           }
         }
 
+        // 1b. Check Reality Meshes .3SM (iTwin / Bentley)
+        if (mesh3smGroup.visible && mesh3smGroup.children.length > 0) {
+          downRaycaster.set(new THREE.Vector3(x, rayOriginY, z), new THREE.Vector3(0, -1, 0));
+          const hits3sm = downRaycaster.intersectObjects(mesh3smGroup.children, true);
+          for (let i = 0; i < hits3sm.length; i++) {
+            const hitY = hits3sm[i].point.y;
+            if (isSectionBoxActive && (hitY < activeBoxMin.y || hitY > activeBoxMax.y)) continue;
+            if (hitY <= currentFeetY + maxStepUp) {
+              if (bimSurfaceY === null || hitY > bimSurfaceY) bimSurfaceY = hitY;
+              break;
+            }
+          }
+        }
+
         // 2. Check Point Cloud Lowest-Point Sector Terrain (impenetrable ground floor in each zone!)
         const pcTerrainY = getPointCloudTerrainHeightAt(x, z);
 
@@ -2681,6 +2721,7 @@
         if (meshGroup.visible && meshGroup.children.length > 0) box.expandByObject(meshGroup);
         if (revitCloudGroup.visible && revitCloudGroup.children.length > 0) box.expandByObject(revitCloudGroup);
         if (directCloudGroup.visible && directCloudGroup.children.length > 0) box.expandByObject(directCloudGroup);
+        if (mesh3smGroup.visible && mesh3smGroup.children.length > 0) box.expandByObject(mesh3smGroup);
         if (box.isEmpty()) return;
 
         const center = box.getCenter(new THREE.Vector3());
@@ -2721,6 +2762,7 @@
         if (targetGroup && targetGroup.children.length > 0) {
           box.expandByObject(targetGroup);
         } else {
+          if (mesh3smGroup.visible && mesh3smGroup.children.length > 0) box.expandByObject(mesh3smGroup);
           if (directCloudGroup.visible && directCloudGroup.children.length > 0) box.expandByObject(directCloudGroup);
           if (revitCloudGroup.visible && revitCloudGroup.children.length > 0) box.expandByObject(revitCloudGroup);
           if (meshGroup.visible && meshGroup.children.length > 0) box.expandByObject(meshGroup);
@@ -3012,6 +3054,10 @@
         meshGroup.visible = e.target.checked;
       });
 
+      document.getElementById('chk-vis-3sm').addEventListener('change', (e) => {
+        mesh3smGroup.visible = e.target.checked;
+      });
+
       // Appearance & Color Mode
       document.getElementById('sel-color-mode').addEventListener('change', (e) => {
         window.setPointCloudColorMode(parseInt(e.target.value, 10));
@@ -3150,15 +3196,19 @@
       document.getElementById('slider-cota-offset').addEventListener('input', (e) => {
         directCloudElevationOffset = parseFloat(e.target.value) || 0.0;
         directCloudGroup.position.y = directCloudElevationOffset;
+        mesh3smGroup.position.y = directCloudElevationOffset;
         const sign = directCloudElevationOffset >= 0 ? '+' : '';
         document.getElementById('lbl-cota-offset').textContent = sign + directCloudElevationOffset.toFixed(2) + ' m';
+        updateSceneBoundsAndEnvironment();
       });
 
       document.getElementById('btn-reset-cota').addEventListener('click', () => {
         directCloudElevationOffset = 0.0;
         directCloudGroup.position.y = 0.0;
+        mesh3smGroup.position.y = 0.0;
         document.getElementById('slider-cota-offset').value = 0;
-        document.getElementById('lbl-cota-offset').textContent = '0.00 m';
+        document.getElementById('lbl-cota-offset').textContent = '+0.00 m';
+        updateSceneBoundsAndEnvironment();
       });
 
       // Interactive 3D Section Box Controls
@@ -3293,7 +3343,8 @@
       dropInZone.addEventListener('click', triggerFastCloudFilePicker);
 
       btnModalFitCloud.addEventListener('click', () => {
-        fitCameraToGroup(directCloudGroup.children.length > 0 ? directCloudGroup : null);
+        const target = (directCloudGroup.children.length > 1) ? directCloudGroup : (mesh3smGroup.children.length > 0 ? mesh3smGroup : null);
+        fitCameraToGroup(target);
         window.hideTaskProgressModal();
       });
 
@@ -3309,12 +3360,23 @@
         clearFullDensityBubble();
         directSectorGroundMap.clear();
         directLoadedPoints = 0;
+
+        // Dispose and clear Reality Meshes (.3SM)
+        while (mesh3smGroup.children.length > 0) {
+          const mObj = mesh3smGroup.children.pop();
+          if (mObj.geometry) mObj.geometry.dispose();
+          if (mObj.material) {
+            if (mObj.material.map) mObj.material.map.dispose();
+            mObj.material.dispose();
+          }
+        }
+
         updatePointCloudTelemetry();
         window.updateTaskProgressModal(
           'NOT_STARTED',
           0.0,
-          'Nubes directas limpiadas (Sin tarea activa)',
-          'Listo para cargar o hacer Drop-In de un archivo .LAS o .RCS.'
+          'Nubes y Mallas directas limpiadas (Sin tarea activa)',
+          'Listo para cargar o hacer Drop-In de un archivo .LAS, .RCS o Malla .3SM.'
         );
       });
 
@@ -3368,6 +3430,7 @@
         const existingBox = new THREE.Box3();
         if (meshGroup.children.length > 0) existingBox.expandByObject(meshGroup);
         if (revitCloudGroup.children.length > 0) existingBox.expandByObject(revitCloudGroup);
+        if (mesh3smGroup.children.length > 0) existingBox.expandByObject(mesh3smGroup);
         if (!existingBox.isEmpty()) {
           const c = existingBox.getCenter(new THREE.Vector3());
           if (Number.isFinite(c.x) && Number.isFinite(c.y) && Number.isFinite(c.z)) {
@@ -3578,6 +3641,629 @@
         return 'Detalle del error: ' + raw;
       }
 
+      // ================= BENTLEY ITWIN / CONTEXTCAPTURE .3SM & REALITY MESH DECODERS =================
+      function decodeOpenCtm(buffer, byteOffset) {
+        try {
+          const dv = new DataView(buffer, byteOffset);
+          if (dv.byteLength < 36) return null;
+          const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
+          if (magic !== 'OCTM') return null;
+          const version = dv.getUint32(4, true);
+          const compMethod = dv.getUint32(8, true);
+          const vertexCount = dv.getUint32(12, true);
+          const triangleCount = dv.getUint32(16, true);
+          const uvMapCount = dv.getUint32(20, true);
+          const attrMapCount = dv.getUint32(24, true);
+          const flags = dv.getUint32(28, true);
+          const commentLen = dv.getUint32(32, true);
+
+          if (vertexCount <= 0 || triangleCount <= 0 || vertexCount > 5000000 || triangleCount > 10000000) return null;
+
+          let ptr = 36 + commentLen;
+          let indices = null;
+          let vertices = null;
+          let normals = null;
+          let uvs = null;
+
+          if (compMethod === 0) { // RAW Uncompressed
+            while (ptr + 4 <= dv.byteLength) {
+              const chunkMagic = String.fromCharCode(dv.getUint8(ptr), dv.getUint8(ptr+1), dv.getUint8(ptr+2), dv.getUint8(ptr+3));
+              ptr += 4;
+              if (chunkMagic === 'INDX') {
+                if (ptr + triangleCount * 12 > dv.byteLength) break;
+                indices = new Uint32Array(triangleCount * 3);
+                for (let i = 0; i < triangleCount * 3; i++) {
+                  indices[i] = dv.getUint32(ptr, true);
+                  ptr += 4;
+                }
+              } else if (chunkMagic === 'VERT') {
+                if (ptr + vertexCount * 12 > dv.byteLength) break;
+                vertices = new Float32Array(vertexCount * 3);
+                for (let i = 0; i < vertexCount * 3; i++) {
+                  vertices[i] = dv.getFloat32(ptr, true);
+                  ptr += 4;
+                }
+              } else if (chunkMagic === 'NORM') {
+                if (ptr + vertexCount * 12 > dv.byteLength) break;
+                normals = new Float32Array(vertexCount * 3);
+                for (let i = 0; i < vertexCount * 3; i++) {
+                  normals[i] = dv.getFloat32(ptr, true);
+                  ptr += 4;
+                }
+              } else if (chunkMagic === 'TEXC') {
+                if (ptr + 8 > dv.byteLength) break;
+                const nameLen = dv.getUint32(ptr, true); ptr += 4 + nameLen;
+                const fileLen = dv.getUint32(ptr, true); ptr += 4 + fileLen;
+                if (ptr + vertexCount * 8 > dv.byteLength) break;
+                uvs = new Float32Array(vertexCount * 2);
+                for (let i = 0; i < vertexCount * 2; i++) {
+                  uvs[i] = dv.getFloat32(ptr, true);
+                  ptr += 4;
+                }
+              } else {
+                break;
+              }
+            }
+          }
+
+          if (vertices && indices) {
+            return { vertexCount, triangleCount, indices, vertices, normals, uvs };
+          }
+        } catch (e) {
+          // ignore chunk decoding failure
+        }
+        return null;
+      }
+
+      function decodeGlbMesh(arrayBuffer) {
+        try {
+          const dv = new DataView(arrayBuffer);
+          if (dv.byteLength < 20) return null;
+          const magic = dv.getUint32(0, true);
+          if (magic !== 0x46546C67) return null; // 'glTF'
+          const version = dv.getUint32(4, true);
+          const totalLength = dv.getUint32(8, true);
+
+          let chunkOffset = 12;
+          let jsonChunk = null;
+          let binChunk = null;
+
+          while (chunkOffset + 8 <= dv.byteLength) {
+            const chunkLength = dv.getUint32(chunkOffset, true);
+            const chunkType = dv.getUint32(chunkOffset + 4, true);
+            const chunkDataOffset = chunkOffset + 8;
+            if (chunkType === 0x4E4F534A) { // 'JSON'
+              const jsonBytes = new Uint8Array(arrayBuffer, chunkDataOffset, chunkLength);
+              const jsonText = new TextDecoder().decode(jsonBytes);
+              jsonChunk = JSON.parse(jsonText);
+            } else if (chunkType === 0x004E4942) { // 'BIN\0'
+              binChunk = new Uint8Array(arrayBuffer, chunkDataOffset, chunkLength);
+            }
+            chunkOffset += 8 + chunkLength;
+          }
+
+          if (!jsonChunk || !jsonChunk.meshes || jsonChunk.meshes.length === 0) return null;
+
+          const resultTiles = [];
+          const bufferViews = jsonChunk.bufferViews || [];
+          const accessors = jsonChunk.accessors || [];
+
+          function getBufferData(accessorIdx) {
+            const acc = accessors[accessorIdx];
+            if (!acc) return null;
+            const bv = bufferViews[acc.bufferView];
+            if (!bv) return null;
+            const byteOffset = (bv.byteOffset || 0) + (acc.byteOffset || 0);
+            const compType = acc.componentType;
+            const count = acc.count;
+            const numComponents = acc.type === 'VEC3' ? 3 : (acc.type === 'VEC2' ? 2 : (acc.type === 'SCALAR' ? 1 : 4));
+
+            if (!binChunk || (byteOffset + count * numComponents) > binChunk.byteLength) return null;
+
+            if (compType === 5126) {
+              return new Float32Array(binChunk.buffer, binChunk.byteOffset + byteOffset, count * numComponents);
+            } else if (compType === 5123) {
+              return new Uint16Array(binChunk.buffer, binChunk.byteOffset + byteOffset, count * numComponents);
+            } else if (compType === 5125) {
+              return new Uint32Array(binChunk.buffer, binChunk.byteOffset + byteOffset, count * numComponents);
+            }
+            return null;
+          }
+
+          let extractedTexture = null;
+          if (jsonChunk.images && jsonChunk.images.length > 0 && binChunk) {
+            const imgDef = jsonChunk.images[0];
+            if (imgDef.bufferView !== undefined) {
+              const bv = bufferViews[imgDef.bufferView];
+              if (bv) {
+                const imgBytes = new Uint8Array(binChunk.buffer, binChunk.byteOffset + (bv.byteOffset || 0), bv.byteLength);
+                const mime = imgDef.mimeType || 'image/jpeg';
+                const blob = new Blob([imgBytes], { type: mime });
+                const url = URL.createObjectURL(blob);
+                extractedTexture = new THREE.TextureLoader().load(url);
+              }
+            }
+          }
+
+          for (let m = 0; m < jsonChunk.meshes.length; m++) {
+            const meshDef = jsonChunk.meshes[m];
+            for (let p = 0; p < meshDef.primitives.length; p++) {
+              const prim = meshDef.primitives[p];
+              const posData = getBufferData(prim.attributes.POSITION);
+              if (!posData) continue;
+              const idxData = prim.indices !== undefined ? getBufferData(prim.indices) : null;
+              const uvData = prim.attributes.TEXCOORD_0 !== undefined ? getBufferData(prim.attributes.TEXCOORD_0) : null;
+              const normData = prim.attributes.NORMAL !== undefined ? getBufferData(prim.attributes.NORMAL) : null;
+
+              resultTiles.push({
+                vertexCount: posData.length / 3,
+                triangleCount: idxData ? idxData.length / 3 : posData.length / 3,
+                vertices: new Float32Array(posData),
+                indices: idxData ? (idxData instanceof Uint32Array ? idxData : new Uint32Array(idxData)) : null,
+                uvs: uvData ? new Float32Array(uvData) : null,
+                normals: normData ? new Float32Array(normData) : null,
+                texture: extractedTexture
+              });
+            }
+          }
+          return { tiles: resultTiles, texture: extractedTexture };
+        } catch (e) {
+          return null;
+        }
+      }
+
+      async function finalizeRealityMeshAndAddToScene(fileName, tiles, baseEast, baseNorth, baseElev) {
+        if (!tiles || tiles.length === 0) {
+          throw new Error('No se encontraron teselas de geometría 3D compatibles en el archivo ' + fileName + '. Si es un archivo de Autodesk Cloud, verifica que esté descargado en el equipo.');
+        }
+
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          92.0,
+          'Etapa 3/3: Georreferenciando Malla Reality (' + fileName + ')',
+          'Posicionando por Coordenadas Compartidas y casando cota MSNM (' + tiles.length + ' teselas)...'
+        );
+        await new Promise((r) => setTimeout(r, 15));
+
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
+        let minZ = Infinity, maxZ = -Infinity;
+        let totalTriangles = 0;
+
+        for (let t = 0; t < tiles.length; t++) {
+          const tile = tiles[t];
+          const verts = tile.vertices;
+          for (let i = 0; i < verts.length; i += 3) {
+            const vx = verts[i + 0];
+            const vy = verts[i + 1];
+            const vz = verts[i + 2];
+            if (vx < minX) minX = vx; if (vx > maxX) maxX = vx;
+            if (vy < minY) minY = vy; if (vy > maxY) maxY = vy;
+            if (vz < minZ) minZ = vz; if (vz > maxZ) maxZ = vz;
+          }
+          totalTriangles += tile.triangleCount || (tile.indices ? tile.indices.length / 3 : tile.vertexCount / 3);
+        }
+
+        const cx = (minX + maxX) * 0.5;
+        const cy = (minY + maxY) * 0.5;
+        const cz = (minZ + maxZ) * 0.5;
+
+        // True Shared Coordinates of reality mesh center
+        const meshCenterEast = baseEast + cx;
+        const meshCenterNorth = baseNorth - cy;
+        const meshMinElev = baseElev + minZ;
+        const meshMaxElev = baseElev + maxZ;
+
+        const coordMode = document.getElementById('sel-coord-mode').value || 'shared';
+        const { refX, refZ, groundMinY, hasExistingScene } = getSceneAlignmentTarget();
+        let alignmentNote = '';
+
+        let shiftX = 0, shiftY = 0, shiftZ = 0;
+        let rotAngle = 0;
+
+        if (coordMode === 'shared') {
+          const distToOrigin = Math.hypot(meshCenterEast - sharedOrigin.east, meshCenterNorth - sharedOrigin.north);
+          if (!hasExistingScene && distToOrigin > 50000.0) {
+            sharedOrigin.east = meshCenterEast;
+            sharedOrigin.north = meshCenterNorth;
+            sharedOrigin.elev = meshMinElev;
+            sharedOrigin.angleRad = 0.0;
+          }
+
+          const cosA = Math.cos(sharedOrigin.angleRad || 0.0);
+          const sinA = Math.sin(sharedOrigin.angleRad || 0.0);
+          const dBaseE = baseEast - sharedOrigin.east;
+          const dBaseN = baseNorth - sharedOrigin.north;
+          const dBaseElev = baseElev - sharedOrigin.elev;
+
+          if (Math.hypot(dBaseE + cx, dBaseN - cy) <= 50000.0) {
+            rotAngle = sharedOrigin.angleRad || 0.0;
+            shiftX = dBaseE * cosA - dBaseN * sinA;
+            shiftY = dBaseElev;
+            shiftZ = -(dBaseE * sinA + dBaseN * cosA);
+            alignmentNote = 'Coordenadas Compartidas Exactas (Cota ' + meshMinElev.toFixed(2) + 'm a ' + meshMaxElev.toFixed(2) + 'm msnm)';
+          } else {
+            shiftX = refX - cx;
+            shiftZ = refZ - (-cy);
+            shiftY = (Math.abs(meshMinElev - sharedOrigin.elev) < 400.0)
+              ? (baseElev - sharedOrigin.elev)
+              : (groundMinY - minZ);
+            alignmentNote = 'Cota casada con base del modelo (' + meshMinElev.toFixed(2) + 'm msnm)';
+          }
+        } else if (coordMode === 'internal') {
+          const isUtm = Math.abs(baseEast) > 10000.0 || Math.abs(baseNorth) > 10000.0;
+          shiftX = isUtm ? (baseEast - sharedOrigin.east) : baseEast;
+          shiftY = isUtm ? (baseElev - sharedOrigin.elev) : baseElev;
+          shiftZ = isUtm ? -(baseNorth - sharedOrigin.north) : -baseNorth;
+          alignmentNote = 'Origen a Origen Interno';
+        } else {
+          shiftX = refX - cx;
+          shiftY = groundMinY - minZ;
+          shiftZ = refZ - (-cy);
+          alignmentNote = 'Centrado + Cota Base Terreno Casada';
+        }
+
+        const cosA = Math.cos(rotAngle);
+        const sinA = Math.sin(rotAngle);
+
+        for (let t = 0; t < tiles.length; t++) {
+          const tile = tiles[t];
+          const verts = tile.vertices;
+          const transformedVerts = new Float32Array(verts.length);
+
+          for (let i = 0; i < verts.length; i += 3) {
+            const bx = verts[i + 0];
+            const by = verts[i + 1];
+            const bz = verts[i + 2];
+
+            // Convert Bentley Z-up to Three.js Y-up
+            const tx = bx;
+            const ty = bz;
+            const tz = -by;
+
+            const rx = tx * cosA - (-tz) * sinA;
+            const rz = -(tx * sinA + (-tz) * cosA);
+
+            transformedVerts[i + 0] = rx + shiftX;
+            transformedVerts[i + 1] = ty + shiftY;
+            transformedVerts[i + 2] = rz + shiftZ;
+          }
+
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute('position', new THREE.BufferAttribute(transformedVerts, 3));
+          if (tile.indices) {
+            geo.setIndex(new THREE.BufferAttribute(tile.indices, 1));
+          }
+          if (tile.uvs) {
+            geo.setAttribute('uv', new THREE.BufferAttribute(tile.uvs, 2));
+          }
+          if (tile.normals) {
+            geo.setAttribute('normal', new THREE.BufferAttribute(tile.normals, 3));
+          } else {
+            geo.computeVertexNormals();
+          }
+
+          const mat = new THREE.MeshStandardMaterial({
+            map: tile.texture || null,
+            color: tile.texture ? 0xffffff : 0xcbd5e1,
+            roughness: 0.85,
+            metalness: 0.05,
+            side: THREE.DoubleSide,
+            clippingPlanes: meshClippingPlanes
+          });
+
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.frustumCulled = true;
+          mesh3smGroup.add(mesh);
+        }
+
+        mesh3smGroup.visible = true;
+        mesh3smGroup.position.y = directCloudElevationOffset;
+        document.getElementById('chk-vis-3sm').checked = true;
+
+        updateSceneBoundsAndEnvironment();
+        fitCameraToGroup(mesh3smGroup);
+
+        if (isWalkMode) {
+          const groundY = findSurfaceHeightUnderPlayer(playerFeetPos.x, playerFeetPos.y, playerFeetPos.z);
+          playerFeetPos.y = groundY;
+          playerVerticalVelocity = 0.0;
+          if (!isThirdPerson) {
+            camera.position.y = playerFeetPos.y + avatarUserHeight;
+          }
+          updateCameraVectorsFromEuler();
+        }
+
+        document.getElementById('stat-meshes').textContent = 'Malla 3SM: ' + fileName + ' (' + totalTriangles.toLocaleString() + ' tris, ' + tiles.length + ' teselas)';
+
+        const spanX = (maxX - minX).toFixed(1);
+        const spanY = (maxY - minY).toFixed(1);
+        const spanZ = (maxZ - minZ).toFixed(1);
+
+        window.updateTaskProgressModal(
+          'COMPLETED',
+          100.0,
+          '¡Malla Reality .3SM Cargada con Éxito! (' + fileName + ')',
+          tiles.length + ' teselas | ' + totalTriangles.toLocaleString() + ' triángulos | ' + alignmentNote + ' | Dim: ' + spanX + 'm × ' + spanY + 'm × ' + spanZ + 'm'
+        );
+      }
+
+      // ================= PARSE BENTLEY ITWIN .3SM SQLITE CONTAINER =================
+      async function parseLocal3smFileInBrowser(file, mdv) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          5.0,
+          'Etapa 1/3: Analizando Contenedor Bentley iTwin .3SM (' + file.name + ')',
+          'Escaneando base de datos SQLite y teselas de malla piramidal (' + sizeMB + ' MB)...'
+        );
+        await new Promise((r) => setTimeout(r, 15));
+
+        const tiles = [];
+        const chunkSize = 16 * 1024 * 1024; // 16 MB chunk
+        const overlap = 65536; // 64 KB overlap
+        let offset = 0;
+        let lastExtractedTexture = null;
+        let baseEast = 0.0, baseNorth = 0.0, baseElev = 0.0;
+
+        // Try reading SQLite SMMasterHeader bounding box / GCS in first 2MB if present
+        try {
+          const headBuf = await file.slice(0, Math.min(file.size, 2 * 1024 * 1024)).arrayBuffer();
+          const headBytes = new Uint8Array(headBuf);
+          const headText = new TextDecoder('utf-8', { fatal: false }).decode(headBytes);
+          const gcsMatch = headText.match(/(?:EASTING|NORTHING|ORIGIN|DATUM|PROJCS|GEOGCS|VERTCS)[\s\S]{1,200}/i);
+          if (gcsMatch) {
+            // Found geospatial metadata tag in SMMasterHeader
+          }
+        } catch (e) {
+          // continue
+        }
+
+        while (offset < file.size) {
+          const curSize = Math.min(chunkSize, file.size - offset);
+          const buf = await file.slice(offset, offset + curSize).arrayBuffer();
+          const bytes = new Uint8Array(buf);
+          const dv = new DataView(buf);
+
+          for (let i = 0; i < bytes.length - 8; i++) {
+            // Check 3MXBO: ContextCapture / Bentley Binary Mesh Block
+            if (bytes[i] === 0x33 && bytes[i+1] === 0x4D && bytes[i+2] === 0x58 && bytes[i+3] === 0x42 && bytes[i+4] === 0x4F) {
+              try {
+                const headerSize = dv.getUint32(i + 5, true);
+                if (headerSize > 10 && headerSize < 100000 && (i + 9 + headerSize) <= bytes.length) {
+                  const jsonBytes = bytes.subarray(i + 9, i + 9 + headerSize);
+                  const jsonStr = new TextDecoder().decode(jsonBytes);
+                  const meta = JSON.parse(jsonStr);
+
+                  let payloadPtr = i + 9 + headerSize;
+                  const scanLimit = Math.min(bytes.length - 4, payloadPtr + 8 * 1024 * 1024);
+
+                  for (let p = payloadPtr; p < scanLimit; p++) {
+                    // Check JPEG
+                    if (bytes[p] === 0xFF && bytes[p+1] === 0xD8 && bytes[p+2] === 0xFF) {
+                      let endJpg = p + 2;
+                      while (endJpg < bytes.length - 1 && !(bytes[endJpg] === 0xFF && bytes[endJpg+1] === 0xD9)) {
+                        endJpg++;
+                      }
+                      if (endJpg < bytes.length - 1) {
+                        const jpgLen = endJpg + 2 - p;
+                        if (jpgLen > 100) {
+                          const jpgBlob = new Blob([bytes.subarray(p, endJpg + 2)], { type: 'image/jpeg' });
+                          const texUrl = URL.createObjectURL(jpgBlob);
+                          lastExtractedTexture = new THREE.TextureLoader().load(texUrl);
+                          p = endJpg + 2;
+                        }
+                      }
+                    }
+                    // Check OCTM
+                    if (bytes[p] === 0x4F && bytes[p+1] === 0x43 && bytes[p+2] === 0x54 && bytes[p+3] === 0x4D) {
+                      const ctmMesh = decodeOpenCtm(buf, p);
+                      if (ctmMesh && ctmMesh.vertexCount > 0) {
+                        ctmMesh.texture = lastExtractedTexture;
+                        tiles.push(ctmMesh);
+                        p += 36;
+                      }
+                    }
+                    // Check glTF (GLB)
+                    if (bytes[p] === 0x67 && bytes[p+1] === 0x6C && bytes[p+2] === 0x54 && bytes[p+3] === 0x46) {
+                      const glbMesh = decodeGlbMesh(buf.slice(p));
+                      if (glbMesh && glbMesh.tiles && glbMesh.tiles.length > 0) {
+                        for (let g = 0; g < glbMesh.tiles.length; g++) {
+                          const tItem = glbMesh.tiles[g];
+                          tItem.texture = tItem.texture || lastExtractedTexture;
+                          tiles.push(tItem);
+                        }
+                        p += 100;
+                      }
+                    }
+                  }
+                  i += 9 + headerSize;
+                }
+              } catch (e) {}
+            }
+
+            // Direct OCTM signature check
+            if (bytes[i] === 0x4F && bytes[i+1] === 0x43 && bytes[i+2] === 0x54 && bytes[i+3] === 0x4D) {
+              const ctmMesh = decodeOpenCtm(buf, i);
+              if (ctmMesh && ctmMesh.vertexCount > 0) {
+                ctmMesh.texture = lastExtractedTexture;
+                tiles.push(ctmMesh);
+                i += 36;
+              }
+            }
+
+            // Direct GLB / glTF signature check
+            if (bytes[i] === 0x67 && bytes[i+1] === 0x6C && bytes[i+2] === 0x54 && bytes[i+3] === 0x46) {
+              const glbMesh = decodeGlbMesh(buf.slice(i));
+              if (glbMesh && glbMesh.tiles && glbMesh.tiles.length > 0) {
+                for (let g = 0; g < glbMesh.tiles.length; g++) {
+                  const tItem = glbMesh.tiles[g];
+                  tItem.texture = tItem.texture || lastExtractedTexture;
+                  tiles.push(tItem);
+                }
+                i += 100;
+              }
+            }
+
+            // Direct JPEG extraction
+            if (bytes[i] === 0xFF && bytes[i+1] === 0xD8 && bytes[i+2] === 0xFF) {
+              let endJpg = i + 2;
+              while (endJpg < bytes.length - 1 && !(bytes[endJpg] === 0xFF && bytes[endJpg+1] === 0xD9)) {
+                endJpg++;
+              }
+              if (endJpg < bytes.length - 1) {
+                const jpgLen = endJpg + 2 - i;
+                if (jpgLen > 1000) {
+                  const jpgBlob = new Blob([bytes.subarray(i, endJpg + 2)], { type: 'image/jpeg' });
+                  const texUrl = URL.createObjectURL(jpgBlob);
+                  lastExtractedTexture = new THREE.TextureLoader().load(texUrl);
+                  i = endJpg + 2;
+                }
+              }
+            }
+          }
+
+          offset += chunkSize - overlap;
+          const pct = Math.min(88.0, 5.0 + 80.0 * (offset / file.size));
+          window.updateTaskProgressModal(
+            'IN_PROGRESS',
+            pct,
+            'Etapa 2/3: Decodificando Teselas .3SM (' + file.name + ')',
+            tiles.length + ' teselas extraídas (' + ((offset / (1024 * 1024)).toFixed(0)) + ' MB / ' + sizeMB + ' MB procesados)...'
+          );
+          await new Promise((r) => setTimeout(r, 4));
+        }
+
+        await finalizeRealityMeshAndAddToScene(file.name, tiles, baseEast, baseNorth, baseElev);
+      }
+
+      // ================= PARSE DIRECT .3MXB (CONTEXTCAPTURE BINARY TILE) =================
+      async function parseLocal3mxbFileInBrowser(file, mdv) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          10.0,
+          'Etapa 1/3: Decodificando Archivo .3MXB (' + file.name + ')',
+          'Leyendo cabecera 3MXBO y buffers de tesela (' + sizeMB + ' MB)...'
+        );
+        await new Promise((r) => setTimeout(r, 10));
+
+        const buf = await file.arrayBuffer();
+        const dv = new DataView(buf);
+        const bytes = new Uint8Array(buf);
+        const tiles = [];
+        let lastExtractedTexture = null;
+
+        for (let i = 0; i < bytes.length - 8; i++) {
+          if (bytes[i] === 0xFF && bytes[i+1] === 0xD8 && bytes[i+2] === 0xFF) {
+            let endJpg = i + 2;
+            while (endJpg < bytes.length - 1 && !(bytes[endJpg] === 0xFF && bytes[endJpg+1] === 0xD9)) endJpg++;
+            if (endJpg < bytes.length - 1) {
+              const jpgBlob = new Blob([bytes.subarray(i, endJpg + 2)], { type: 'image/jpeg' });
+              lastExtractedTexture = new THREE.TextureLoader().load(URL.createObjectURL(jpgBlob));
+              i = endJpg + 2;
+            }
+          }
+          if (bytes[i] === 0x4F && bytes[i+1] === 0x43 && bytes[i+2] === 0x54 && bytes[i+3] === 0x4D) {
+            const ctm = decodeOpenCtm(buf, i);
+            if (ctm && ctm.vertexCount > 0) {
+              ctm.texture = lastExtractedTexture;
+              tiles.push(ctm);
+              i += 36;
+            }
+          }
+        }
+
+        await finalizeRealityMeshAndAddToScene(file.name, tiles, 0.0, 0.0, 0.0);
+      }
+
+      // ================= PARSE DIRECT .GLB / .GLTF REALITY MESH =================
+      async function parseLocalGlbFileInBrowser(file, mdv) {
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          15.0,
+          'Etapa 1/3: Decodificando Malla GLB / glTF (' + file.name + ')',
+          'Extrayendo geometrías y texturas PBR...'
+        );
+        await new Promise((r) => setTimeout(r, 10));
+
+        const buf = await file.arrayBuffer();
+        const glb = decodeGlbMesh(buf);
+        if (!glb || !glb.tiles || glb.tiles.length === 0) {
+          throw new Error('No se pudo decodificar la malla GLB en ' + file.name);
+        }
+        await finalizeRealityMeshAndAddToScene(file.name, glb.tiles, 0.0, 0.0, 0.0);
+      }
+
+      // ================= PARSE WAVEFRONT .OBJ REALITY MESH =================
+      async function parseLocalObjFileInBrowser(file) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        window.updateTaskProgressModal(
+          'IN_PROGRESS',
+          15.0,
+          'Etapa 1/3: Leyendo Malla Wavefront .OBJ (' + file.name + ')',
+          'Procesando vértices y caras (' + sizeMB + ' MB)...'
+        );
+        await new Promise((r) => setTimeout(r, 10));
+
+        const text = await file.text();
+        const lines = text.split('\n');
+        const rawPos = [];
+        const rawUvs = [];
+        const rawNorms = [];
+        const outPos = [];
+        const outUvs = [];
+        const outNorms = [];
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.startsWith('v ')) {
+            const p = line.split(/\s+/);
+            rawPos.push(parseFloat(p[1]), parseFloat(p[2]), parseFloat(p[3]));
+          } else if (line.startsWith('vt ')) {
+            const p = line.split(/\s+/);
+            rawUvs.push(parseFloat(p[1]), parseFloat(p[2]));
+          } else if (line.startsWith('vn ')) {
+            const p = line.split(/\s+/);
+            rawNorms.push(parseFloat(p[1]), parseFloat(p[2]), parseFloat(p[3]));
+          } else if (line.startsWith('f ')) {
+            const parts = line.split(/\s+/).slice(1);
+            if (parts.length >= 3) {
+              for (let t = 1; t < parts.length - 1; t++) {
+                const cornerIndices = [0, t, t + 1];
+                for (let c = 0; c < 3; c++) {
+                  const corner = parts[cornerIndices[c]].split('/');
+                  const vIdx = (parseInt(corner[0], 10) - 1) * 3;
+                  outPos.push(rawPos[vIdx], rawPos[vIdx + 1], rawPos[vIdx + 2]);
+                  if (corner[1]) {
+                    const uvIdx = (parseInt(corner[1], 10) - 1) * 2;
+                    outUvs.push(rawUvs[uvIdx], rawUvs[uvIdx + 1]);
+                  }
+                  if (corner[2]) {
+                    const nIdx = (parseInt(corner[2], 10) - 1) * 3;
+                    outNorms.push(rawNorms[nIdx], rawNorms[nIdx + 1], rawNorms[nIdx + 2]);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        const tile = {
+          vertexCount: outPos.length / 3,
+          triangleCount: outPos.length / 9,
+          vertices: new Float32Array(outPos),
+          indices: null,
+          uvs: outUvs.length > 0 ? new Float32Array(outUvs) : null,
+          normals: outNorms.length > 0 ? new Float32Array(outNorms) : null,
+          texture: null
+        };
+
+        await finalizeRealityMeshAndAddToScene(file.name, [tile], 0.0, 0.0, 0.0);
+      }
+
       async function parsePointCloudFileInBrowser(file) {
         try {
           const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
@@ -3585,11 +4271,11 @@
             'IN_PROGRESS',
             2.0,
             'Etapa 1/3: Iniciando lectura de ' + file.name + ' (' + sizeMB + ' MB)',
-            'Verificando firma binaria (.LAS LASF / Autodesk ReCap .RCS ADOCT)...'
+            'Verificando firma binaria (.LAS / .RCS / Malla .3SM iTwin)...'
           );
           await new Promise((r) => setTimeout(r, 15));
 
-          if (file.size < 227) {
+          if (file.size < 20) {
             window.updateTaskProgressModal(
               'ERROR',
               0.0,
@@ -3603,18 +4289,33 @@
           const mdv = new DataView(magicBuf);
           const sig4 = String.fromCharCode(mdv.getUint8(0), mdv.getUint8(1), mdv.getUint8(2), mdv.getUint8(3));
           const sig5 = sig4 + String.fromCharCode(mdv.getUint8(4));
+          const sig16 = String.fromCharCode(...Array.from(new Uint8Array(magicBuf, 0, 16)));
+          const fileNameLower = file.name.toLowerCase();
 
-          if (sig5 === 'ADOCT') {
+          if (sig5 === 'ADOCT' || fileNameLower.endsWith('.rcs')) {
             await parseLocalRcsFileInBrowser(file, mdv);
-          } else if (sig4 === 'LASF') {
+          } else if (sig4 === 'LASF' || fileNameLower.endsWith('.las') || fileNameLower.endsWith('.laz')) {
             await parseLocalLasFileInBrowser(file, mdv);
+          } else if (sig16.startsWith('SQLite format 3') || fileNameLower.endsWith('.3sm')) {
+            await parseLocal3smFileInBrowser(file, mdv);
+          } else if (sig5 === '3MXBO' || fileNameLower.endsWith('.3mxb') || fileNameLower.endsWith('.3mx')) {
+            await parseLocal3mxbFileInBrowser(file, mdv);
+          } else if (sig4 === 'glTF' || fileNameLower.endsWith('.glb') || fileNameLower.endsWith('.gltf')) {
+            await parseLocalGlbFileInBrowser(file, mdv);
+          } else if (fileNameLower.endsWith('.obj')) {
+            await parseLocalObjFileInBrowser(file);
           } else {
-            window.updateTaskProgressModal(
-              'ERROR',
-              0.0,
-              'Formato no reconocido en ' + file.name,
-              'Cabecera detectada: "' + sig5 + '". Por favor selecciona o arrastra un archivo .LAS (LASF) o Autodesk ReCap .RCS (ADOCT).'
-            );
+            // Check if extension indicates .3sm or similar
+            if (fileNameLower.endsWith('.3sm')) {
+              await parseLocal3smFileInBrowser(file, mdv);
+            } else {
+              window.updateTaskProgressModal(
+                'ERROR',
+                0.0,
+                'Formato no reconocido en ' + file.name,
+                'Cabecera detectada: "' + sig5 + '". Formatos compatibles: Nubes .LAS, .RCS y Mallas Reality .3SM (Bentley / iTwin), .3MXB, .GLB, .OBJ.'
+              );
+            }
           }
         } catch (err) {
           window.updateTaskProgressModal(
@@ -3625,6 +4326,21 @@
           );
         }
       }
+
+      window.loadRealityMeshBase64 = async function(fileName, b64) {
+        try {
+          const binaryString = atob(b64);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const fileObj = new File([bytes], fileName);
+          await parsePointCloudFileInBrowser(fileObj);
+        } catch (err) {
+          window.updateTaskProgressModal('ERROR', 0.0, 'Error al decodificar ' + fileName, translateErrorToSpanish(err));
+        }
+      };
 
       // ================= NATIVE AUTODESK RECAP .RCS (ADOCT) OCTREE READER IN JAVASCRIPT =================
       async function parseLocalRcsFileInBrowser(file, hdv) {

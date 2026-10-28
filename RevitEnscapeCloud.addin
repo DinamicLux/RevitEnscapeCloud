@@ -2,7 +2,7 @@
 <RevitAddIns>
   <AddIn Type="Application">
     <Name>EnscapeCloud RT â€” Renderizador + Nube de Puntos (Revit 2026)</Name>
-    <Assembly>C:\Users\durre\.gemini\antigravity\scratch\RevitEnscapeCloud\dist_20261027_145526\RevitEnscapeCloud.dll</Assembly>
+    <Assembly>C:\Users\durre\.gemini\antigravity\scratch\RevitEnscapeCloud\dist\RevitEnscapeCloud.dll</Assembly>
     <AddInId>8D94A1E0-5F3C-4B98-9D42-7A1E2B3C4D5E</AddInId>
     <FullClassName>RevitEnscapeCloud.App</FullClassName>
     <VendorId>ENSCAPECLOUD</VendorId>

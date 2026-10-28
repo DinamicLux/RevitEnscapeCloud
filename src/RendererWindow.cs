@@ -731,8 +731,8 @@ namespace RevitEnscapeCloud
             {
                 OpenFileDialog dlg = new OpenFileDialog
                 {
-                    Title = "Cargar Nube de Puntos (.LAS o ReCap .RCS / .RCP)",
-                    Filter = "Nubes de Puntos (*.las;*.rcs;*.rcp)|*.las;*.rcs;*.rcp|Todos los archivos (*.*)|*.*",
+                    Title = "Cargar Nube de Puntos (.LAS / .RCS) o Malla Reality .3SM (iTwin)",
+                    Filter = "Nubes y Mallas Reality (*.las;*.rcs;*.rcp;*.3sm;*.3mx;*.3mxb;*.obj;*.glb)|*.las;*.rcs;*.rcp;*.3sm;*.3mx;*.3mxb;*.obj;*.glb|Mallas Reality .3SM Bentley (*.3sm;*.3mx;*.3mxb)|*.3sm;*.3mx;*.3mxb|Nubes ReCap (*.rcs;*.rcp)|*.rcs;*.rcp|Nubes LAS (*.las)|*.las|Todos los archivos (*.*)|*.*",
                     Multiselect = true,
                     DereferenceLinks = false,
                     ValidateNames = false,
@@ -751,6 +751,26 @@ namespace RevitEnscapeCloud
                 {
                     string ext = Path.GetExtension(filePath).ToLowerInvariant();
                     string fileName = Path.GetFileName(filePath);
+
+                    if (ext == ".3sm" || ext == ".3mx" || ext == ".3mxb" || ext == ".glb" || ext == ".obj")
+                    {
+                        SetStatus("Cargando Malla Reality (" + ext.ToUpperInvariant() + "): " + fileName + "...");
+                        PushProgressToWebView("IN_PROGRESS", 5.0, "Cargando Malla Reality: " + fileName, "Leyendo archivo binario...");
+                        try
+                        {
+                            byte[] fileBytes = await Task.Run(() => File.ReadAllBytes(filePath));
+                            string b64 = Convert.ToBase64String(fileBytes);
+                            await _webView.CoreWebView2.ExecuteScriptAsync(
+                                "window.loadRealityMeshBase64('" + EscapeJs(fileName) + "', '" + b64 + "');"
+                            );
+                        }
+                        catch (Exception exMesh)
+                        {
+                            SetStatus("Error al cargar malla reality: " + exMesh.Message);
+                            PushProgressToWebView("ERROR", 0.0, "Error en " + fileName, exMesh.Message);
+                        }
+                        continue;
+                    }
 
                     if (ext == ".rcp")
                     {
@@ -816,6 +836,11 @@ namespace RevitEnscapeCloud
                 SetStatus("Error al cargar archivo de nube de puntos: " + ex.Message);
                 PushProgressToWebView("ERROR", 0.0, "Error de Carga", ex.Message);
             }
+        }
+
+        private string EscapeJs(string s)
+        {
+            return (s ?? "").Replace("\\", "\\\\").Replace("'", "\\'").Replace("\r", "").Replace("\n", " ");
         }
 
         private void PushProgressToWebView(string state, double pct, string title, string detail)
