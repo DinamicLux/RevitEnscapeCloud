@@ -92,7 +92,7 @@ namespace RevitEnscapeCloud
             MinWidth = 960;
             MinHeight = 600;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            Background = new SolidColorBrush(Color.FromRgb(15, 18, 24));
+            Background = new SolidColorBrush(Color.FromRgb(89, 88, 89));
             AllowDrop = true;
             PreviewDragEnter += (s, e) =>
             {

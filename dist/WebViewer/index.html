@@ -7,7 +7,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     html, body {
       width: 100%; height: 100%; overflow: hidden;
-      background: #141821;
+      background: #595859;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       color: #f1f5f9;
     }
@@ -929,7 +929,7 @@
         <span>Usar Color de Fondo Fijo (ReCap)</span>
         <input type="checkbox" id="chk-custom-bg" checked />
       </label>
-      <input type="color" id="picker-bg-color" value="#141821" style="width:100%; height:26px; border:none; border-radius:4px; cursor:pointer; background:transparent;" />
+      <input type="color" id="picker-bg-color" value="#595859" style="width:100%; height:26px; border:none; border-radius:4px; cursor:pointer; background:transparent;" />
     </div>
 
     <div class="control-group">
@@ -974,10 +974,10 @@
 
       const scene = new THREE.Scene();
       let useCustomBgColor = true;
-      let customBgColor = new THREE.Color('#141821'); // Autodesk ReCap dark slate background by default
+      let customBgColor = new THREE.Color('#595859'); // Default RGB(89, 88, 89) background
       let solarSkyColor = new THREE.Color(0x87b5d8);
       scene.background = customBgColor.clone();
-      scene.fog = new THREE.FogExp2(0x141821, 0.00008);
+      scene.fog = new THREE.FogExp2(0x595859, 0.00008);
 
       const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 100000);
       camera.position.set(14, 7.5, 16);
